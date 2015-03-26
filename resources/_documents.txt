@@ -1,6 +1,8 @@
 http://twobtech.com/brochures/model_405_nm.pdf    2B Tech. Model 405 nm Brochure.pdf
 http://twobtech.com/brochures/model_106.pdf    2B Tech. Model 106 Brochure.pdf
 http://twobtech.com/tech_notes/TN001.pdf    2B Tech. O3 Monitor Specs.pdf
+http://www.airmartechnology.com/uploads/InstallGuide/17-461-01.pdf    Airmar 200WX weather station manual.pdf
+http://www.airmartechnology.com/uploads/InstallGuide/17-570-01.pdf    Airmar 200WX addendum for RH sensor.pdf
 http://www.tsi.com/uploadedFiles/_Site_Root/Products/Literature/Application_Notes/iti_073.pdf    TSI Model 8520 DustTrak analog output.pdf
 http://www.tsi.com/uploadedFiles/_Site_Root/Products/Literature/Manuals/1980198S-8520.pdf    TSI Model 8520 DustTrak user manual.pdf
 http://www.tsi.com/uploadedFiles/_Site_Root/Products/Literature/Application_Notes/ITI-044.pdf    TSI Model 8520 DustTrak serial output.pdf
