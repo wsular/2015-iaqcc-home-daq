@@ -69,8 +69,8 @@ Alias d(12) = nox_twob
 Units pm_tsi = mg/m^3
 Units pm_c_dylos = ?
 Units pm_f_dylos = ?
-Units co2_licor = ?
-Units h2o_licor = ?
+Units co2_licor = ppmv
+Units h2o_licor = ppmv
 Units ch4_lgr = ppmv
 Units co2_lgr = ppmv
 Units h2o_lgr = ppmv
@@ -89,8 +89,8 @@ EndTable
 BeginProg
   Scan(SCAN_INTV,Sec,SCAN_BUFF,0)
     VoltDiff(pm_tsi,1,mv5000,DF_TSI_PM,True,0,INTEG,TSI_PM_MLT,TSI_PM_OFF)
-'    VoltDiff(co2_licor,1,mv5000,DF_LICOR_CO2,True,0,INTEG,LICOR_CO2_MLT,LICOR_CO2_OFF)
-'    VoltDiff(h2o_licor,1,mv5000,DF_LICOR_H2O,True,0,INTEG,LICOR_H2O_MLT,LICOR_H2O_OFF)
+    VoltDiff(co2_licor,1,mv5000,DF_LICOR_CO2,True,0,INTEG,LICOR_CO2_MLT,LICOR_CO2_OFF)
+    VoltDiff(h2o_licor,1,mv5000,DF_LICOR_H2O,True,0,INTEG,LICOR_H2O_MLT,LICOR_H2O_OFF)
     VoltDiff(ch4_lgr,1,mv5000,DF_LGR_CH4,True,0,INTEG,LGR_CH4_MLT,LGR_CH4_OFF)
     VoltDiff(co2_lgr,1,mv5000,DF_LGR_CO2,True,0,INTEG,LGR_CO2_MLT,LGR_CO2_OFF)
     VoltDiff(h2o_lgr,1,mv5000,DF_LGR_H2O,True,0,INTEG,LGR_H2O_MLT,LGR_H2O_OFF)
