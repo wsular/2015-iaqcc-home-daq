@@ -103,6 +103,18 @@ DataTable(tsdata,True,10000)
   Sample(12,d,IEEE4)
 EndTable
 
+DataTable(stats,True,10000)
+  DataInterval(0,30,min,1)
+  CardOut(STOP_WHEN_FULL,10000)
+  Average(1,pm_tsi,IEEE4,pm_tsi=NAN)
+  Average(1,co2_licor,IEEE4,disable_licor)
+  Average(1,h2o_licor,IEEE4,disable_licor)
+  Average(1,ch4_lgr,IEEE4,disable_lgr)
+  Average(1,co2_lgr,IEEE4,disable_lgr)
+  Average(1,h2o_lgr,IEEE4,disable_lgr)
+  Average(1,o3_twob,IEEE4,disable_twob_o3)
+EndTable
+
 DataTable(telemetry,True,1)
   DataInterval(0,5,min,1)
   Average(1,pm_tsi,IEEE4,pm_tsi=NAN)
@@ -185,6 +197,7 @@ BeginProg
     VoltDiff(o3_twob,1,mv5000,DF_TWOB_O3,True,0,INTEG,TWOB_O3_MLT,TWOB_O3_OFF)
 '    VoltDiff(nox_twob,1,mv5000,DF_TWOB_NOX,True,0,INTEG,TWOB_NOX_MLT,TWOB_NOX_OFF)
     CallTable(tsdata)
+    CallTable(stats)
 
   NextScan
 
