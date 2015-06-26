@@ -14,9 +14,9 @@ Const GIT_TAG = ""
 
 
 ' I/O
-Const DF_DUSTTRAK = 1
-'Const DF_LI840A_CO2 = 2
-'Const DF_LI840A_H2O = 3
+Const DF_TSI_PM = 1
+Const DF_LICOR_CO2 = 2
+Const DF_LICOR_H2O = 3
 Const DF_LGR_CH4 = 4
 Const DF_LGR_CO2 = 5
 Const DF_LGR_H2O = 6
@@ -27,15 +27,15 @@ Const COM_DYLOS = 1 'C1/2
 'Const COM_LGR = 2 'C3/4
 'Const COM_TWOB_NOX = 3 'C5/6
 'Const COM_BT_MFC = 4 'C7/8
-'Const COM_LI840A = ComRS232
+'Const COM_LICOR = ComRS232
 
 ' Analog scaling
-Const DUSTTRAK_PM_OFF = 0
-Const DUSTTRAK_PM_MLT = (1.0 - DUSTTRAK_PM_OFF)/5000 '0-1.0 mg/m^3, 0-5V
-'Const LI840A_CO2_OFF = 0
-'Const LI840A_CO2_MLT = (1 - LI840A_CO2_OFF)/5000 '0-X ?, 0-5V
-'Const LI840A_H2O_OFF = 0
-'Const LI840A_H2O_MLT = (1 - LI840A_H2O_OFF)/5000 '0-X ?, 0-5V
+Const TSI_PM_OFF = 0
+Const TSI_PM_MLT = (1.0 - TSI_PM_OFF)/5000 '0-1.0 mg/m^3, 0-5V
+Const LICOR_CO2_OFF = 0
+Const LICOR_CO2_MLT = (1 - LICOR_CO2_OFF)/5000 '0-X ?, 0-5V
+Const LICOR_H2O_OFF = 0
+Const LICOR_H2O_MLT = (1 - LICOR_H2O_OFF)/5000 '0-X ?, 0-5V
 Const LGR_CH4_OFF = 0
 Const LGR_CH4_MLT = (100 - LGR_CH4_OFF)/5000 '0-100 ppm, 0-5V
 Const LGR_CO2_OFF = 0
@@ -53,11 +53,11 @@ Const INTEG = 250
 Const STOP_WHEN_FULL = 0 
 
 Public d(12)
-Alias d(1)  = pm_dusttrak
+Alias d(1)  = pm_tsi
 Alias d(2)  = pm_c_dylos
 Alias d(3)  = pm_f_dylos
-Alias d(4)  = co2_li840a
-Alias d(5)  = h2o_li840a
+Alias d(4)  = co2_licor
+Alias d(5)  = h2o_licor
 Alias d(6)  = ch4_lgr
 Alias d(7)  = co2_lgr
 Alias d(8)  = h2o_lgr
@@ -66,11 +66,11 @@ Alias d(10) = no2_twob
 Alias d(11) = no_twob
 Alias d(12) = nox_twob
 
-Units pm_dusttrak = mg/m^3
+Units pm_tsi = mg/m^3
 Units pm_c_dylos = ?
 Units pm_f_dylos = ?
-Units co2_li840a = ?
-Units h2o_li840a = ?
+Units co2_licor = ?
+Units h2o_licor = ?
 Units ch4_lgr = ppmv
 Units co2_lgr = ppmv
 Units h2o_lgr = ppmv
@@ -88,9 +88,9 @@ EndTable
 
 BeginProg
   Scan(SCAN_INTV,Sec,SCAN_BUFF,0)
-    VoltDiff(pm_dusttrak,1,mv5000,DF_DUSTTRAK,True,0,INTEG,dusttrak_PM_MLT,dusttrak_PM_OFF)
-'    VoltDiff(co2_li840a,1,mv5000,DF_LI840A_CO2,True,0,INTEG,LI840A_CO2_MLT,LI840A_CO2_OFF)
-'    VoltDiff(h2o_li840a,1,mv5000,DF_LI840A_H2O,True,0,INTEG,LI840A_H2O_MLT,LI840A_H2O_OFF)
+    VoltDiff(pm_tsi,1,mv5000,DF_TSI_PM,True,0,INTEG,TSI_PM_MLT,TSI_PM_OFF)
+'    VoltDiff(co2_licor,1,mv5000,DF_LICOR_CO2,True,0,INTEG,LICOR_CO2_MLT,LICOR_CO2_OFF)
+'    VoltDiff(h2o_licor,1,mv5000,DF_LICOR_H2O,True,0,INTEG,LICOR_H2O_MLT,LICOR_H2O_OFF)
     VoltDiff(ch4_lgr,1,mv5000,DF_LGR_CH4,True,0,INTEG,LGR_CH4_MLT,LGR_CH4_OFF)
     VoltDiff(co2_lgr,1,mv5000,DF_LGR_CO2,True,0,INTEG,LGR_CO2_MLT,LGR_CO2_OFF)
     VoltDiff(h2o_lgr,1,mv5000,DF_LGR_H2O,True,0,INTEG,LGR_H2O_MLT,LGR_H2O_OFF)
