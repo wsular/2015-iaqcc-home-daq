@@ -80,6 +80,21 @@ Units no2_twob = ?
 Units no_twob = ?
 Units nox_twob = ?
 
+Public disable(4)
+Alias disable(1) = disable_tsi
+Alias disable(2) = disable_licor
+Alias disable(3) = disable_lgr
+Alias disable(4) = disable_twob_o3
+
+Dim t_(7)
+'t_(1) = pm_tsi
+'t_(2) = co2_licor
+'t_(3) = h2o_licor
+'t_(4) = ch4_lgr
+'t_(5) = co2_lgr
+'t_(6) = h2o_lgr
+'t_(7) = o3_twob
+
 
 '============================ DATA TABLES ===================================
 DataTable(tsdata,True,10000)
@@ -88,7 +103,24 @@ DataTable(tsdata,True,10000)
   Sample(12,d,IEEE4)
 EndTable
 
+DataTable(telemetry,True,1)
+  DataInterval(0,5,min,1)
+  Average(1,pm_tsi,IEEE4,pm_tsi=NAN)
+  Average(1,co2_licor,IEEE4,disable_licor)
+  Average(1,h2o_licor,IEEE4,disable_licor)
+  Average(1,ch4_lgr,IEEE4,disable_lgr)
+  Average(1,co2_lgr,IEEE4,disable_lgr)
+  Average(1,h2o_lgr,IEEE4,disable_lgr)
+  Average(1,o3_twob,IEEE4,disable_twob_o3)
+EndTable
+
+
 '================================== MENU ====================================
+Const Yes = True
+Const Cancel = False
+
+Public test_scadabr As Boolean
+
 DisplayMenu("Indoor AQ", -1)
   SubMenu("Debug")
     SubMenu("Monitor sensors")
@@ -100,8 +132,45 @@ DisplayMenu("Indoor AQ", -1)
       DisplayValue("LGR H2O", h2o_lgr)
       DisplayValue("2B O3", o3_twob)
     EndSubMenu
+    MenuItem("Test ScadaBR", test_scadabr)
+      MenuPick(Cancel, Yes)
   EndSubMenu
 EndMenu
+
+
+'============================= SCADABR INTEGRATION ==================================
+Include("CPU:scadabr_Enc.cr3")
+Dim scadabr_socket As Long
+Dim rtime(9) As Long
+Dim scadabr_success As Boolean
+Dim scadabr_resp As String * 256
+Dim send_report_now As Boolean
+
+Sub send_scadabr_data(payload As String * 512)
+  Dim uri As String * 512
+  Dim tstamp As String * 18
+  RealTime(rtime)
+  Sprintf(tstamp,"%04u%02u%02u%02u%02u%02u", rtime(1),rtime(2),rtime(3),rtime(4),rtime(5),rtime(6))
+  uri = REPORT_URL & tstamp & payload
+  scadabr_socket = HTTPGet(uri, scadabr_resp, "")
+  scadabr_success = NOT (scadabr_socket OR Len(scadabr_resp))
+EndSub
+
+Sub send_test_ScadaBR()
+  send_scadabr_data("&testing=0")
+  test_scadabr = False
+EndSub
+
+Sub send_telemetry_report()
+  Dim msg As String * 512
+  Dim payload As String * 512
+  '        (1)            (2)           (3)           (4)         (5) 
+  msg  = "&pm_tsi=%f&co2_licor=%f&h2o_licor=%f&ch4_lgr=%f&co2_lgr=%f"
+  '        (6)         (7)
+  msg &= "&h2o_lgr=%f&o3_twob=%f"
+  Sprintf(payload, msg, t_(1), t_(2), t_(3), t_(4), t_(5), t_(6), t_(7))
+  send_scadabr_data(payload)
+EndSub
 
 
 '========================= MAIN PROGRAM =====================================
@@ -116,7 +185,20 @@ BeginProg
     VoltDiff(o3_twob,1,mv5000,DF_TWOB_O3,True,0,INTEG,TWOB_O3_MLT,TWOB_O3_OFF)
 '    VoltDiff(nox_twob,1,mv5000,DF_TWOB_NOX,True,0,INTEG,TWOB_NOX_MLT,TWOB_NOX_OFF)
     CallTable(tsdata)
+
+  NextScan
+
+  SlowSequence
+  Scan(1,Sec,2,0)
+    If (test_scadabr) Then
+      send_test_ScadaBR()
+    EndIf
     
+    CallTable(telemetry)
+    If (telemetry.Output(1,1)) Then
+      GetRecord(t_(1),telemetry,1)
+      send_telemetry_report()
+    EndIf
   NextScan
 EndProg
 

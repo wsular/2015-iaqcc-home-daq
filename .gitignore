@@ -1,3 +1,7 @@
 
+# Private config files
+/indoor/datalogger/scadabr.cr3
+/indoor/datalogger/scadabr_Enc.cr3
+
 # Third-party files
 /resources/*.pdf
