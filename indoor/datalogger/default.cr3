@@ -12,7 +12,6 @@
 'update before deployment but DO NOT check-in other than empty string!
 Const GIT_TAG = ""
 
-
 ' I/O
 Const DF_TSI_PM = 1
 Const DF_LICOR_CO2 = 2
@@ -47,6 +46,8 @@ Const TWOB_O3_MLT = 0.2 '????
 'Const TWOB_NOX_OFF = 0
 'Const TWOB_NOX_MLT = 
 
+
+'============================== INTERNALS ===================================
 Const SCAN_INTV = 1
 Const SCAN_BUFF = 10
 Const INTEG = 250
@@ -80,12 +81,30 @@ Units no_twob = ?
 Units nox_twob = ?
 
 
+'============================ DATA TABLES ===================================
 DataTable(tsdata,True,10000)
   DataInterval(0,1,min,5)
   CardOut(STOP_WHEN_FULL,10000)
   Sample(12,d,IEEE4)
 EndTable
 
+'================================== MENU ====================================
+DisplayMenu("Indoor AQ", -1)
+  SubMenu("Debug")
+    SubMenu("Monitor sensors")
+      DisplayValue("Dusttrak PM", pm_tsi)
+      DisplayValue("LI840A CO2", co2_licor)
+      DisplayValue("LI840A H2O", h2o_licor)
+      DisplayValue("LGR CH4", ch4_lgr)
+      DisplayValue("LGR CO2", co2_lgr)
+      DisplayValue("LGR H2O", h2o_lgr)
+      DisplayValue("2B O3", o3_twob)
+    EndSubMenu
+  EndSubMenu
+EndMenu
+
+
+'========================= MAIN PROGRAM =====================================
 BeginProg
   Scan(SCAN_INTV,Sec,SCAN_BUFF,0)
     VoltDiff(pm_tsi,1,mv5000,DF_TSI_PM,True,0,INTEG,TSI_PM_MLT,TSI_PM_OFF)
