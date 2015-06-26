@@ -14,7 +14,7 @@ Const GIT_TAG = ""
 
 
 ' I/O
-Const DF_DUSTRAK = 1
+Const DF_DUSTTRAK = 1
 'Const DF_LI840A_CO2 = 2
 'Const DF_LI840A_H2O = 3
 Const DF_LGR_CH4 = 4
@@ -30,8 +30,8 @@ Const COM_DYLOS = 1 'C1/2
 'Const COM_LI840A = ComRS232
 
 ' Analog scaling
-Const DUSTRAK_PM_OFF = 0
-Const DUSTRAK_PM_MLT = (1.0 - DUSTRAK_PM_OFF)/5000 '0-1.0 mg/m^3, 0-5V
+Const DUSTTRAK_PM_OFF = 0
+Const DUSTTRAK_PM_MLT = (1.0 - DUSTTRAK_PM_OFF)/5000 '0-1.0 mg/m^3, 0-5V
 'Const LI840A_CO2_OFF = 0
 'Const LI840A_CO2_MLT = (1 - LI840A_CO2_OFF)/5000 '0-X ?, 0-5V
 'Const LI840A_H2O_OFF = 0
@@ -53,7 +53,7 @@ Const INTEG = 250
 Const STOP_WHEN_FULL = 0 
 
 Public d(12)
-Alias d(1)  = pm_dustrak
+Alias d(1)  = pm_dusttrak
 Alias d(2)  = pm_c_dylos
 Alias d(3)  = pm_f_dylos
 Alias d(4)  = co2_li840a
@@ -66,7 +66,7 @@ Alias d(10) = no2_twob
 Alias d(11) = no_twob
 Alias d(12) = nox_twob
 
-Units pm_dustrak = mg/m^3
+Units pm_dusttrak = mg/m^3
 Units pm_c_dylos = ?
 Units pm_f_dylos = ?
 Units co2_li840a = ?
@@ -88,7 +88,7 @@ EndTable
 
 BeginProg
   Scan(SCAN_INTV,Sec,SCAN_BUFF,0)
-    VoltDiff(pm_dustrak,1,mv5000,DF_DUSTRAK,True,0,INTEG,DUSTRAK_PM_MLT,DUSTRAK_PM_OFF)
+    VoltDiff(pm_dusttrak,1,mv5000,DF_DUSTTRAK,True,0,INTEG,dusttrak_PM_MLT,dusttrak_PM_OFF)
 '    VoltDiff(co2_li840a,1,mv5000,DF_LI840A_CO2,True,0,INTEG,LI840A_CO2_MLT,LI840A_CO2_OFF)
 '    VoltDiff(h2o_li840a,1,mv5000,DF_LI840A_H2O,True,0,INTEG,LI840A_H2O_MLT,LI840A_H2O_OFF)
     VoltDiff(ch4_lgr,1,mv5000,DF_LGR_CH4,True,0,INTEG,LGR_CH4_MLT,LGR_CH4_OFF)
