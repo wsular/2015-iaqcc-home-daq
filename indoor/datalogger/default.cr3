@@ -22,12 +22,6 @@ Const DF_LGR_H2O = 6
 Const DF_TWOB_O3 = 7
 'Const DF_TWOB_NOX = 8
 
-Const COM_DYLOS = 1 'C1/2
-'Const COM_LGR = 2 'C3/4
-'Const COM_TWOB_NOX = 3 'C5/6
-'Const COM_BT_MFC = 4 'C7/8
-'Const COM_LICOR = ComRS232
-
 ' Analog scaling
 Const TSI_PM_OFF = 0
 Const TSI_PM_MLT = (1.0 - TSI_PM_OFF)/5000 '0-1.0 mg/m^3, 0-5V
@@ -46,6 +40,17 @@ Const TWOB_O3_MLT = 0.2 '????
 'Const TWOB_NOX_OFF = 0
 'Const TWOB_NOX_MLT = 
 
+' Serial input
+Const DYLOS_COM = Com4
+Const DYLOS_BAUD = 9600
+Const DYLOS_FMT = 3 '8/n/1
+Const DYLOS_BUFF = 12
+
+'Const COM_LGR = 2 'C3/4
+'Const COM_TWOB_NOX = 3 'C5/6
+'Const COM_BT_MFC = 4 'C7/8
+'Const COM_LICOR = ComRS232
+
 
 '============================== INTERNALS ===================================
 Const SCAN_INTV = 1
@@ -53,32 +58,33 @@ Const SCAN_BUFF = 10
 Const INTEG = 250
 Const STOP_WHEN_FULL = 0 
 
-Public d(12)
-Alias d(1)  = pm_tsi
-Alias d(2)  = pm_c_dylos
-Alias d(3)  = pm_f_dylos
-Alias d(4)  = co2_licor
-Alias d(5)  = h2o_licor
-Alias d(6)  = ch4_lgr
-Alias d(7)  = co2_lgr
-Alias d(8)  = h2o_lgr
-Alias d(9)  = o3_twob
-Alias d(10) = no2_twob
-Alias d(11) = no_twob
-Alias d(12) = nox_twob
+Const FT3_PER_M3 = 35.314667
 
+Public d(7)
+Alias d(1) = pm_tsi
+Alias d(2) = co2_licor
+Alias d(3) = h2o_licor
+Alias d(4) = ch4_lgr
+Alias d(5) = co2_lgr
+Alias d(6) = h2o_lgr
+Alias d(7) = o3_twob
 Units pm_tsi = mg/m^3
-Units pm_c_dylos = ?
-Units pm_f_dylos = ?
 Units co2_licor = ppmv
 Units h2o_licor = ppmv
 Units ch4_lgr = ppmv
 Units co2_lgr = ppmv
 Units h2o_lgr = ppmv
 Units o3_twob = ppbv
-Units no2_twob = ?
-Units no_twob = ?
-Units nox_twob = ?
+
+Dim dc1100_record As String * 12
+Dim dc1100_vals(2)
+'dc1100_vals(1) = "small" counts / 100 ft^3
+'dc1100_vals(2) = "large" counts / 100 ft^3
+Dim dc1100(2)
+Alias dc1100(1) = dc1100_pm_small
+Alias dc1100(2) = dc1100_pm_large
+Units dc1100_pm_small = counts/m^3
+Units dc1100_pm_large = counts/m^3
 
 Public disable(4)
 Alias disable(1) = disable_tsi
@@ -86,26 +92,31 @@ Alias disable(2) = disable_licor
 Alias disable(3) = disable_lgr
 Alias disable(4) = disable_twob_o3
 
-Dim t_(7)
-'t_(1) = pm_tsi
-'t_(2) = co2_licor
-'t_(3) = h2o_licor
-'t_(4) = ch4_lgr
-'t_(5) = co2_lgr
-'t_(6) = h2o_lgr
-'t_(7) = o3_twob
+Dim t_(9)
+'t(1)  = dc1100_pm_small
+'t(2)  = dc1100_pm_large
+'t_(3) = pm_tsi
+'t_(4) = co2_licor
+'t_(5) = h2o_licor
+'t_(6) = ch4_lgr
+'t_(7) = co2_lgr
+'t_(8) = h2o_lgr
+'t_(9) = o3_twob
 
 
 '============================ DATA TABLES ===================================
 DataTable(tsdata,True,10000)
   DataInterval(0,1,min,5)
   CardOut(STOP_WHEN_FULL,10000)
-  Sample(12,d,IEEE4)
+  Sample(2,dc1100,IEEE4)
+  Sample(7,d,IEEE4)
 EndTable
 
 DataTable(stats,True,10000)
   DataInterval(0,30,min,1)
   CardOut(STOP_WHEN_FULL,10000)
+  Average(1,dc1100_pm_small,IEEE4,dc1100_pm_small=NAN)
+  Average(1,dc1100_pm_large,IEEE4,dc1100_pm_large=NAN)
   Average(1,pm_tsi,IEEE4,pm_tsi=NAN)
   Average(1,co2_licor,IEEE4,disable_licor)
   Average(1,h2o_licor,IEEE4,disable_licor)
@@ -117,6 +128,8 @@ EndTable
 
 DataTable(telemetry,True,1)
   DataInterval(0,5,min,1)
+  Average(1,dc1100_pm_small,IEEE4,dc1100_pm_small=NAN)
+  Average(1,dc1100_pm_large,IEEE4,dc1100_pm_large=NAN)
   Average(1,pm_tsi,IEEE4,pm_tsi=NAN)
   Average(1,co2_licor,IEEE4,disable_licor)
   Average(1,h2o_licor,IEEE4,disable_licor)
@@ -137,7 +150,10 @@ DisplayMenu("Indoor AQ", -1)
   SubMenu("Debug")
     SubMenu("Monitor sensors")
       DisplayValue("Dusttrak PM", pm_tsi)
-      DisplayValue("LI840A CO2", co2_licor)
+      SubMenu("PM (Dylos)")
+        DisplayValue("DC1100 small", dc1100_pm_small)
+        DisplayValue("DC1100 large", dc1100_pm_large)
+      EndSubMenu
       DisplayValue("LI840A H2O", h2o_licor)
       DisplayValue("LGR CH4", ch4_lgr)
       DisplayValue("LGR CO2", co2_lgr)
@@ -176,17 +192,32 @@ EndSub
 Sub send_telemetry_report()
   Dim msg As String * 512
   Dim payload As String * 512
-  '        (1)            (2)           (3)           (4)         (5) 
-  msg  = "&pm_tsi=%f&co2_licor=%f&h2o_licor=%f&ch4_lgr=%f&co2_lgr=%f"
-  '        (6)         (7)
-  msg &= "&h2o_lgr=%f&o3_twob=%f"
-  Sprintf(payload, msg, t_(1), t_(2), t_(3), t_(4), t_(5), t_(6), t_(7))
+  '        (1)               (2)               (3)       (4)          (5)
+  msg  = "&pm_small_dylos=%f&pm_large_dylos=%f&pm_tsi=%f&co2_licor=%f&h2o_licor=%f"
+  '        (6)        (7)        (8)        (9)
+  msg &= "&ch4_lgr=%f&co2_lgr=%f&h2o_lgr=%f&o3_twob=%f"
+  Sprintf(payload,msg,t_(1),t_(2),t_(3),t_(4),t_(5),t_(6),t_(7),t_(8),t_(9))
   send_scadabr_data(payload)
+EndSub
+
+
+'================================ FUNCTIONS =================================
+Function convert_dc1100_value(number) As Float
+  'counts/100 per cubic foot => counts per cubic meter
+  Return INT(number * 100 * FT3_PER_M3)
+EndFunction
+
+
+'============================== SUBROUTINES =================================
+Sub setup()
+  SerialOpen(DYLOS_COM,DYLOS_BAUD,DYLOS_FMT,0,DYLOS_BUFF)
 EndSub
 
 
 '========================= MAIN PROGRAM =====================================
 BeginProg
+  setup()
+
   Scan(SCAN_INTV,Sec,SCAN_BUFF,0)
     VoltDiff(pm_tsi,1,mv5000,DF_TSI_PM,True,0,INTEG,TSI_PM_MLT,TSI_PM_OFF)
     VoltDiff(co2_licor,1,mv5000,DF_LICOR_CO2,True,0,INTEG,LICOR_CO2_MLT,LICOR_CO2_OFF)
@@ -196,9 +227,24 @@ BeginProg
     VoltDiff(h2o_lgr,1,mv5000,DF_LGR_H2O,True,0,INTEG,LGR_H2O_MLT,LGR_H2O_OFF)
     VoltDiff(o3_twob,1,mv5000,DF_TWOB_O3,True,0,INTEG,TWOB_O3_MLT,TWOB_O3_OFF)
 '    VoltDiff(nox_twob,1,mv5000,DF_TWOB_NOX,True,0,INTEG,TWOB_NOX_MLT,TWOB_NOX_OFF)
+  NextScan
+
+  SlowSequence
+  Scan(1,min,1,0)
+    SerialIn(dc1100_record,DYLOS_COM,100,&h0D,DYLOS_BUFF)
+    If (Len(dc1100_record)) Then
+      SplitStr(dc1100_vals(1),dc1100_record,"",2,0)
+      If (dc1100_vals(1)=NAN OR dc1100_vals(2)=NAN) Then
+        dc1100_pm_small = NAN
+        dc1100_pm_large = NAN
+      Else
+        dc1100_pm_small = convert_dc1100_value(dc1100_vals(1))
+        dc1100_pm_large = convert_dc1100_value(dc1100_vals(2))
+      EndIf
+    EndIf
+
     CallTable(tsdata)
     CallTable(stats)
-
   NextScan
 
   SlowSequence
