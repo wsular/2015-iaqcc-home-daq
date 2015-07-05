@@ -57,18 +57,21 @@ Const O3_BUFF = 60
 Const SCAN_INTV = 500
 Const SCAN_BUFF = 10
 Const INTEG = 250
-Const DAYS_OF_DATA = 7 'XXXX FIXME
+Const DAYS_OF_DATA = 60
+Const FILE_INTV = 24
+Const FILE_UNIT = Hr
+Const DAILY_EMAIL_TIME = 6 'time into file_intv
 
 Const FT3_PER_M3 = 35.314667
 Const MBAR_PER_TORR = 1.3332237
 
-Const FNAME_PREFIX = "IAQ15_homeinterior_"
+Const FNAME_PREFIX = "IAQ15_" & STATION & "_"
 Const TSDATA_FNAME_FMT = "CRD:" & FNAME_PREFIX & "tsdata_"
 Const STATS_FNAME_FMT = "CRD:" & FNAME_PREFIX & "stats_"
 Public tsdata_fname As String * 48
 Public stats_fname As String * 48
-Public new_tsdata_file As Boolean
-Public new_stats_file As Boolean
+Public is_new_tsdata_file As Boolean
+Public is_new_stats_file As Boolean
 
 Public d(3)
 Alias d(1) = pm_tsi
@@ -226,8 +229,8 @@ Dim t(34)
 '============================ DATA TABLES ===================================
 DataTable(tsdata,True,10000)
   DataInterval(0,1,min,5)
-'  CardOut(STOP_WHEN_FULL,10000)
-  TableFile(tsdata_fname_fmt,8,DAYS_OF_DATA,0,5,min,new_tsdata_file,tsdata_fname)
+  TableFile(TSDATA_FNAME_FMT,8,DAYS_OF_DATA,0,FILE_INTV,FILE_UNIT, _
+      is_new_tsdata_file,tsdata_fname)
   Sample(2,dc1100,IEEE4)
   Sample(3,d,IEEE4)
   Sample(3,o3,IEEE4)
@@ -244,8 +247,8 @@ EndTable
 
 DataTable(stats,True,10000)
   DataInterval(0,30,min,1)
-'  CardOut(STOP_WHEN_FULL,10000)
-  TableFile(stats_fname_fmt,8,DAYS_OF_DATA,0,1,Hr,new_stats_file,stats_fname)
+  TableFile(STATS_FNAME_FMT,8,DAYS_OF_DATA,0,FILE_INTV,FILE_UNIT, _
+      is_new_stats_file,stats_fname)
   Average(1,dc1100_pm_small,IEEE4,dc1100_pm_small=NAN)
   Average(1,dc1100_pm_large,IEEE4,dc1100_pm_large=NAN)
   Average(1,pm_tsi,IEEE4,pm_tsi=NAN)
@@ -363,6 +366,17 @@ Sub send_startup_email()
   msg &= "Power input (Volts): " & Status.Battery & CRLF
   EmailSend(SMTP_SERV,EMAIL_TO,EMAIL_FROM,email_boot_subject,msg,"", _
       SMTP_USER,SMTP_PASS,smtp_response)
+EndSub
+
+Const EMAIL_DAILY_SUBJECT = "Daily notice from " & STATION & " CR3000"
+Sub send_daily_email()
+  Dim msg As String * 512
+  msg = "Good morning, it's the " & STATION & " CR3000. Yesterday's data "
+  msg &= "files are attached."
+  Dim attachments As String * 96
+  attachments = stats_fname & "," & tsdata_fname
+  EmailSend(SMTP_SERV,EMAIL_TO,EMAIL_FROM,EMAIL_DAILY_SUBJECT,msg, _
+      attachments,SMTP_USER,SMTP_PASS,smtp_response)
 EndSub
 
 
@@ -494,7 +508,7 @@ BeginProg
     CallTable(stats)
   NextScan
 
-  SlowSequence
+  SlowSequence '''''''''''''''' REPORTING THREAD '''''''''''''''''''''''''
   Scan(1,Sec,2,0)
     If (test_scadabr) Then
       send_test_ScadaBR()
@@ -504,6 +518,10 @@ BeginProg
     If (telemetry.Output(1,1)) Then
       GetRecord(t(1),telemetry,1)
       send_telemetry_report()
+    EndIf
+    
+    If TimeIntoInterval(DAILY_EMAIL_TIME,FILE_INTV,FILE_UNIT) Then
+      send_daily_email()
     EndIf
   NextScan
 EndProg
