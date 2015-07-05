@@ -15,20 +15,10 @@ Const GIT_TAG = ""
 'uniquely identify this location/datalogger
 Const STATION = "homeinterior"
 
-' I/O
 Const DF_TSI_PM = 1
-Const DF_LICOR_CO2 = 2
-Const DF_LICOR_H2O = 3
-
-' Analog scaling
 Const TSI_PM_OFF = 0
 Const TSI_PM_MLT = (1.0 - TSI_PM_OFF)/5000 '0-1.0 mg/m^3, 0-5V
-Const LICOR_CO2_OFF = 0
-Const LICOR_CO2_MLT = (1 - LICOR_CO2_OFF)/5000 '0-X ?, 0-5V
-Const LICOR_H2O_OFF = 0
-Const LICOR_H2O_MLT = (1 - LICOR_H2O_OFF)/5000 '0-X ?, 0-5V
 
-' Serial input
 Const DYLOS_COM = Com4
 Const DYLOS_BAUD = 9600
 Const DYLOS_FMT = 3 '8/n/1
@@ -52,6 +42,7 @@ Const O3_BUFF = 60
 'Const COM_BT_MFC = 4 'C7/8
 'Const COM_LICOR = ComRS232
 
+Dim co2_licor, h2o_licor 'XXXX req'd for proper telemetry reports
 
 '============================== INTERNALS ===================================
 Const SCAN_INTV = 500
@@ -73,10 +64,8 @@ Public stats_fname As String * 48
 Public is_new_tsdata_file As Boolean
 Public is_new_stats_file As Boolean
 
-Public d(3)
-Alias d(1) = pm_tsi
-Alias d(2) = co2_licor
-Alias d(3) = h2o_licor
+Public pm_tsi
+Units pm_tsi = mg/m^3
 
 Dim dc1100_record As String * 12
 Dim dc1100_vals(2)
@@ -232,7 +221,7 @@ DataTable(tsdata,True,10000)
   TableFile(TSDATA_FNAME_FMT,8,DAYS_OF_DATA,0,FILE_INTV,FILE_UNIT, _
       is_new_tsdata_file,tsdata_fname)
   Sample(2,dc1100,IEEE4)
-  Sample(3,d,IEEE4)
+  Sample(1,pm_tsi,IEEE4)
   Sample(3,o3,IEEE4)
   Sample(15,nox,IEEE4)
   Sample(1,gga30p_CH4,IEEE4)
@@ -252,8 +241,6 @@ DataTable(stats,True,10000)
   Average(1,dc1100_pm_small,IEEE4,dc1100_pm_small=NAN)
   Average(1,dc1100_pm_large,IEEE4,dc1100_pm_large=NAN)
   Average(1,pm_tsi,IEEE4,pm_tsi=NAN)
-  Average(1,co2_licor,IEEE4,disable_licor)
-  Average(1,h2o_licor,IEEE4,disable_licor)
   Average(3,o3,IEEE4,disable_o3)
   Average(15,nox,IEEE4,disable_nox)
   Average(1,gga30p_CH4,IEEE4,disable_gga30p OR gga30p_CH4=NAN)
@@ -271,8 +258,11 @@ DataTable(telemetry,True,1)
   Average(1,dc1100_pm_small,IEEE4,dc1100_pm_small=NAN)
   Average(1,dc1100_pm_large,IEEE4,dc1100_pm_large=NAN)
   Average(1,pm_tsi,IEEE4,pm_tsi=NAN)
-  Average(1,co2_licor,IEEE4,disable_licor)
-  Average(1,h2o_licor,IEEE4,disable_licor)
+  'XXXX leave following two lines intact despite removing all other references
+  'to LI-840A because telemetry report depends on them & shifting variables
+  'is highly resource intensive - wait until RS232 integration occurs
+  Average(1,co2_licor,IEEE4,False) 
+  Average(1,h2o_licor,IEEE4,False)
   Average(3,o3,IEEE4,disable_o3)
   Average(15,nox,IEEE4,disable_nox)
   Average(1,gga30p_CH4,IEEE4,disable_gga30p OR gga30p_CH4=NAN)
@@ -303,7 +293,6 @@ DisplayMenu("Indoor AQ", -1)
         DisplayValue("DC1100 small", dc1100_pm_small)
         DisplayValue("DC1100 large", dc1100_pm_large)
       EndSubMenu
-      DisplayValue("LI840A H2O", h2o_licor)
       SubMenu("O3 (2B Tech)")
         DisplayValue("O3", m205_O3)
         DisplayValue("Cell tmpr.", m205_cell_T)
@@ -463,8 +452,6 @@ BeginProg
 
   Scan(500,mSec,SCAN_BUFF,0)
     VoltDiff(pm_tsi,1,mv5000,DF_TSI_PM,True,0,INTEG,TSI_PM_MLT,TSI_PM_OFF)
-    VoltDiff(co2_licor,1,mv5000,DF_LICOR_CO2,True,0,INTEG,LICOR_CO2_MLT,LICOR_CO2_OFF)
-    VoltDiff(h2o_licor,1,mv5000,DF_LICOR_H2O,True,0,INTEG,LICOR_H2O_MLT,LICOR_H2O_OFF)
 
     SerialIn(ch4_record,CH4_COM,5,&h0A,CH4_BUFF)
     If (Len(ch4_record)) Then
