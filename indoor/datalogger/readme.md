@@ -8,4 +8,5 @@ Sensors are wired to a CR3000 as specified in `interior-daq-wiring.docx`
 1. Edit values in `scadabr-template.cr3` and save as `scadabr.cr3` then save and 
    encrypt to `scadabr_Enc.cr3`. Load `scadabr_Enc.cr3` onto the CR3000's `CPU:`
    drive.
-2. Load `default.cr3` onto the CR3000's `CPU:` drive.
+2. Repeat pattern in step 1 for `email-template.cr3`.
+3. Load `default.cr3` onto the CR3000's `CPU:` drive.

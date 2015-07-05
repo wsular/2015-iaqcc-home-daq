@@ -12,6 +12,9 @@
 'update before deployment but DO NOT check-in other than empty string!
 Const GIT_TAG = ""
 
+'uniquely identify this location/datalogger
+Const STATION = "homeinterior"
+
 ' I/O
 Const DF_TSI_PM = 1
 Const DF_LICOR_CO2 = 2
@@ -340,6 +343,29 @@ DisplayMenu("Indoor AQ", -1)
 EndMenu
 
 
+'================================ EMAIL ====================================
+Include "CPU:email_Enc.cr3"  'contains non-public settings
+Const CRLF = CHR(13) & CHR(10)
+Public smtp_response As String * 80
+
+Const email_boot_subject = "Start-up notice from " & STATION & " CR3000"
+Sub send_startup_email()
+  Dim msg As String * 512
+  msg = ("This is the " & STATION & " CR3000. Starting up..." & CRLF & CRLF)
+  'HINT both CompileResults and CardStatus come with a trailing <CR><LF> but 
+  'CardStatus has a CRLF pair in the middle which must be stripped out
+  msg &= "Compile results: " & RTrim(Status.CompileResults(1))
+  msg &= "Card status: " & RTrim(Replace(Status.CardStatus(1), CRLF, " "))
+  msg &= CRLF & "Program error count: " & Status.ProgErrors & CRLF
+  msg &= "Watchdog error count: " & Status.WatchdogErrors & CRLF
+  msg &= "Run signature: " & Status.RunSignature & CRLF
+  msg &= "Program signature: " & Status.ProgSignature & CRLF
+  msg &= "Power input (Volts): " & Status.Battery & CRLF
+  EmailSend(SMTP_SERV,EMAIL_TO,EMAIL_FROM,email_boot_subject,msg,"", _
+      SMTP_USER,SMTP_PASS,smtp_response)
+EndSub
+
+
 '============================= SCADABR INTEGRATION ==================================
 Include("CPU:scadabr_Enc.cr3")
 Dim scadabr_socket As Long
@@ -418,6 +444,7 @@ EndSub
 
 '========================= MAIN PROGRAM =====================================
 BeginProg
+  send_startup_email()
   setup()
 
   Scan(500,mSec,SCAN_BUFF,0)
