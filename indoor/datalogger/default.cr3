@@ -45,8 +45,6 @@ Const O3_BUFF = 60
 Dim co2_licor, h2o_licor 'XXXX req'd for proper telemetry reports
 
 '============================== INTERNALS ===================================
-Const SCAN_INTV = 500
-Const SCAN_BUFF = 10
 Const INTEG = 250
 Const DAYS_OF_DATA = 60
 Const FILE_INTV = 24
@@ -461,7 +459,9 @@ BeginProg
   send_startup_email()
   setup()
 
-  Scan(500,mSec,SCAN_BUFF,0)
+  'HINT - Los Gatos Research GGA-30p CH4/CO2/H2O analyzer sends messages at
+  '       not precisely 1Hz... run twice as fast to avoid losing messages.
+  Scan(500,mSec,4,0)
     VoltDiff(pm_tsi,1,mv5000,DF_TSI_PM,True,0,INTEG,TSI_PM_MLT,TSI_PM_OFF)
 
     SerialIn(ch4_record,CH4_COM,5,&h0A,CH4_BUFF)
@@ -473,6 +473,10 @@ BeginProg
       ch4_year = ch4(1) 'convert string->float
       disable_gga30p = NOT(ch4_year = 2015)
       gga30p_gas_P *= MBAR_PER_TORR
+    EndIf
+
+    If (test_scadabr) Then
+      send_test_scadabr()
     EndIf
   NextScan
 
@@ -502,22 +506,21 @@ BeginProg
       'TODO detect bad input
     EndIf
 
+    'FIXME TODO
+    'Lack of inter-scan lock flag means that even though DustTrak & GGA-30p
+    'are being evaluated more frequently than minutely, only one data value
+    'per minute is included in following data tables
     CallTable(tsdata)
     CallTable(stats)
-  NextScan
-
-  SlowSequence '''''''''''''''' REPORTING THREAD '''''''''''''''''''''''''
-  Scan(1,Sec,2,0)
-    If (test_scadabr) Then
-      send_test_ScadaBR()
-    EndIf
-    
     CallTable(telemetry)
     If (telemetry.Output(1,1)) Then
       GetRecord(t(1),telemetry,1)
       send_telemetry_report()
     EndIf
-    
+  NextScan
+
+  SlowSequence
+  Scan(5,Sec,2,0)
     If TimeIntoInterval(DAILY_EMAIL_TIME,FILE_INTV,FILE_UNIT) Then
       send_daily_email()
     EndIf
