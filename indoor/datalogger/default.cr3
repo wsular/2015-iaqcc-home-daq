@@ -1,4 +1,4 @@
-''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+ ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 ' Indoor Air Quality 2015 | Home interior DAQ
 '
 ' Data acquistion program
@@ -54,15 +54,17 @@ Const DAILY_EMAIL_TIME = 6 'time into file_intv
 Const FT3_PER_M3 = 35.314667
 Const MBAR_PER_TORR = 1.3332237
 
+Public debug_on As Boolean
+
 Const FNAME_PREFIX = "IAQ15_" & STATION & "_"
 Const TSDATA_FNAME_FMT = "CRD:" & FNAME_PREFIX & "tsdata_"
 Const STATS_FNAME_FMT = "CRD:" & FNAME_PREFIX & "stats_"
-Public tsdata_fname As String * 48
-Public stats_fname As String * 48
-Public is_new_tsdata_file As Boolean
-Public is_new_stats_file As Boolean
+Dim tsdata_fname As String * 48
+Dim stats_fname As String * 48
+Dim is_new_tsdata_file As Boolean
+Dim is_new_stats_file As Boolean
 
-Public pm_tsi
+Dim pm_tsi
 Units pm_tsi = mg/m^3
 
 Dim dc1100_record As String * 12
@@ -76,22 +78,19 @@ Units dc1100_pm_small = counts/m^3
 Units dc1100_pm_large = counts/m^3
 
 Dim o3_record As String * 80
-Public o3(9)
+Dim o3(9)
 Alias o3(1) = m205_O3
 Alias o3(2) = m205_cell_T
 Alias o3(3) = m205_cell_P
-'4: date, day of month
-'5: date, month
-'6: date, short year
-'7: time, hour
-'8: time, minute
-'9: time, second
+'4: date, day of month    '7: time, hour
+'5: date, month           '8: time, minute
+'6: date, short year      '9: time, second
 Units m205_O3 = ppb
 Units m205_cell_T = degC
 Units m205_cell_P = mbar
 
 Dim nox_record As String * 128
-Public nox(22)
+Dim nox(22)
 Alias nox(1)  = m405_NO2
 Alias nox(2)  = m405_NO
 Alias nox(3)  = m405_NOx
@@ -107,12 +106,9 @@ Alias nox(12) = m405_samp_LED_V
 Alias nox(13) = m405_ref_LED_V
 Alias nox(14) = m405_NO_gen_V
 Alias nox(15) = m405_scrubber_T
-'16: date, day of month
-'17: date, month
-'18: date, short year
-'19: time, hour
-'20: time, minutes
-'21: time, seconds
+'16: date, day of month    '19: time, hour
+'17: date, month           '20: time, minutes
+'18: date, short year      '21: time, seconds
 Alias nox(22) = m405_status
 Units m405_NO2 = ppb
 Units m405_NO = ppb
@@ -131,31 +127,19 @@ Units m405_scrubber_T = degC
 
 Dim ch4_record As String * 400
 Dim ch4_year
-Public ch4(25)
-'1: date (well, year)
-'2: time (well, hour)
-Alias ch4(3)  = gga30p_CH4
-'4: CH4 s.d.
-Alias ch4(5)  = gga30p_H2O
-'6: H2O s.d.
-Alias ch4(7) = gga30p_CO2
-'8: CO2 s.d.
-Alias ch4(9) = gga30p_CH4_dry
-'10: CH4 dry s.d.
-Alias ch4(11) = gga30p_CO2_dry
-'12: CO2 dry s.d.
-Alias ch4(13) = gga30p_gas_P
-'14: gas P s.d.
-Alias ch4(15) = gga30p_gas_T
-'16: gas T s.d.
-Alias ch4(17) = gga30p_amb_T
-'18: amb T s.d.
-Alias ch4(19) = gga30p_ringdown0
-'20: ringdown #0 s.d.
-Alias ch4(21) = gga30p_ringdown1
-'22: ringdown #1 s.d.
-Alias ch4(23) = gga30p_fit_flag
-'24: MIU valve
+Dim ch4(25)
+'1: date (only year captured)     '2: time (only hour captured)
+Alias ch4(3)  = gga30p_CH4        '4: CH4 s.d.
+Alias ch4(5)  = gga30p_H2O        '6: H2O s.d.
+Alias ch4(7) = gga30p_CO2         '8: CO2 s.d.
+Alias ch4(9) = gga30p_CH4_dry     '10: CH4 dry s.d.
+Alias ch4(11) = gga30p_CO2_dry    '12: CO2 dry s.d.
+Alias ch4(13) = gga30p_gas_P      '14: gas P s.d.
+Alias ch4(15) = gga30p_gas_T      '16: gas T s.d.
+Alias ch4(17) = gga30p_amb_T      '18: amb T s.d.
+Alias ch4(19) = gga30p_ringdown0  '20: ringdown #0 s.d.
+Alias ch4(21) = gga30p_ringdown1  '22: ringdown #1 s.d.
+Alias ch4(23) = gga30p_fit_flag   '24: MIU valve
 '25: MIU description
 Units gga30p_CH4 = ppm (wet)
 Units gga30p_H2O = ppm
@@ -169,7 +153,7 @@ Units gga30p_ringdown0 = usec
 Units gga30p_ringdown1 = usec
 Units gga30p_fit_flag = arb
 
-Public disable(5) As Boolean
+Dim disable(5) As Boolean
 Alias disable(1) = disable_tsi
 Alias disable(2) = disable_licor
 Alias disable(3) = disable_gga30p
@@ -287,10 +271,44 @@ DataTable(telemetry,True,1)
   Average(1,gga30p_fit_flag,IEEE4,disable_gga30p OR gga30p_fit_flag=NAN)
 EndTable
 
+DataTable(debug,True,1)
+  Sample(1,pm_tsi,IEEE4)
+  Sample(1,disable_tsi,Boolean)
+  Sample(2,dc1100(1),IEEE4)
+  Sample(1,o3_record,String)
+  Sample(3,o3(1),IEEE4)
+  Sample(1,disable_o3,Boolean)
+  Sample(1,nox_record,String)
+  Sample(15,nox(1),IEEE4)
+  Sample(1,nox(22),IEEE4)
+  Sample(1,disable_nox,Boolean)
+  Sample(1,ch4_record,String)
+  Sample(1,gga30p_CH4,IEEE4)
+  Sample(1,gga30p_H2O,IEEE4)
+  Sample(1,gga30p_CO2,IEEE4)
+  Sample(1,gga30p_CH4_dry,IEEE4)
+  Sample(1,gga30p_CO2_dry,IEEE4)
+  Sample(1,gga30p_gas_P,IEEE4)
+  Sample(1,gga30p_gas_T,IEEE4)
+  Sample(1,gga30p_amb_T,IEEE4)
+  Sample(1,gga30p_ringdown0,IEEE4)
+  Sample(1,gga30p_ringdown1,IEEE4)
+  Sample(1,gga30p_fit_flag,IEEE4)
+  Sample(1,disable_gga30p,Boolean)
+  Sample(1,tsdata_fname,String)
+  Sample(1,stats_fname,String)
+  Sample(1,is_new_tsdata_file,Boolean)
+  Sample(1,is_new_stats_file,Boolean)
+  Sample(1,smtp_response,String)
+  Sample(1,scadabr_resp,String)
+  Sample(1,scadabr_success,Boolean)
+EndTable
+
 
 '================================== MENU ====================================
 Const Yes = True
 Const Cancel = False
+Const No = False
 
 Public test_scadabr As Boolean
 
@@ -338,6 +356,8 @@ DisplayMenu("Indoor AQ", -1)
         DisplayValue("fit flag", gga30p_fit_flag)
       EndSubMenu
     EndSubMenu
+    MenuItem("Debug  ON", debug_on)
+      MenuPick(No,Yes)
     MenuItem("Test ScadaBR", test_scadabr)
       MenuPick(Cancel, Yes)
   EndSubMenu
@@ -347,7 +367,7 @@ EndMenu
 '================================ EMAIL ====================================
 Include "CPU:email_Enc.cr3"  'contains non-public settings
 Const CRLF = CHR(13) & CHR(10)
-Public smtp_response As String * 80
+Dim smtp_response As String * 80
 
 Const email_boot_subject = "Start-up notice from " & STATION & " CR3000"
 Sub send_startup_email()
@@ -475,6 +495,7 @@ BeginProg
       gga30p_gas_P *= MBAR_PER_TORR
     EndIf
 
+    If (debug_on) Then CallTable(debug)
     If (test_scadabr) Then
       send_test_scadabr()
     EndIf
@@ -512,6 +533,8 @@ BeginProg
     'per minute is included in following data tables
     CallTable(tsdata)
     CallTable(stats)
+    If (debug_on) Then CallTable(debug)
+
     CallTable(telemetry)
     If (telemetry.Output(1,1)) Then
       GetRecord(t(1),telemetry,1)
