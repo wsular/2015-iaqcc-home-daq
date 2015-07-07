@@ -64,8 +64,8 @@ Dim stats_fname As String * 48
 Dim is_new_tsdata_file As Boolean
 Dim is_new_stats_file As Boolean
 
-Dim pm_tsi
-Units pm_tsi = mg/m^3
+Dim dusttrak2_pm
+Units dusttrak2_pm = mg/m^3
 
 Dim dc1100_record As String * 12
 Dim dc1100_vals(2)
@@ -161,9 +161,9 @@ Alias disable(4) = disable_o3
 Alias disable(5) = disable_nox
 
 Dim t(34)
-'t(1)  = dc1100_pm_small
-'t(2)  = dc1100_pm_large
-'t(3)  = pm_tsi
+'t(1)  = dusttrak2_pm
+'t(2)  = dc1100_pm_small
+'t(3)  = dc1100_pm_large
 't(4)  = co2_licor
 't(5)  = h2o_licor
 't(6)  = m205_O3     'Average(3,...)
@@ -202,8 +202,8 @@ DataTable(tsdata,True,10000)
   DataInterval(0,1,min,5)
   TableFile(TSDATA_FNAME_FMT,8,DAYS_OF_DATA,0,FILE_INTV,FILE_UNIT, _
       is_new_tsdata_file,tsdata_fname)
+  Sample(1,dusttrak2_pm,IEEE4)
   Sample(2,dc1100,IEEE4)
-  Sample(1,pm_tsi,IEEE4)
   Sample(2,o3(1),FP2)
   Sample(1,o3(3),IEEE4)
   Sample(7,nox(1),FP2)
@@ -226,9 +226,9 @@ DataTable(stats,True,10000)
   DataInterval(0,30,min,1)
   TableFile(STATS_FNAME_FMT,8,DAYS_OF_DATA,0,FILE_INTV,FILE_UNIT, _
       is_new_stats_file,stats_fname)
+  Average(1,dusttrak2_pm,IEEE4,dusttrak2_pm=NAN)
   Average(1,dc1100_pm_small,IEEE4,dc1100_pm_small=NAN)
   Average(1,dc1100_pm_large,IEEE4,dc1100_pm_large=NAN)
-  Average(1,pm_tsi,IEEE4,pm_tsi=NAN)
   Average(2,o3(1),FP2,disable_o3)
   Average(1,o3(3),IEEE4,disable_o3)
   Average(7,nox(1),FP2,disable_nox)
@@ -248,9 +248,9 @@ EndTable
 
 DataTable(telemetry,True,1)
   DataInterval(0,5,min,1)
+  Average(1,dusttrak2_pm,IEEE4,dusttrak2_pm=NAN)
   Average(1,dc1100_pm_small,IEEE4,dc1100_pm_small=NAN)
   Average(1,dc1100_pm_large,IEEE4,dc1100_pm_large=NAN)
-  Average(1,pm_tsi,IEEE4,pm_tsi=NAN)
   'XXXX leave following two lines intact despite removing all other references
   'to LI-840A because telemetry report depends on them & shifting variables
   'is highly resource intensive - wait until RS232 integration occurs
@@ -272,7 +272,7 @@ DataTable(telemetry,True,1)
 EndTable
 
 DataTable(debug,True,1)
-  Sample(1,pm_tsi,IEEE4)
+  Sample(1,dusttrak2_pm,IEEE4)
   Sample(1,disable_tsi,Boolean)
   Sample(2,dc1100(1),IEEE4)
   Sample(1,o3_record,String)
@@ -315,7 +315,7 @@ Public test_scadabr As Boolean
 DisplayMenu("Indoor AQ", -1)
   SubMenu("Debug")
     SubMenu("Monitor sensors")
-      DisplayValue("Dusttrak PM", pm_tsi)
+      DisplayValue("Dusttrak PM", dusttrak2_pm)
       SubMenu("PM (Dylos)")
         DisplayValue("DC1100 small", dc1100_pm_small)
         DisplayValue("DC1100 large", dc1100_pm_large)
@@ -421,8 +421,8 @@ Sub send_test_ScadaBR()
   test_scadabr = False
 EndSub
 
-'                1                   2                   3           4
-Const REPORT1 = "&dc1100_pm_small=%.1f&dc1100_pm_large=%.1f&pm_tsi=%.3f&co2_licor=%.3f"
+'                1                 2                    3                    4
+Const REPORT1 = "&dusttrak2_pm=%.3f&dc1100_pm_small=%.1f&dc1100_pm_large=%.1f&co2_licor=%.3f"
 '                5              6            7                8
 Const REPORT2 = "&h2o_licor=%.3f&m205_o3=%.1f&m205_cell_t=%.1f&m205_cell_p=%.1f"
 '                9             10           11            12
@@ -482,7 +482,7 @@ BeginProg
   'HINT - Los Gatos Research GGA-30p CH4/CO2/H2O analyzer sends messages at
   '       not precisely 1Hz... run twice as fast to avoid losing messages.
   Scan(500,mSec,4,0)
-    VoltDiff(pm_tsi,1,mv5000,DF_TSI_PM,True,0,INTEG,TSI_PM_MLT,TSI_PM_OFF)
+    VoltDiff(dusttrak2_pm,1,mv5000,DF_TSI_PM,True,0,INTEG,TSI_PM_MLT,TSI_PM_OFF)
 
     SerialIn(ch4_record,CH4_COM,5,&h0A,CH4_BUFF)
     If (Len(ch4_record)) Then
