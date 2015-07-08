@@ -1,6 +1,14 @@
 Changelog for indoor AQ datalogger
 ==================================
 
+next version
+------------
+
+### Issues fixed
+
+* Add NTP support to keep logger time-synced
+
+
 v0.1 [2015-07-06]
 -----------------
 

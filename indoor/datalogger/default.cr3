@@ -64,6 +64,12 @@ Dim stats_fname As String * 48
 Dim is_new_tsdata_file As Boolean
 Dim is_new_stats_file As Boolean
 
+Const NTP_ADDR = "0.us.pool.ntp.org"
+Const NTP_OFFSET = -8*3600 'sec from UTC = PST
+Const NTP_DEV = 100 'ms, tolerable drift
+Dim cr3k_clock_drift
+Units cr3k_clock_drift = ms
+
 Dim dusttrak2_pm
 Units dusttrak2_pm = mg/m^3
 
@@ -546,6 +552,11 @@ BeginProg
   Scan(5,Sec,2,0)
     If TimeIntoInterval(DAILY_EMAIL_TIME,FILE_INTV,FILE_UNIT) Then
       send_daily_email()
+    EndIf
+
+    If TimeIntoInterval(0,6,Hr) Then
+      cr3k_clock_drift = NetworkTimeProtocol(NTP_ADDR,NTP_OFFSET,NTP_DEV)
+      send_scadabr_data(FormatFloat(cr3k_clock_drift,"&cr3k_clock_drift=%f"))
     EndIf
   NextScan
 EndProg
