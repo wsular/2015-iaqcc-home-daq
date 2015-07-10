@@ -52,7 +52,8 @@ col_units = ','.join(['"%s"' % ea[1] for ea in columns])
 def squeeze_met_data(airmar_filepath, date):
     """Extract meterological data from raw 200WX data file"""
     fpath, fname = osp.split(airmar_filepath)
-    oname = osp.splitext(fname)[0] + '.dat'
+    datets = date.strftime('%Y-%m-%d')
+    oname = datets + '_Airmar200WX_IAQ2015.dat'
 
     print "Extracting data from", fname
     try:
@@ -68,7 +69,7 @@ def squeeze_met_data(airmar_filepath, date):
             for line in datafile:
                 #each data protocol key is divided by a $ identifier
                 time, data = line.split('$')
-                timestamp = date.strftime('"%Y-%m-%d ' + time[:-5] + '"' )
+                timestamp = '"%s %s"' % (datets, time[:-5])
                 #WIMDA is data protocol key for the meteorological composite
                 if data.startswith('WIMDA'):
                     (key, bpi, bpiu, bp, bpbu, at, atu, wt, wtu,
