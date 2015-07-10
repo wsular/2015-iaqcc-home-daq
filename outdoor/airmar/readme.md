@@ -108,6 +108,11 @@ C:\Users\lar\Desktop> git clone https://bitbucket.org/wsular/2015-iaq-intensive-
     * Switch to 'Statistic' tab; click 'Yes' to enable statistics and restart
       the service. *This will not work if NTP Server Monitor is not run as an
       administrator.*
+    * Switch to 'Configuration' tab; enable 'Run at system start' and 'Display
+      Icon in TrayIconBar'.
+
+> With 'Run at system start' enabled, the user must acknowledge a UAC prompt 
+> (or disable UAC) at login after the Time Server Monitor is launched.
 
 
   [1]: http://www.airmartechnology.com/2009/about/download-software.php
