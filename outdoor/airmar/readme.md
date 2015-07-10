@@ -52,10 +52,9 @@ The data acquisition system is composed of:
     * Log time: `24`
     * `meters` selected (distances)
 * Under Advanced Setup
-    * Sensor Hardware
-        * Enable/Disable Functionality: under both tabs 'NMEA 0183 Display Settings'
-          and 'PC Settings': disable all messages except `GGA`, `MDA` and set
-          intervals to `0:10.00`.
+    * Sensor Hardware > Enable/Disable Functionality > 'PC Settings' tab
+        * Disable the default messages `MWV (R)`, `ROT`, `VWT`
+        * Also, change all intervals to 5-seconds
     * Communications/Diagnostics
         * Set raw data log path to `C:\Users\lar\Desktop\200WX raw data`
     * Names
