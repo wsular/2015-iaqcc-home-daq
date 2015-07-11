@@ -1,4 +1,4 @@
-''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+ ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 ' Indoor Air Quality 2015 | Home interior DAQ
 '
 ' Data acquistion program
@@ -12,142 +12,390 @@
 'update before deployment but DO NOT check-in other than empty string!
 Const GIT_TAG = ""
 
-' I/O
-Const DF_TSI_PM = 1
-Const DF_LICOR_CO2 = 2
-Const DF_LICOR_H2O = 3
-Const DF_LGR_CH4 = 4
-Const DF_LGR_CO2 = 5
-Const DF_LGR_H2O = 6
-Const DF_TWOB_O3 = 7
-'Const DF_TWOB_NOX = 8
+'uniquely identify this location/datalogger
+Const STATION = "homeinterior"
 
-Const COM_DYLOS = 1 'C1/2
-'Const COM_LGR = 2 'C3/4
-'Const COM_TWOB_NOX = 3 'C5/6
+Const DF_TSI_PM = 7
+Const TSI_PM_OFF = 0
+Const TSI_PM_MLT = (1.0 - TSI_PM_OFF)/5000 '0-1.0 mg/m^3, 0-5V
+
+Const DYLOS_COM = Com4
+Const DYLOS_BAUD = 9600
+Const DYLOS_FMT = 3 '8/n/1
+Const DYLOS_BUFF = 12
+
+Const NOX_COM = ComRS232
+Const NOX_BAUD = 19200
+Const NOX_FMT = 3 '8/n/1
+Const NOX_BUFF = 128
+
+Const CH4_COM = Com2
+Const CH4_BAUD = 19200
+Const CH4_FMT = 3 '8/n/1
+Const CH4_BUFF = 800
+
+Const O3_COM = Com3
+Const O3_BAUD = 19200
+Const O3_FMT = 3 '8/n/1
+Const O3_BUFF = 60
+
 'Const COM_BT_MFC = 4 'C7/8
 'Const COM_LICOR = ComRS232
 
-' Analog scaling
-Const TSI_PM_OFF = 0
-Const TSI_PM_MLT = (1.0 - TSI_PM_OFF)/5000 '0-1.0 mg/m^3, 0-5V
-Const LICOR_CO2_OFF = 0
-Const LICOR_CO2_MLT = (1 - LICOR_CO2_OFF)/5000 '0-X ?, 0-5V
-Const LICOR_H2O_OFF = 0
-Const LICOR_H2O_MLT = (1 - LICOR_H2O_OFF)/5000 '0-X ?, 0-5V
-Const LGR_CH4_OFF = 0
-Const LGR_CH4_MLT = (100 - LGR_CH4_OFF)/5000 '0-100 ppm, 0-5V
-Const LGR_CO2_OFF = 0
-Const LGR_CO2_MLT = (5000 - LGR_CO2_OFF)/5000 '0-5000 ppm, 0-5V
-Const LGR_H2O_OFF = 1
-Const LGR_H2O_MLT = (50000 - LGR_H2O_OFF)/5000 '0-50000 ppm, 0-5V
-Const TWOB_O3_OFF = 0
-Const TWOB_O3_MLT = 0.2 '????
-'Const TWOB_NOX_OFF = 0
-'Const TWOB_NOX_MLT = 
-
+Dim co2_licor, h2o_licor 'XXXX req'd for proper telemetry reports
 
 '============================== INTERNALS ===================================
-Const SCAN_INTV = 1
-Const SCAN_BUFF = 10
 Const INTEG = 250
-Const STOP_WHEN_FULL = 0 
+Const DAYS_OF_DATA = 60
+Const FILE_INTV = 24
+Const FILE_UNIT = Hr
+Const DAILY_EMAIL_TIME = 6 'time into file_intv
 
-Public d(12)
-Alias d(1)  = pm_tsi
-Alias d(2)  = pm_c_dylos
-Alias d(3)  = pm_f_dylos
-Alias d(4)  = co2_licor
-Alias d(5)  = h2o_licor
-Alias d(6)  = ch4_lgr
-Alias d(7)  = co2_lgr
-Alias d(8)  = h2o_lgr
-Alias d(9)  = o3_twob
-Alias d(10) = no2_twob
-Alias d(11) = no_twob
-Alias d(12) = nox_twob
+Const FT3_PER_M3 = 35.314667
+Const MBAR_PER_TORR = 1.3332237
 
-Units pm_tsi = mg/m^3
-Units pm_c_dylos = ?
-Units pm_f_dylos = ?
-Units co2_licor = ppmv
-Units h2o_licor = ppmv
-Units ch4_lgr = ppmv
-Units co2_lgr = ppmv
-Units h2o_lgr = ppmv
-Units o3_twob = ppbv
-Units no2_twob = ?
-Units no_twob = ?
-Units nox_twob = ?
+Public debug_on As Boolean
 
-Public disable(4)
+Const FNAME_PREFIX = "IAQ15_" & STATION & "_"
+Const TSDATA_FNAME_FMT = "CRD:" & FNAME_PREFIX & "tsdata_"
+Const STATS_FNAME_FMT = "CRD:" & FNAME_PREFIX & "stats_"
+Dim tsdata_fname As String * 48
+Dim stats_fname As String * 48
+Dim is_new_tsdata_file As Boolean
+Dim is_new_stats_file As Boolean
+
+Dim dusttrak2_pm
+Units dusttrak2_pm = mg/m^3
+
+Dim dc1100_record As String * 12
+Dim dc1100_vals(2)
+'dc1100_vals(1) = "small" counts / 100 ft^3
+'dc1100_vals(2) = "large" counts / 100 ft^3
+Dim dc1100(2)
+Alias dc1100(1) = dc1100_pm_small
+Alias dc1100(2) = dc1100_pm_large
+Units dc1100_pm_small = counts/m^3
+Units dc1100_pm_large = counts/m^3
+
+Dim o3_record As String * 80
+Dim o3(9)
+Alias o3(1) = m205_O3
+Alias o3(2) = m205_cell_T
+Alias o3(3) = m205_cell_P
+'4: date, day of month    '7: time, hour
+'5: date, month           '8: time, minute
+'6: date, short year      '9: time, second
+Units m205_O3 = ppb
+Units m205_cell_T = degC
+Units m205_cell_P = mbar
+
+Dim nox_record As String * 128
+Dim nox(22)
+Alias nox(1)  = m405_NO2
+Alias nox(2)  = m405_NO
+Alias nox(3)  = m405_NOx
+Alias nox(4)  = m405_NO2_zero
+Alias nox(5)  = m405_NO_zero
+Alias nox(6)  = m405_flow_factor
+Alias nox(7)  = m405_cell_T
+Alias nox(8)  = m405_cell_P
+Alias nox(9)  = m405_overflow_F
+Alias nox(10) = m405_cell_F
+Alias nox(11) = m405_O3_F
+Alias nox(12) = m405_samp_LED_V
+Alias nox(13) = m405_ref_LED_V
+Alias nox(14) = m405_NO_gen_V
+Alias nox(15) = m405_scrubber_T
+'16: date, day of month    '19: time, hour
+'17: date, month           '20: time, minutes
+'18: date, short year      '21: time, seconds
+Alias nox(22) = m405_status
+Units m405_NO2 = ppb
+Units m405_NO = ppb
+Units m405_NOx = ppb
+Units m405_NO2_zero = ppb
+Units m405_NO_zero = ppb
+Units m405_cell_T = degC
+Units m405_cell_P = mbar
+Units m405_overflow_F = cc/min
+Units m405_cell_F = cc/min
+Units m405_O3_F = cc/min
+Units m405_samp_LED_V = volts
+Units m405_ref_LED_V = volts
+Units m405_NO_gen_V = volts
+Units m405_scrubber_T = degC
+
+Dim ch4_record As String * 400
+Dim ch4_year
+Dim ch4(25)
+'1: date (only year captured)     '2: time (only hour captured)
+Alias ch4(3)  = gga30p_CH4        '4: CH4 s.d.
+Alias ch4(5)  = gga30p_H2O        '6: H2O s.d.
+Alias ch4(7) = gga30p_CO2         '8: CO2 s.d.
+Alias ch4(9) = gga30p_CH4_dry     '10: CH4 dry s.d.
+Alias ch4(11) = gga30p_CO2_dry    '12: CO2 dry s.d.
+Alias ch4(13) = gga30p_gas_P      '14: gas P s.d.
+Alias ch4(15) = gga30p_gas_T      '16: gas T s.d.
+Alias ch4(17) = gga30p_amb_T      '18: amb T s.d.
+Alias ch4(19) = gga30p_ringdown0  '20: ringdown #0 s.d.
+Alias ch4(21) = gga30p_ringdown1  '22: ringdown #1 s.d.
+Alias ch4(23) = gga30p_fit_flag   '24: MIU valve
+'25: MIU description
+Units gga30p_CH4 = ppm (wet)
+Units gga30p_H2O = ppm
+Units gga30p_CO2 = ppm (wet)
+Units gga30p_CH4_dry = ppm
+Units gga30p_CO2_dry = ppm
+Units gga30p_gas_P = mbar
+Units gga30p_gas_T = degC
+Units gga30p_amb_T = degC
+Units gga30p_ringdown0 = usec
+Units gga30p_ringdown1 = usec
+Units gga30p_fit_flag = arb
+
+Dim disable(5) As Boolean
 Alias disable(1) = disable_tsi
 Alias disable(2) = disable_licor
-Alias disable(3) = disable_lgr
-Alias disable(4) = disable_twob_o3
+Alias disable(3) = disable_gga30p
+Alias disable(4) = disable_o3
+Alias disable(5) = disable_nox
 
-Dim t_(7)
-'t_(1) = pm_tsi
-'t_(2) = co2_licor
-'t_(3) = h2o_licor
-'t_(4) = ch4_lgr
-'t_(5) = co2_lgr
-'t_(6) = h2o_lgr
-'t_(7) = o3_twob
+Dim t(34)
+'t(1)  = dusttrak2_pm
+'t(2)  = dc1100_pm_small
+'t(3)  = dc1100_pm_large
+'t(4)  = co2_licor
+'t(5)  = h2o_licor
+'t(6)  = m205_O3     'Average(3,...)
+'t(7)  = m205_cell_T
+'t(8)  = m205_cell_P
+'t(9)  = m405_NO2    'Average(15,...)
+'t(10) = m405_NO
+'t(11) = m405_NOx
+'t(12) = m405_NO2_zero
+'t(13) = m405_NO_zero
+'t(14) = m405_flow_factor
+'t(15) = m405_cell_T
+'t(16) = m405_cell_P
+'t(17) = m405_overflow_F
+'t(18) = m405_cell_F
+'t(19) = m405_O3_F
+'t(20) = m405_samp_LED_V
+'t(21) = m405_ref_LED_V
+'t(22) = m405_NO_gen_V
+'t(23) = m405_scrubber_T
+'t(24) = gga30p_CH4
+'t(25) = gga30p_H2O
+'t(26) = gga30p_CO2
+'t(27) = gga30p_CH4_dry
+'t(28) = gga30p_CO2_dry
+'t(29) = gga30p_gas_P
+'t(30) = gga30p_gas_T
+'t(31) = gga30p_amb_T
+'t(32) = gga30p_ringdown0
+'t(33) = gga30p_ringdown1
+'t(34) = gga30p_fit_flag
 
 
 '============================ DATA TABLES ===================================
 DataTable(tsdata,True,10000)
   DataInterval(0,1,min,5)
-  CardOut(STOP_WHEN_FULL,10000)
-  Sample(12,d,IEEE4)
+  TableFile(TSDATA_FNAME_FMT,8,DAYS_OF_DATA,0,FILE_INTV,FILE_UNIT, _
+      is_new_tsdata_file,tsdata_fname)
+  Sample(1,dusttrak2_pm,IEEE4)
+  Sample(2,dc1100,IEEE4)
+  Sample(2,o3(1),FP2)
+  Sample(1,o3(3),IEEE4)
+  Sample(7,nox(1),FP2)
+  Sample(1,nox(8),IEEE4)
+  Sample(3,nox(9),FP2)
+  Sample(2,nox(12),IEEE4)
+  Sample(2,nox(14),FP2)
+  Sample(1,nox(22),UINT2)
+  Sample(1,gga30p_CH4,FP2)
+  Sample(1,gga30p_H2O,IEEE4)
+  Sample(1,gga30p_CO2,FP2)
+  Sample(1,gga30p_CH4_dry,FP2)
+  Sample(1,gga30p_CO2_dry,FP2)
+  Sample(1,gga30p_gas_P,IEEE4)
+  Sample(1,gga30p_gas_T,FP2)
+  Sample(1,gga30p_amb_T,FP2)
 EndTable
 
 DataTable(stats,True,10000)
   DataInterval(0,30,min,1)
-  CardOut(STOP_WHEN_FULL,10000)
-  Average(1,pm_tsi,IEEE4,pm_tsi=NAN)
-  Average(1,co2_licor,IEEE4,disable_licor)
-  Average(1,h2o_licor,IEEE4,disable_licor)
-  Average(1,ch4_lgr,IEEE4,disable_lgr)
-  Average(1,co2_lgr,IEEE4,disable_lgr)
-  Average(1,h2o_lgr,IEEE4,disable_lgr)
-  Average(1,o3_twob,IEEE4,disable_twob_o3)
+  TableFile(STATS_FNAME_FMT,8,DAYS_OF_DATA,0,FILE_INTV,FILE_UNIT, _
+      is_new_stats_file,stats_fname)
+  Average(1,dusttrak2_pm,IEEE4,dusttrak2_pm=NAN)
+  Average(1,dc1100_pm_small,IEEE4,dc1100_pm_small=NAN)
+  Average(1,dc1100_pm_large,IEEE4,dc1100_pm_large=NAN)
+  Average(2,o3(1),FP2,disable_o3)
+  Average(1,o3(3),IEEE4,disable_o3)
+  Average(7,nox(1),FP2,disable_nox)
+  Average(1,nox(8),IEEE4,disable_nox)
+  Average(3,nox(9),FP2,disable_nox)
+  Average(2,nox(12),IEEE4,disable_nox)
+  Average(2,nox(14),FP2,disable_nox)  
+  Average(1,gga30p_CH4,FP2,disable_gga30p OR gga30p_CH4=NAN)
+  Average(1,gga30p_H2O,IEEE4,disable_gga30p OR gga30p_H2O=NAN)
+  Average(1,gga30p_CO2,FP2,disable_gga30p OR gga30p_CO2=NAN)
+  Average(1,gga30p_CH4_dry,FP2,disable_gga30p OR gga30p_CH4_dry=NAN)
+  Average(1,gga30p_CO2_dry,FP2,disable_gga30p OR gga30p_CO2_dry=NAN)
+  Average(1,gga30p_gas_P,IEEE4,disable_gga30p OR gga30p_gas_P=NAN)
+  Average(1,gga30p_gas_T,FP2,disable_gga30p OR gga30p_gas_T=NAN)
+  Average(1,gga30p_amb_T,FP2,disable_gga30p OR gga30p_amb_T=NAN)
 EndTable
 
 DataTable(telemetry,True,1)
   DataInterval(0,5,min,1)
-  Average(1,pm_tsi,IEEE4,pm_tsi=NAN)
-  Average(1,co2_licor,IEEE4,disable_licor)
-  Average(1,h2o_licor,IEEE4,disable_licor)
-  Average(1,ch4_lgr,IEEE4,disable_lgr)
-  Average(1,co2_lgr,IEEE4,disable_lgr)
-  Average(1,h2o_lgr,IEEE4,disable_lgr)
-  Average(1,o3_twob,IEEE4,disable_twob_o3)
+  Average(1,dusttrak2_pm,IEEE4,dusttrak2_pm=NAN)
+  Average(1,dc1100_pm_small,IEEE4,dc1100_pm_small=NAN)
+  Average(1,dc1100_pm_large,IEEE4,dc1100_pm_large=NAN)
+  'XXXX leave following two lines intact despite removing all other references
+  'to LI-840A because telemetry report depends on them & shifting variables
+  'is highly resource intensive - wait until RS232 integration occurs
+  Average(1,co2_licor,IEEE4,False) 
+  Average(1,h2o_licor,IEEE4,False)
+  Average(3,o3,IEEE4,disable_o3)
+  Average(15,nox,IEEE4,disable_nox)
+  Average(1,gga30p_CH4,IEEE4,disable_gga30p OR gga30p_CH4=NAN)
+  Average(1,gga30p_H2O,IEEE4,disable_gga30p OR gga30p_H2O=NAN)
+  Average(1,gga30p_CO2,IEEE4,disable_gga30p OR gga30p_CO2=NAN)
+  Average(1,gga30p_CH4_dry,IEEE4,disable_gga30p OR gga30p_CH4_dry=NAN)
+  Average(1,gga30p_CO2_dry,IEEE4,disable_gga30p OR gga30p_CO2_dry=NAN)
+  Average(1,gga30p_gas_P,IEEE4,disable_gga30p OR gga30p_gas_P=NAN)
+  Average(1,gga30p_gas_T,IEEE4,disable_gga30p OR gga30p_gas_T=NAN)
+  Average(1,gga30p_amb_T,IEEE4,disable_gga30p OR gga30p_amb_T=NAN)
+  Average(1,gga30p_ringdown0,IEEE4,disable_gga30p OR gga30p_ringdown0=NAN)
+  Average(1,gga30p_ringdown1,IEEE4,disable_gga30p OR gga30p_ringdown1=NAN)
+  Average(1,gga30p_fit_flag,IEEE4,disable_gga30p OR gga30p_fit_flag=NAN)
+EndTable
+
+DataTable(debug,True,1)
+  Sample(1,dusttrak2_pm,IEEE4)
+  Sample(1,disable_tsi,Boolean)
+  Sample(2,dc1100(1),IEEE4)
+  Sample(1,o3_record,String)
+  Sample(3,o3(1),IEEE4)
+  Sample(1,disable_o3,Boolean)
+  Sample(1,nox_record,String)
+  Sample(15,nox(1),IEEE4)
+  Sample(1,nox(22),IEEE4)
+  Sample(1,disable_nox,Boolean)
+  Sample(1,ch4_record,String)
+  Sample(1,gga30p_CH4,IEEE4)
+  Sample(1,gga30p_H2O,IEEE4)
+  Sample(1,gga30p_CO2,IEEE4)
+  Sample(1,gga30p_CH4_dry,IEEE4)
+  Sample(1,gga30p_CO2_dry,IEEE4)
+  Sample(1,gga30p_gas_P,IEEE4)
+  Sample(1,gga30p_gas_T,IEEE4)
+  Sample(1,gga30p_amb_T,IEEE4)
+  Sample(1,gga30p_ringdown0,IEEE4)
+  Sample(1,gga30p_ringdown1,IEEE4)
+  Sample(1,gga30p_fit_flag,IEEE4)
+  Sample(1,disable_gga30p,Boolean)
+  Sample(1,tsdata_fname,String)
+  Sample(1,stats_fname,String)
+  Sample(1,is_new_tsdata_file,Boolean)
+  Sample(1,is_new_stats_file,Boolean)
+  Sample(1,smtp_response,String)
+  Sample(1,scadabr_resp,String)
+  Sample(1,scadabr_success,Boolean)
 EndTable
 
 
 '================================== MENU ====================================
 Const Yes = True
 Const Cancel = False
+Const No = False
 
 Public test_scadabr As Boolean
 
 DisplayMenu("Indoor AQ", -1)
   SubMenu("Debug")
     SubMenu("Monitor sensors")
-      DisplayValue("Dusttrak PM", pm_tsi)
-      DisplayValue("LI840A CO2", co2_licor)
-      DisplayValue("LI840A H2O", h2o_licor)
-      DisplayValue("LGR CH4", ch4_lgr)
-      DisplayValue("LGR CO2", co2_lgr)
-      DisplayValue("LGR H2O", h2o_lgr)
-      DisplayValue("2B O3", o3_twob)
+      DisplayValue("Dusttrak PM", dusttrak2_pm)
+      SubMenu("PM (Dylos)")
+        DisplayValue("DC1100 small", dc1100_pm_small)
+        DisplayValue("DC1100 large", dc1100_pm_large)
+      EndSubMenu
+      SubMenu("O3 (2B Tech)")
+        DisplayValue("O3", m205_O3)
+        DisplayValue("Cell tmpr.", m205_cell_T)
+        DisplayValue("Cell press.", m205_cell_P)
+      EndSubMenu
+      SubMenu("NO/NO2 (2B Tech)")
+        DisplayValue("NO2", m405_NO2)
+        DisplayValue("NO", m405_NO)
+        DisplayValue("NOx", m405_NOx)
+        DisplayValue("NO2 zero", m405_NO2_zero)
+        DisplayValue("NO zero", m405_NO_zero)
+        DisplayValue("Flow factor", m405_flow_factor)
+        DisplayValue("Cell tmpr.", m405_cell_T)
+        DisplayValue("Cell press.", m405_cell_P)
+        DisplayValue("Cell flow", m405_cell_F)
+        DisplayValue("Overflow", m405_overflow_F)
+        DisplayValue("O3 flow", m405_O3_F)
+        DisplayValue("Smp LED V", m405_samp_LED_V)
+        DisplayValue("Ref LED V", m405_ref_LED_V)
+        DisplayValue("NO gen. V", m405_NO_gen_V)
+        DisplayValue("Status", m405_status)
+      EndSubMenu
+      SubMenu("CH4/CO2/H2O (LGR)")
+        DisplayValue("CH4", gga30p_CH4)
+        DisplayValue("CO2", gga30p_CO2)
+        DisplayValue("H2O", gga30p_H2O)
+        DisplayValue("CH4 (dry)", gga30p_CH4_dry)
+        DisplayValue("CO2 (dry)", gga30p_CO2_dry)
+        DisplayValue("gas press.", gga30p_gas_P)
+        DisplayValue("gas tmpr.", gga30p_gas_T)
+        DisplayValue("amb. tmpr.", gga30p_amb_T)
+        DisplayValue("ringdown 0", gga30p_ringdown0)
+        DisplayValue("ringdown 1", gga30p_ringdown1)
+        DisplayValue("fit flag", gga30p_fit_flag)
+      EndSubMenu
     EndSubMenu
+    MenuItem("Debug  ON", debug_on)
+      MenuPick(No,Yes)
     MenuItem("Test ScadaBR", test_scadabr)
       MenuPick(Cancel, Yes)
   EndSubMenu
 EndMenu
+
+
+'================================ EMAIL ====================================
+Include "CPU:email_Enc.cr3"  'contains non-public settings
+Const CRLF = CHR(13) & CHR(10)
+Dim smtp_response As String * 80
+
+Const email_boot_subject = "Start-up notice from " & STATION & " CR3000"
+Sub send_startup_email()
+  Dim msg As String * 512
+  msg = ("This is the " & STATION & " CR3000. Starting up..." & CRLF & CRLF)
+  'HINT both CompileResults and CardStatus come with a trailing <CR><LF> but 
+  'CardStatus has a CRLF pair in the middle which must be stripped out
+  msg &= "Compile results: " & RTrim(Status.CompileResults(1))
+  msg &= "Card status: " & RTrim(Replace(Status.CardStatus(1), CRLF, " "))
+  msg &= CRLF & "Program error count: " & Status.ProgErrors & CRLF
+  msg &= "Watchdog error count: " & Status.WatchdogErrors & CRLF
+  msg &= "Run signature: " & Status.RunSignature & CRLF
+  msg &= "Program signature: " & Status.ProgSignature & CRLF
+  msg &= "Power input (Volts): " & Status.Battery & CRLF
+  EmailSend(SMTP_SERV,EMAIL_TO,EMAIL_FROM,email_boot_subject,msg,"", _
+      SMTP_USER,SMTP_PASS,smtp_response)
+EndSub
+
+Const EMAIL_DAILY_SUBJECT = "Daily notice from " & STATION & " CR3000"
+Sub send_daily_email()
+  Dim msg As String * 512
+  msg = "Good morning, it's the " & STATION & " CR3000. Yesterday's data "
+  msg &= "files are attached."
+  Dim attachments As String * 96
+  attachments = stats_fname & "," & tsdata_fname
+  EmailSend(SMTP_SERV,EMAIL_TO,EMAIL_FROM,EMAIL_DAILY_SUBJECT,msg, _
+      attachments,SMTP_USER,SMTP_PASS,smtp_response)
+EndSub
 
 
 '============================= SCADABR INTEGRATION ==================================
@@ -158,8 +406,8 @@ Dim scadabr_success As Boolean
 Dim scadabr_resp As String * 256
 Dim send_report_now As Boolean
 
-Sub send_scadabr_data(payload As String * 512)
-  Dim uri As String * 512
+Sub send_scadabr_data(payload As String * 900)
+  Dim uri As String * 985
   Dim tstamp As String * 18
   RealTime(rtime)
   Sprintf(tstamp,"%04u%02u%02u%02u%02u%02u", rtime(1),rtime(2),rtime(3),rtime(4),rtime(5),rtime(6))
@@ -173,44 +421,131 @@ Sub send_test_ScadaBR()
   test_scadabr = False
 EndSub
 
+'                1                 2                    3                    4
+Const REPORT1 = "&dusttrak2_pm=%.3f&dc1100_pm_small=%.1f&dc1100_pm_large=%.1f&co2_licor=%.3f"
+'                5              6            7                8
+Const REPORT2 = "&h2o_licor=%.3f&m205_o3=%.1f&m205_cell_t=%.1f&m205_cell_p=%.1f"
+'                9             10           11            12
+Const REPORT3 = "&m405_no2=%.1f&m405_no=%.1f&m405_nox=%.1f&m405_no2_zero=%.1f"
+'                13                14                    15               16
+Const REPORT4 = "&m405_no_zero=%.1f&m405_flow_factor=%.2f&m405_cell_t=%.1f&m405_cell_p=%.1f"
+'                17                   18               19             20
+Const REPORT5 = "&m405_overflow_f=%.1f&m405_cell_f=%.1f&m405_o3_f=%.1f&m405_samp_led_v=%.4f"
+'                21                  22                 23
+Const REPORT6 = "&m405_ref_led_v=%.4f&m405_no_gen_v=%.4f&m405_scrubber_t=%.2f"
+'                24              25              26              27
+Const REPORT7 = "&gga30p_ch4=%.2f&gga30p_h2o=%.1f&gga30p_co2=%.1f&gga30p_ch4_dry=%.2f"
+'                28                  29                30                31
+Const REPORT8 = "&gga30p_co2_dry=%.1f&gga30p_gas_p=%.1f&gga30p_gas_t=%.1f&gga30p_amb_t=%.1f"
+'                32                    33                    34
+Const REPORT9 = "&gga30p_ringdown0=%.4f&gga30p_ringdown1=%.4f&gga30p_fit_flag=%.1f"
 Sub send_telemetry_report()
-  Dim msg As String * 512
-  Dim payload As String * 512
-  '        (1)            (2)           (3)           (4)         (5) 
-  msg  = "&pm_tsi=%f&co2_licor=%f&h2o_licor=%f&ch4_lgr=%f&co2_lgr=%f"
-  '        (6)         (7)
-  msg &= "&h2o_lgr=%f&o3_twob=%f"
-  Sprintf(payload, msg, t_(1), t_(2), t_(3), t_(4), t_(5), t_(6), t_(7))
+  Dim msg1 As String * 100, msg2 As String * 100, msg3 As String * 100
+  Dim msg4 As String * 100, msg5 As String * 100, msg6 As String * 100
+  Dim msg7 As String * 100, msg8 As String * 100, msg9 As String * 100
+  Dim payload As String * 900
+  Sprintf(msg1,REPORT1,t(1),t(2),t(3),t(4))
+  Sprintf(msg2,REPORT2,t(5),t(6),t(7),t(8))
+  Sprintf(msg3,REPORT3,t(9),t(10),t(11),t(12))
+  Sprintf(msg4,REPORT4,t(13),t(14),t(15),t(16))
+  Sprintf(msg5,REPORT5,t(17),t(18),t(19),t(20))
+  Sprintf(msg6,REPORT6,t(21),t(22),t(23))
+  Sprintf(msg7,REPORT7,t(24),t(25),t(26),t(27))
+  Sprintf(msg8,REPORT8,t(28),t(29),t(30),t(31))
+  Sprintf(msg9,REPORT9,t(32),t(33),t(34))
+  payload = msg1 & msg2 & msg3 & msg4 & msg5 & msg6 & msg7 & msg8 & msg9
   send_scadabr_data(payload)
+EndSub
+
+
+'================================ FUNCTIONS =================================
+Function convert_dc1100_value(number) As Float
+  'counts/100 per cubic foot => counts per cubic meter
+  Return INT(number * 100 * FT3_PER_M3)
+EndFunction
+
+
+'============================== SUBROUTINES =================================
+Sub setup()
+  SerialOpen(DYLOS_COM,DYLOS_BAUD,DYLOS_FMT,0,DYLOS_BUFF)
+  SerialOpen(NOX_COM,NOX_BAUD,NOX_FMT,0,NOX_BUFF)
+  SerialOpen(CH4_COM,CH4_BAUD,CH4_FMT,0,CH4_BUFF)
+  SerialOpen(O3_COM,O3_BAUD,O3_FMT,0,O3_BUFF)
 EndSub
 
 
 '========================= MAIN PROGRAM =====================================
 BeginProg
-  Scan(SCAN_INTV,Sec,SCAN_BUFF,0)
-    VoltDiff(pm_tsi,1,mv5000,DF_TSI_PM,True,0,INTEG,TSI_PM_MLT,TSI_PM_OFF)
-    VoltDiff(co2_licor,1,mv5000,DF_LICOR_CO2,True,0,INTEG,LICOR_CO2_MLT,LICOR_CO2_OFF)
-    VoltDiff(h2o_licor,1,mv5000,DF_LICOR_H2O,True,0,INTEG,LICOR_H2O_MLT,LICOR_H2O_OFF)
-    VoltDiff(ch4_lgr,1,mv5000,DF_LGR_CH4,True,0,INTEG,LGR_CH4_MLT,LGR_CH4_OFF)
-    VoltDiff(co2_lgr,1,mv5000,DF_LGR_CO2,True,0,INTEG,LGR_CO2_MLT,LGR_CO2_OFF)
-    VoltDiff(h2o_lgr,1,mv5000,DF_LGR_H2O,True,0,INTEG,LGR_H2O_MLT,LGR_H2O_OFF)
-    VoltDiff(o3_twob,1,mv5000,DF_TWOB_O3,True,0,INTEG,TWOB_O3_MLT,TWOB_O3_OFF)
-'    VoltDiff(nox_twob,1,mv5000,DF_TWOB_NOX,True,0,INTEG,TWOB_NOX_MLT,TWOB_NOX_OFF)
-    CallTable(tsdata)
-    CallTable(stats)
+  send_startup_email()
+  setup()
 
+  'HINT - Los Gatos Research GGA-30p CH4/CO2/H2O analyzer sends messages at
+  '       not precisely 1Hz... run twice as fast to avoid losing messages.
+  Scan(500,mSec,4,0)
+    VoltDiff(dusttrak2_pm,1,mv5000,DF_TSI_PM,True,0,INTEG,TSI_PM_MLT,TSI_PM_OFF)
+
+    SerialIn(ch4_record,CH4_COM,5,&h0A,CH4_BUFF)
+    If (Len(ch4_record)) Then
+      SplitStr(ch4(1),ch4_record,", ",25,6)
+      'HACK - verify message parsed properly by verifying year value against
+      '       current year. won't work next year, or if analyzer's time is
+      '       not set correctly!
+      ch4_year = ch4(1) 'convert string->float
+      disable_gga30p = NOT(ch4_year = 2015)
+      gga30p_gas_P *= MBAR_PER_TORR
+    EndIf
+
+    If (debug_on) Then CallTable(debug)
+    If (test_scadabr) Then
+      send_test_scadabr()
+    EndIf
   NextScan
 
   SlowSequence
-  Scan(1,Sec,2,0)
-    If (test_scadabr) Then
-      send_test_ScadaBR()
+  Scan(1,min,1,0)
+    SerialIn(dc1100_record,DYLOS_COM,100,&h0D,DYLOS_BUFF)
+    If (Len(dc1100_record)) Then
+      SplitStr(dc1100_vals(1),dc1100_record,"",2,0)
+      If (dc1100_vals(1)=NAN OR dc1100_vals(2)=NAN) Then
+        dc1100_pm_small = NAN
+        dc1100_pm_large = NAN
+      Else
+        dc1100_pm_small = convert_dc1100_value(dc1100_vals(1))
+        dc1100_pm_large = convert_dc1100_value(dc1100_vals(2))
+      EndIf
     EndIf
-    
+
+    SerialIn(o3_record,O3_COM,100,&h0D,O3_BUFF)
+    If (Len(o3_record)) Then
+      SplitStr(o3(1),o3_record,"",9,0)
+      'TODO detect bad input
+    EndIf
+
+    SerialIn(nox_record,NOX_COM,100,&h0D,NOX_BUFF)
+    If (Len(nox_record)) Then
+      SplitStr(nox(1),nox_record,"",22,0)
+      'TODO detect bad input
+    EndIf
+
+    'FIXME TODO
+    'Lack of inter-scan lock flag means that even though DustTrak & GGA-30p
+    'are being evaluated more frequently than minutely, only one data value
+    'per minute is included in following data tables
+    CallTable(tsdata)
+    CallTable(stats)
+    If (debug_on) Then CallTable(debug)
+
     CallTable(telemetry)
     If (telemetry.Output(1,1)) Then
-      GetRecord(t_(1),telemetry,1)
+      GetRecord(t(1),telemetry,1)
       send_telemetry_report()
+    EndIf
+  NextScan
+
+  SlowSequence
+  Scan(5,Sec,2,0)
+    If TimeIntoInterval(DAILY_EMAIL_TIME,FILE_INTV,FILE_UNIT) Then
+      send_daily_email()
     EndIf
   NextScan
 EndProg

@@ -2,6 +2,8 @@
 # Private config files
 /indoor/datalogger/scadabr.cr3
 /indoor/datalogger/scadabr_Enc.cr3
+/indoor/datalogger/email.cr3
+/indoor/datalogger/email_Enc.cr3
 
 # Third-party files
 /third-party/*.pdf
