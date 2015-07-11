@@ -62,9 +62,9 @@ def squeeze_met_data(airmar_filepath, date):
             raise
 
     with open(osp.join(args.dest, oname), mode='w') as outfile:
-       with open(airmar_filepath, mode='r') as datafile:
-            outfile.write(col_names+'\n')
-            outfile.write(col_units+'\n')
+        outfile.write(col_names+'\n')
+        outfile.write(col_units+'\n')
+        with open(airmar_filepath, mode='r') as datafile:
             for line in datafile:
                 #each data protocol key is divided by a $ identifier
                 time, data = line.split('$')
