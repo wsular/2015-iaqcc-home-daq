@@ -14,6 +14,8 @@ Const GIT_TAG = ""
 
 'uniquely identify this location/datalogger
 Const STATION = "homeinterior"
+'version-stamped name for data file headers
+Const SELF = STATION & "(" & GIT_TAG & ")"
 
 Const DF_TSI_PM = 7
 Const TSI_PM_OFF = 0
@@ -39,6 +41,10 @@ Const O3_BAUD = 19200
 Const O3_FMT = 3 '8/n/1
 Const O3_BUFF = 60
 
+Const O3_DF = 1
+Const O3_MLT = 0.200
+Const O3_OFF = -0.002 * O3_MLT 'typ. 2 mV (+) offset
+
 'Const COM_BT_MFC = 4 'C7/8
 'Const COM_LICOR = ComRS232
 
@@ -49,7 +55,6 @@ Const INTEG = 250
 Const DAYS_OF_DATA = 60
 Const FILE_INTV = 24
 Const FILE_UNIT = Hr
-Const DAILY_EMAIL_TIME = 6 'time into file_intv
 
 Const FT3_PER_M3 = 35.314667
 Const MBAR_PER_TORR = 1.3332237
@@ -63,6 +68,12 @@ Dim tsdata_fname As String * 48
 Dim stats_fname As String * 48
 Dim is_new_tsdata_file As Boolean
 Dim is_new_stats_file As Boolean
+
+Const NTP_ADDR = "0.us.pool.ntp.org"
+Const NTP_OFFSET = -8*3600 'sec from UTC = PST
+Const NTP_DEV = 100 'ms, tolerable drift
+Dim cr3k_clock_drift
+Units cr3k_clock_drift = ms
 
 Dim dusttrak2_pm
 Units dusttrak2_pm = mg/m^3
@@ -88,6 +99,9 @@ Alias o3(3) = m205_cell_P
 Units m205_O3 = ppb
 Units m205_cell_T = degC
 Units m205_cell_P = mbar
+
+Dim m205_O3_lo_fi
+Units m205_O3_lo_fi = ppb
 
 Dim nox_record As String * 128
 Dim nox(22)
@@ -160,7 +174,7 @@ Alias disable(3) = disable_gga30p
 Alias disable(4) = disable_o3
 Alias disable(5) = disable_nox
 
-Dim t(34)
+Dim t(35)
 't(1)  = dusttrak2_pm
 't(2)  = dc1100_pm_small
 't(3)  = dc1100_pm_large
@@ -195,6 +209,7 @@ Dim t(34)
 't(32) = gga30p_ringdown0
 't(33) = gga30p_ringdown1
 't(34) = gga30p_fit_flag
+'t(35) = m205_O3_lo_fi
 
 
 '============================ DATA TABLES ===================================
@@ -204,6 +219,7 @@ DataTable(tsdata,True,10000)
       is_new_tsdata_file,tsdata_fname)
   Sample(1,dusttrak2_pm,IEEE4)
   Sample(2,dc1100,IEEE4)
+  Sample(1,m205_O3_lo_fi,FP2)
   Sample(2,o3(1),FP2)
   Sample(1,o3(3),IEEE4)
   Sample(7,nox(1),FP2)
@@ -229,6 +245,7 @@ DataTable(stats,True,10000)
   Average(1,dusttrak2_pm,IEEE4,dusttrak2_pm=NAN)
   Average(1,dc1100_pm_small,IEEE4,dc1100_pm_small=NAN)
   Average(1,dc1100_pm_large,IEEE4,dc1100_pm_large=NAN)
+  Average(1,m205_O3_lo_fi,FP2,m205_O3_lo_fi=NAN)
   Average(2,o3(1),FP2,disable_o3)
   Average(1,o3(3),IEEE4,disable_o3)
   Average(7,nox(1),FP2,disable_nox)
@@ -275,6 +292,7 @@ DataTable(debug,True,1)
   Sample(1,dusttrak2_pm,IEEE4)
   Sample(1,disable_tsi,Boolean)
   Sample(2,dc1100(1),IEEE4)
+  Sample(1,m205_O3_lo_fi,IEEE4)
   Sample(1,o3_record,String)
   Sample(3,o3(1),IEEE4)
   Sample(1,disable_o3,Boolean)
@@ -321,6 +339,7 @@ DisplayMenu("Indoor AQ", -1)
         DisplayValue("DC1100 large", dc1100_pm_large)
       EndSubMenu
       SubMenu("O3 (2B Tech)")
+        DisplayValue("O3 low-fi", m205_O3_lo_fi)
         DisplayValue("O3", m205_O3)
         DisplayValue("Cell tmpr.", m205_cell_T)
         DisplayValue("Cell press.", m205_cell_P)
@@ -368,6 +387,7 @@ EndMenu
 Include "CPU:email_Enc.cr3"  'contains non-public settings
 Const CRLF = CHR(13) & CHR(10)
 Dim smtp_response As String * 80
+Dim email_failed As Boolean
 
 Const email_boot_subject = "Start-up notice from " & STATION & " CR3000"
 Sub send_startup_email()
@@ -390,11 +410,13 @@ Const EMAIL_DAILY_SUBJECT = "Daily notice from " & STATION & " CR3000"
 Sub send_daily_email()
   Dim msg As String * 512
   msg = "Good morning, it's the " & STATION & " CR3000. Yesterday's data "
-  msg &= "files are attached."
+  msg &= "files are attached. [" & GIT_TAG & "]"
   Dim attachments As String * 96
   attachments = stats_fname & "," & tsdata_fname
-  EmailSend(SMTP_SERV,EMAIL_TO,EMAIL_FROM,EMAIL_DAILY_SUBJECT,msg, _
-      attachments,SMTP_USER,SMTP_PASS,smtp_response)
+  Dim ok As Boolean
+  ok = EmailSend(SMTP_SERV,EMAIL_TO,EMAIL_FROM,EMAIL_DAILY_SUBJECT,msg, _
+         attachments,SMTP_USER,SMTP_PASS,smtp_response)
+  email_failed = NOT ok
 EndSub
 
 
@@ -423,10 +445,10 @@ EndSub
 
 '                1                 2                    3                    4
 Const REPORT1 = "&dusttrak2_pm=%.3f&dc1100_pm_small=%.1f&dc1100_pm_large=%.1f&co2_licor=%.3f"
-'                5              6            7                8
-Const REPORT2 = "&h2o_licor=%.3f&m205_o3=%.1f&m205_cell_t=%.1f&m205_cell_p=%.1f"
-'                9             10           11            12
-Const REPORT3 = "&m405_no2=%.1f&m405_no=%.1f&m405_nox=%.1f&m405_no2_zero=%.1f"
+'                5              6            7                8                9
+Const REPORT2 = "&h2o_licor=%.3f&m205_o3=%.1f&m205_cell_t=%.1f&m205_cell_p=%.1f&m405_no2=%.1f"
+'                10           11            12                 35
+Const REPORT3 = "&m405_no=%.1f&m405_nox=%.1f&m405_no2_zero=%.1f&m205_o3_lo_fi=%.1f"
 '                13                14                    15               16
 Const REPORT4 = "&m405_no_zero=%.1f&m405_flow_factor=%.2f&m405_cell_t=%.1f&m405_cell_p=%.1f"
 '                17                   18               19             20
@@ -445,8 +467,8 @@ Sub send_telemetry_report()
   Dim msg7 As String * 100, msg8 As String * 100, msg9 As String * 100
   Dim payload As String * 900
   Sprintf(msg1,REPORT1,t(1),t(2),t(3),t(4))
-  Sprintf(msg2,REPORT2,t(5),t(6),t(7),t(8))
-  Sprintf(msg3,REPORT3,t(9),t(10),t(11),t(12))
+  Sprintf(msg2,REPORT2,t(5),t(6),t(7),t(8),t(9))
+  Sprintf(msg3,REPORT3,t(10),t(11),t(12),t(35))
   Sprintf(msg4,REPORT4,t(13),t(14),t(15),t(16))
   Sprintf(msg5,REPORT5,t(17),t(18),t(19),t(20))
   Sprintf(msg6,REPORT6,t(21),t(22),t(23))
@@ -476,6 +498,7 @@ EndSub
 
 '========================= MAIN PROGRAM =====================================
 BeginProg
+  SetStatus("StationName", SELF)
   send_startup_email()
   setup()
 
@@ -483,6 +506,7 @@ BeginProg
   '       not precisely 1Hz... run twice as fast to avoid losing messages.
   Scan(500,mSec,4,0)
     VoltDiff(dusttrak2_pm,1,mv5000,DF_TSI_PM,True,0,INTEG,TSI_PM_MLT,TSI_PM_OFF)
+    VoltDiff(m205_O3_lo_fi,1,mV5000,O3_DF,True,0,INTEG,O3_MLT,O3_OFF)
 
     SerialIn(ch4_record,CH4_COM,5,&h0A,CH4_BUFF)
     If (Len(ch4_record)) Then
@@ -543,9 +567,19 @@ BeginProg
   NextScan
 
   SlowSequence
-  Scan(5,Sec,2,0)
-    If TimeIntoInterval(DAILY_EMAIL_TIME,FILE_INTV,FILE_UNIT) Then
+  Scan(5,Min,1,0)
+    If TimeIntoInterval(360,1440,Min) Then '6 AM
       send_daily_email()
+    ElseIf TimeIntoInterval(365, 1440, Min) Then
+      If (email_failed) Then send_daily_email()
+    ElseIf TimeIntoInterval(370, 1440, Min) Then
+      If (email_failed) Then send_daily_email()
+      email_failed = False 'give up until tomorrow
+    EndIf
+
+    If TimeIntoInterval(0,6,Hr) Then
+      cr3k_clock_drift = NetworkTimeProtocol(NTP_ADDR,NTP_OFFSET,NTP_DEV)
+      send_scadabr_data(FormatFloat(cr3k_clock_drift,"&cr3k_clock_drift=%f"))
     EndIf
   NextScan
 EndProg
