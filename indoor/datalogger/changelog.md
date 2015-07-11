@@ -4,6 +4,15 @@ Changelog for indoor AQ datalogger
 next version
 ------------
 
+### Hotfixes
+
+* Observe symptoms of #1 occur after skipped record in table `tsdata` (1min);
+  increase the incoming record buffer sizes for O3, NOx monitors
+
+
+v0.2 [2015-07-10]
+-----------------
+
 ### Issues fixed
 
 * Add NTP support to keep logger time-synced
