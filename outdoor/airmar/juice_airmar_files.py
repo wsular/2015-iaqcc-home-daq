@@ -13,9 +13,8 @@ re-writes files into comma-separated format containing:
 * Wind direction, degEofTN and degEofMN
 * Wind speed, m/s
 
-The search directory is provided as first command line argument; if not
-specified, it defaults to the working directory. Similarly, the output
-directory can be provided as the second command line argument and, if missing,
+The search directory must be provided as first command line argument. Output
+directory can be provided as a second command line argument and, if missing,
 will default to the working directory.
 
 """
