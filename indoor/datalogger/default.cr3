@@ -540,18 +540,21 @@ BeginProg
         dc1100_pm_small = convert_dc1100_value(dc1100_vals(1))
         dc1100_pm_large = convert_dc1100_value(dc1100_vals(2))
       EndIf
+      SerialFlush(DYLOS_COM)
     EndIf
 
     SerialIn(o3_record,O3_COM,100,&h0D,O3_REC)
     If (Len(o3_record)) Then
       SplitStr(o3(1),o3_record,"",9,0)
       'TODO detect bad input
+      SerialFlush(O3_COM)
     EndIf
 
     SerialIn(nox_record,NOX_COM,100,&h0D,NOX_REC)
     If (Len(nox_record)) Then
       SplitStr(nox(1),nox_record,"",22,0)
       'TODO detect bad input
+      SerialFlush(NOX_COM)
     EndIf
 
     'FIXME TODO

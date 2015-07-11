@@ -6,6 +6,15 @@ next version
 
 ### Hotfixes
 
+* Still observe symptoms even with large buffers so clear buffers after each
+  record is read
+
+
+v0.2.1 [2015-07-11]
+-------------------
+
+### Hotfixes
+
 * Observe symptoms of #1 occur after skipped record in table `tsdata` (1min);
   increase the incoming record buffer sizes for O3, NOx monitors
 * Include Git tag in start-up email
