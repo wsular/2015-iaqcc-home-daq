@@ -10,6 +10,7 @@ next version
 * Incidentally resolve 
   [issue #1](https://bitbucket.org/wsular/2015-iaq-intensive-daq/issues/1/) by
   re-integrating the ozone monitor's analog voltage signal (Model 205; 2B Tech)
+* Datalogger attempts to send daily email up to (3) times
 
 ### Data table changes
 

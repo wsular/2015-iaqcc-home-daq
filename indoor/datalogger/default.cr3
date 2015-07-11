@@ -55,7 +55,6 @@ Const INTEG = 250
 Const DAYS_OF_DATA = 60
 Const FILE_INTV = 24
 Const FILE_UNIT = Hr
-Const DAILY_EMAIL_TIME = 6 'time into file_intv
 
 Const FT3_PER_M3 = 35.314667
 Const MBAR_PER_TORR = 1.3332237
@@ -388,6 +387,7 @@ EndMenu
 Include "CPU:email_Enc.cr3"  'contains non-public settings
 Const CRLF = CHR(13) & CHR(10)
 Dim smtp_response As String * 80
+Dim email_failed As Boolean
 
 Const email_boot_subject = "Start-up notice from " & STATION & " CR3000"
 Sub send_startup_email()
@@ -413,8 +413,10 @@ Sub send_daily_email()
   msg &= "files are attached. [" & GIT_TAG & "]"
   Dim attachments As String * 96
   attachments = stats_fname & "," & tsdata_fname
-  EmailSend(SMTP_SERV,EMAIL_TO,EMAIL_FROM,EMAIL_DAILY_SUBJECT,msg, _
-      attachments,SMTP_USER,SMTP_PASS,smtp_response)
+  Dim ok As Boolean
+  ok = EmailSend(SMTP_SERV,EMAIL_TO,EMAIL_FROM,EMAIL_DAILY_SUBJECT,msg, _
+         attachments,SMTP_USER,SMTP_PASS,smtp_response)
+  email_failed = NOT ok
 EndSub
 
 
@@ -565,9 +567,14 @@ BeginProg
   NextScan
 
   SlowSequence
-  Scan(5,Sec,2,0)
-    If TimeIntoInterval(DAILY_EMAIL_TIME,FILE_INTV,FILE_UNIT) Then
+  Scan(5,Min,1,0)
+    If TimeIntoInterval(360,1440,Min) Then '6 AM
       send_daily_email()
+    ElseIf TimeIntoInterval(365, 1440, Min) Then
+      If (email_failed) Then send_daily_email()
+    ElseIf TimeIntoInterval(370, 1440, Min) Then
+      If (email_failed) Then send_daily_email()
+      email_failed = False 'give up until tomorrow
     EndIf
 
     If TimeIntoInterval(0,6,Hr) Then
