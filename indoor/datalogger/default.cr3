@@ -560,7 +560,6 @@ BeginProg
     'per minute is included in following data tables
     CallTable(tsdata)
     CallTable(stats)
-    If (debug_on) Then CallTable(debug)
 
     CallTable(telemetry)
     If (telemetry.Output(1,1)) Then
