@@ -7,6 +7,20 @@ next version
 ### Issues fixed
 
 * Add NTP support to keep logger time-synced
+* Incidentally resolve 
+  [issue #1](https://bitbucket.org/wsular/2015-iaq-intensive-daq/issues/1/) by
+  re-integrating the ozone monitor's analog voltage signal (Model 205; 2B Tech)
+
+### Data table changes
+
+* New column `m205_O3_lo_fi` in table `tsdata` between columns `dc1100_pm_large`
+  and `m205_O3`
+* New column `m205_O3_lo_fi_Avg` in table `stats` between columns
+  `dc1100_pm_large_Avg` and `m205_O3_Avg`
+
+### Notes
+
+* Now also recording analog voltage signal from ozone monitor
 
 
 v0.1 [2015-07-06]

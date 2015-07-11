@@ -39,6 +39,10 @@ Const O3_BAUD = 19200
 Const O3_FMT = 3 '8/n/1
 Const O3_BUFF = 60
 
+Const O3_DF = 1
+Const O3_MLT = 0.200
+Const O3_OFF = -0.002 * O3_MLT 'typ. 2 mV (+) offset
+
 'Const COM_BT_MFC = 4 'C7/8
 'Const COM_LICOR = ComRS232
 
@@ -94,6 +98,9 @@ Alias o3(3) = m205_cell_P
 Units m205_O3 = ppb
 Units m205_cell_T = degC
 Units m205_cell_P = mbar
+
+Dim m205_O3_lo_fi
+Units m205_O3_lo_fi = ppb
 
 Dim nox_record As String * 128
 Dim nox(22)
@@ -166,7 +173,7 @@ Alias disable(3) = disable_gga30p
 Alias disable(4) = disable_o3
 Alias disable(5) = disable_nox
 
-Dim t(34)
+Dim t(35)
 't(1)  = dusttrak2_pm
 't(2)  = dc1100_pm_small
 't(3)  = dc1100_pm_large
@@ -201,15 +208,17 @@ Dim t(34)
 't(32) = gga30p_ringdown0
 't(33) = gga30p_ringdown1
 't(34) = gga30p_fit_flag
+'t(35) = m205_O3_lo_fi
 
 
 '============================ DATA TABLES ===================================
 DataTable(tsdata,True,10000)
   DataInterval(0,1,min,5)
-  TableFile(TSDATA_FNAME_FMT,8,DAYS_OF_DATA,0,FILE_INTV,FILE_UNIT, _
-      is_new_tsdata_file,tsdata_fname)
+'  TableFile(TSDATA_FNAME_FMT,8,DAYS_OF_DATA,0,FILE_INTV,FILE_UNIT, _
+'      is_new_tsdata_file,tsdata_fname)
   Sample(1,dusttrak2_pm,IEEE4)
   Sample(2,dc1100,IEEE4)
+  Sample(1,m205_O3_lo_fi,FP2)
   Sample(2,o3(1),FP2)
   Sample(1,o3(3),IEEE4)
   Sample(7,nox(1),FP2)
@@ -230,11 +239,12 @@ EndTable
 
 DataTable(stats,True,10000)
   DataInterval(0,30,min,1)
-  TableFile(STATS_FNAME_FMT,8,DAYS_OF_DATA,0,FILE_INTV,FILE_UNIT, _
-      is_new_stats_file,stats_fname)
+'  TableFile(STATS_FNAME_FMT,8,DAYS_OF_DATA,0,FILE_INTV,FILE_UNIT, _
+'      is_new_stats_file,stats_fname)
   Average(1,dusttrak2_pm,IEEE4,dusttrak2_pm=NAN)
   Average(1,dc1100_pm_small,IEEE4,dc1100_pm_small=NAN)
   Average(1,dc1100_pm_large,IEEE4,dc1100_pm_large=NAN)
+  Average(1,m205_O3_lo_fi,FP2,m205_O3_lo_fi=NAN)
   Average(2,o3(1),FP2,disable_o3)
   Average(1,o3(3),IEEE4,disable_o3)
   Average(7,nox(1),FP2,disable_nox)
@@ -281,6 +291,7 @@ DataTable(debug,True,1)
   Sample(1,dusttrak2_pm,IEEE4)
   Sample(1,disable_tsi,Boolean)
   Sample(2,dc1100(1),IEEE4)
+  Sample(1,m205_O3_lo_fi,IEEE4)
   Sample(1,o3_record,String)
   Sample(3,o3(1),IEEE4)
   Sample(1,disable_o3,Boolean)
@@ -327,6 +338,7 @@ DisplayMenu("Indoor AQ", -1)
         DisplayValue("DC1100 large", dc1100_pm_large)
       EndSubMenu
       SubMenu("O3 (2B Tech)")
+        DisplayValue("O3 low-fi", m205_O3_lo_fi)
         DisplayValue("O3", m205_O3)
         DisplayValue("Cell tmpr.", m205_cell_T)
         DisplayValue("Cell press.", m205_cell_P)
@@ -429,10 +441,10 @@ EndSub
 
 '                1                 2                    3                    4
 Const REPORT1 = "&dusttrak2_pm=%.3f&dc1100_pm_small=%.1f&dc1100_pm_large=%.1f&co2_licor=%.3f"
-'                5              6            7                8
-Const REPORT2 = "&h2o_licor=%.3f&m205_o3=%.1f&m205_cell_t=%.1f&m205_cell_p=%.1f"
-'                9             10           11            12
-Const REPORT3 = "&m405_no2=%.1f&m405_no=%.1f&m405_nox=%.1f&m405_no2_zero=%.1f"
+'                5              6            7                8                9
+Const REPORT2 = "&h2o_licor=%.3f&m205_o3=%.1f&m205_cell_t=%.1f&m205_cell_p=%.1f&m405_no2=%.1f"
+'                10           11            12                 35
+Const REPORT3 = "&m405_no=%.1f&m405_nox=%.1f&m405_no2_zero=%.1f&m205_o3_lo_fi=%.1f"
 '                13                14                    15               16
 Const REPORT4 = "&m405_no_zero=%.1f&m405_flow_factor=%.2f&m405_cell_t=%.1f&m405_cell_p=%.1f"
 '                17                   18               19             20
@@ -451,8 +463,8 @@ Sub send_telemetry_report()
   Dim msg7 As String * 100, msg8 As String * 100, msg9 As String * 100
   Dim payload As String * 900
   Sprintf(msg1,REPORT1,t(1),t(2),t(3),t(4))
-  Sprintf(msg2,REPORT2,t(5),t(6),t(7),t(8))
-  Sprintf(msg3,REPORT3,t(9),t(10),t(11),t(12))
+  Sprintf(msg2,REPORT2,t(5),t(6),t(7),t(8),t(9))
+  Sprintf(msg3,REPORT3,t(10),t(11),t(12),t(35))
   Sprintf(msg4,REPORT4,t(13),t(14),t(15),t(16))
   Sprintf(msg5,REPORT5,t(17),t(18),t(19),t(20))
   Sprintf(msg6,REPORT6,t(21),t(22),t(23))
@@ -489,6 +501,7 @@ BeginProg
   '       not precisely 1Hz... run twice as fast to avoid losing messages.
   Scan(500,mSec,4,0)
     VoltDiff(dusttrak2_pm,1,mv5000,DF_TSI_PM,True,0,INTEG,TSI_PM_MLT,TSI_PM_OFF)
+    VoltDiff(m205_O3_lo_fi,1,mV5000,O3_DF,True,0,INTEG,O3_MLT,O3_OFF)
 
     SerialIn(ch4_record,CH4_COM,5,&h0A,CH4_BUFF)
     If (Len(ch4_record)) Then
