@@ -13,6 +13,9 @@ next version
 
 ### Data table changes
 
+* String representing station name now contains the Git tag in parentheses so
+  relevant program version is tracked in data files, not repo tag names plus
+  spreadsheet.
 * New column `m205_O3_lo_fi` in table `tsdata` between columns `dc1100_pm_large`
   and `m205_O3`
 * New column `m205_O3_lo_fi_Avg` in table `stats` between columns
@@ -21,6 +24,8 @@ next version
 ### Notes
 
 * Now also recording analog voltage signal from ozone monitor
+* Datalogger's 'Station Name' is modified each deployment because it contains
+  the release's Git tag.
 
 
 v0.1 [2015-07-06]

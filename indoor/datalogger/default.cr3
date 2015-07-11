@@ -14,6 +14,8 @@ Const GIT_TAG = ""
 
 'uniquely identify this location/datalogger
 Const STATION = "homeinterior"
+'version-stamped name for data file headers
+Const SELF = STATION & "(" & GIT_TAG & ")"
 
 Const DF_TSI_PM = 7
 Const TSI_PM_OFF = 0
@@ -408,7 +410,7 @@ Const EMAIL_DAILY_SUBJECT = "Daily notice from " & STATION & " CR3000"
 Sub send_daily_email()
   Dim msg As String * 512
   msg = "Good morning, it's the " & STATION & " CR3000. Yesterday's data "
-  msg &= "files are attached."
+  msg &= "files are attached. [" & GIT_TAG & "]"
   Dim attachments As String * 96
   attachments = stats_fname & "," & tsdata_fname
   EmailSend(SMTP_SERV,EMAIL_TO,EMAIL_FROM,EMAIL_DAILY_SUBJECT,msg, _
@@ -494,6 +496,7 @@ EndSub
 
 '========================= MAIN PROGRAM =====================================
 BeginProg
+  SetStatus("StationName", SELF)
   send_startup_email()
   setup()
 
