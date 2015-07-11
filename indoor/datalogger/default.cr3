@@ -404,6 +404,7 @@ Sub send_startup_email()
   msg &= "Run signature: " & Status.RunSignature & CRLF
   msg &= "Program signature: " & Status.ProgSignature & CRLF
   msg &= "Power input (Volts): " & Status.Battery & CRLF
+  msg &= "Git tag: " & GIT_TAG & CRLF
   EmailSend(SMTP_SERV,EMAIL_TO,EMAIL_FROM,email_boot_subject,msg,"", _
       SMTP_USER,SMTP_PASS,smtp_response)
 EndSub

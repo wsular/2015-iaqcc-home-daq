@@ -8,6 +8,7 @@ next version
 
 * Observe symptoms of #1 occur after skipped record in table `tsdata` (1min);
   increase the incoming record buffer sizes for O3, NOx monitors
+* Include Git tag in start-up email
 
 
 v0.2 [2015-07-10]
