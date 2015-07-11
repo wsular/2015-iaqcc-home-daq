@@ -563,16 +563,16 @@ BeginProg
     'per minute is included in following data tables
     CallTable(tsdata)
     CallTable(stats)
+  NextScan
 
+  SlowSequence
+  Scan(1,Min,1,0)
     CallTable(telemetry)
     If (telemetry.Output(1,1)) Then
       GetRecord(t(1),telemetry,1)
       send_telemetry_report()
     EndIf
-  NextScan
 
-  SlowSequence
-  Scan(5,Min,1,0)
     If TimeIntoInterval(360,1440,Min) Then '6 AM
       send_daily_email()
     ElseIf TimeIntoInterval(365, 1440, Min) Then

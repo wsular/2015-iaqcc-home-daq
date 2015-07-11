@@ -8,6 +8,10 @@ next version
 
 * Still observe symptoms even with large buffers so clear buffers after each
   record is read
+* Also, move telemetry stuffs into email slowsequence; missing records are 
+  observed to correlate with the period following whole 5-min intervals and
+  the telemetry table is both processed on 5-minutes and requires network
+  comms, which is susceptible to timeouts, etc
 
 
 v0.2.1 [2015-07-11]
