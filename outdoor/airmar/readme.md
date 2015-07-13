@@ -98,7 +98,7 @@ C:\Users\lar\Desktop> git clone https://bitbucket.org/wsular/2015-iaq-intensive-
     * DO create configuration file and select for public NTP servers
       North America -> United States of America
     * DO create new account for service;
-      name:`local_ntpd`, password: `BoringPassword4BoringNTP`
+      name: *<your name here>*, password: *<your password here>*
 * Installation of `ntp-time-server-monitor-104.exe`:
     * No special instructions for install
     * After completed, open Properties of the created Start Menu shortcut,
