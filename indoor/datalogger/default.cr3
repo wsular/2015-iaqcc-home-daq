@@ -29,7 +29,8 @@ Const DYLOS_BUFF = 12
 Const NOX_COM = ComRS232
 Const NOX_BAUD = 19200
 Const NOX_FMT = 3 '8/n/1
-Const NOX_BUFF = 128
+Const NOX_REC = 128
+Const NOX_BUFF = 1+2*NOX_REC
 
 Const CH4_COM = Com2
 Const CH4_BAUD = 19200
@@ -39,7 +40,8 @@ Const CH4_BUFF = 800
 Const O3_COM = Com3
 Const O3_BAUD = 19200
 Const O3_FMT = 3 '8/n/1
-Const O3_BUFF = 60
+Const O3_REC = 80
+Const O3_BUFF = 1+2*O3_REC
 
 Const O3_DF = 1
 Const O3_MLT = 0.200
@@ -88,7 +90,7 @@ Alias dc1100(2) = dc1100_pm_large
 Units dc1100_pm_small = counts/m^3
 Units dc1100_pm_large = counts/m^3
 
-Dim o3_record As String * 80
+Dim o3_record As String * O3_REC
 Dim o3(9)
 Alias o3(1) = m205_O3
 Alias o3(2) = m205_cell_T
@@ -103,7 +105,7 @@ Units m205_cell_P = mbar
 Dim m205_O3_lo_fi
 Units m205_O3_lo_fi = ppb
 
-Dim nox_record As String * 128
+Dim nox_record As String * NOX_REC
 Dim nox(22)
 Alias nox(1)  = m405_NO2
 Alias nox(2)  = m405_NO
@@ -402,6 +404,7 @@ Sub send_startup_email()
   msg &= "Run signature: " & Status.RunSignature & CRLF
   msg &= "Program signature: " & Status.ProgSignature & CRLF
   msg &= "Power input (Volts): " & Status.Battery & CRLF
+  msg &= "Git tag: " & GIT_TAG & CRLF
   EmailSend(SMTP_SERV,EMAIL_TO,EMAIL_FROM,email_boot_subject,msg,"", _
       SMTP_USER,SMTP_PASS,smtp_response)
 EndSub
@@ -526,7 +529,7 @@ BeginProg
   NextScan
 
   SlowSequence
-  Scan(1,min,1,0)
+  Scan(1,Min,1,0)
     SerialIn(dc1100_record,DYLOS_COM,100,&h0D,DYLOS_BUFF)
     If (Len(dc1100_record)) Then
       SplitStr(dc1100_vals(1),dc1100_record,"",2,0)
@@ -537,18 +540,21 @@ BeginProg
         dc1100_pm_small = convert_dc1100_value(dc1100_vals(1))
         dc1100_pm_large = convert_dc1100_value(dc1100_vals(2))
       EndIf
+      SerialFlush(DYLOS_COM)
     EndIf
 
-    SerialIn(o3_record,O3_COM,100,&h0D,O3_BUFF)
+    SerialIn(o3_record,O3_COM,100,&h0D,O3_REC)
     If (Len(o3_record)) Then
       SplitStr(o3(1),o3_record,"",9,0)
       'TODO detect bad input
+      SerialFlush(O3_COM)
     EndIf
 
-    SerialIn(nox_record,NOX_COM,100,&h0D,NOX_BUFF)
+    SerialIn(nox_record,NOX_COM,100,&h0D,NOX_REC)
     If (Len(nox_record)) Then
       SplitStr(nox(1),nox_record,"",22,0)
       'TODO detect bad input
+      SerialFlush(NOX_COM)
     EndIf
 
     'FIXME TODO
@@ -557,17 +563,16 @@ BeginProg
     'per minute is included in following data tables
     CallTable(tsdata)
     CallTable(stats)
-    If (debug_on) Then CallTable(debug)
+  NextScan
 
+  SlowSequence
+  Scan(1,Min,1,0)
     CallTable(telemetry)
     If (telemetry.Output(1,1)) Then
       GetRecord(t(1),telemetry,1)
       send_telemetry_report()
     EndIf
-  NextScan
 
-  SlowSequence
-  Scan(5,Min,1,0)
     If TimeIntoInterval(360,1440,Min) Then '6 AM
       send_daily_email()
     ElseIf TimeIntoInterval(365, 1440, Min) Then

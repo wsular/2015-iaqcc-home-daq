@@ -4,6 +4,30 @@ Changelog for indoor AQ datalogger
 next version
 ------------
 
+### Hotfixes
+
+* Still observe symptoms even with large buffers so clear buffers after each
+  record is read
+* Also, move telemetry stuffs into email slowsequence; missing records are 
+  observed to correlate with the period following whole 5-min intervals and
+  the telemetry table is both processed on 5-minutes and requires network
+  comms, which is susceptible to timeouts, etc
+
+
+v0.2.1 [2015-07-11]
+-------------------
+
+### Hotfixes
+
+* Observe symptoms of #1 occur after skipped record in table `tsdata` (1min);
+  increase the incoming record buffer sizes for O3, NOx monitors
+* Include Git tag in start-up email
+* Remove duplicate call to debug table
+
+
+v0.2 [2015-07-10]
+-----------------
+
 ### Issues fixed
 
 * Add NTP support to keep logger time-synced
