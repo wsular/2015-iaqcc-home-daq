@@ -55,8 +55,6 @@ Dim co2_licor, h2o_licor 'XXXX req'd for proper telemetry reports
 '============================== INTERNALS ===================================
 Const INTEG = 250
 Const DAYS_OF_DATA = 60
-Const FILE_INTV = 24
-Const FILE_UNIT = Hr
 
 Const FT3_PER_M3 = 35.314667
 Const MBAR_PER_TORR = 1.3332237
@@ -217,7 +215,8 @@ Dim t(35)
 '============================ DATA TABLES ===================================
 DataTable(tsdata,True,10000)
   DataInterval(0,1,min,5)
-  TableFile(TSDATA_FNAME_FMT,8,DAYS_OF_DATA,0,FILE_INTV,FILE_UNIT, _
+  'HACK TableFile trails by 1 record
+  TableFile(TSDATA_FNAME_FMT,8,DAYS_OF_DATA,1439,1440,Min, _
       is_new_tsdata_file,tsdata_fname)
   Sample(1,dusttrak2_pm,IEEE4)
   Sample(2,dc1100,IEEE4)
@@ -242,7 +241,7 @@ EndTable
 
 DataTable(stats,True,10000)
   DataInterval(0,30,min,1)
-  TableFile(STATS_FNAME_FMT,8,DAYS_OF_DATA,0,FILE_INTV,FILE_UNIT, _
+  TableFile(STATS_FNAME_FMT,8,DAYS_OF_DATA,1439,1440,Min, _
       is_new_stats_file,stats_fname)
   Average(1,dusttrak2_pm,IEEE4,dusttrak2_pm=NAN)
   Average(1,dc1100_pm_small,IEEE4,dc1100_pm_small=NAN)

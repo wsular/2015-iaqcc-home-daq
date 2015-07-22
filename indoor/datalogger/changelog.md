@@ -1,8 +1,17 @@
 Changelog for indoor AQ datalogger
 ==================================
 
-next version
+Next release
 ------------
+
+### Issues fixed
+
+* Keep point 0 (first) at midnight (00:00:00) in data files. 
+  [#2](https://bitbucket.org/wsular/2015-iaq-intensive-daq/issues/2/)
+
+
+v0.2.2 [2015-07-11]
+-------------------
 
 ### Hotfixes
 
