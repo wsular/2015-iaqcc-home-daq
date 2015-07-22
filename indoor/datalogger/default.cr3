@@ -64,8 +64,11 @@ Public debug_on As Boolean
 Const FNAME_PREFIX = "IAQ15_" & STATION & "_"
 Const TSDATA_FNAME_FMT = "CRD:" & FNAME_PREFIX & "tsdata_"
 Const STATS_FNAME_FMT = "CRD:" & FNAME_PREFIX & "stats_"
+Dim tsdata_latest As String * 48
 Dim tsdata_fname As String * 48
+Dim stats_latest As String * 48
 Dim stats_fname As String * 48
+Dim datestamp As String * 16
 Dim is_new_tsdata_file As Boolean
 Dim is_new_stats_file As Boolean
 
@@ -217,7 +220,7 @@ DataTable(tsdata,True,10000)
   DataInterval(0,1,min,5)
   'HACK TableFile trails by 1 record
   TableFile(TSDATA_FNAME_FMT,8,DAYS_OF_DATA,1439,1440,Min, _
-      is_new_tsdata_file,tsdata_fname)
+      is_new_tsdata_file,tsdata_latest)
   Sample(1,dusttrak2_pm,IEEE4)
   Sample(2,dc1100,IEEE4)
   Sample(1,m205_O3_lo_fi,FP2)
@@ -242,7 +245,7 @@ EndTable
 DataTable(stats,True,10000)
   DataInterval(0,30,min,1)
   TableFile(STATS_FNAME_FMT,8,DAYS_OF_DATA,1439,1440,Min, _
-      is_new_stats_file,stats_fname)
+      is_new_stats_file,stats_latest)
   Average(1,dusttrak2_pm,IEEE4,dusttrak2_pm=NAN)
   Average(1,dc1100_pm_small,IEEE4,dc1100_pm_small=NAN)
   Average(1,dc1100_pm_large,IEEE4,dc1100_pm_large=NAN)
@@ -414,7 +417,7 @@ Sub send_daily_email()
   msg = "Good morning, it's the " & STATION & " CR3000. Yesterday's data "
   msg &= "files are attached. [" & GIT_TAG & "]"
   Dim attachments As String * 96
-  attachments = stats_fname & "," & tsdata_fname
+  attachments = stats_latest & "," & tsdata_latest
   Dim ok As Boolean
   ok = EmailSend(SMTP_SERV,EMAIL_TO,EMAIL_FROM,EMAIL_DAILY_SUBJECT,msg, _
          attachments,SMTP_USER,SMTP_PASS,smtp_response)
@@ -490,11 +493,19 @@ EndFunction
 
 
 '============================== SUBROUTINES =================================
+Sub update_filenames()
+  RealTime(rtime)
+  Sprintf(datestamp,"%04u%02u%02u.%02u%02u", rtime(1),rtime(2),rtime(3),rtime(4),rtime(5))
+  tsdata_fname = TSDATA_FNAME_FMT & datestamp
+  stats_fname = STATS_FNAME_FMT & datestamp
+EndSub
+
 Sub setup()
   SerialOpen(DYLOS_COM,DYLOS_BAUD,DYLOS_FMT,0,DYLOS_BUFF)
   SerialOpen(NOX_COM,NOX_BAUD,NOX_FMT,0,NOX_BUFF)
   SerialOpen(CH4_COM,CH4_BAUD,CH4_FMT,0,CH4_BUFF)
   SerialOpen(O3_COM,O3_BAUD,O3_FMT,0,O3_BUFF)
+  update_filenames()
 EndSub
 
 
@@ -562,6 +573,16 @@ BeginProg
     'per minute is included in following data tables
     CallTable(tsdata)
     CallTable(stats)
+    
+    If (is_new_tsdata_file) Then 
+      FileRename(tsdata_latest, tsdata_fname)
+      tsdata_latest = tsdata_fname 'retain for email sending
+    EndIf
+    If (is_new_stats_file) Then 
+      FileRename(stats_latest, stats_fname)
+      stats_latest = stats_fname
+    EndIf
+    If (is_new_tsdata_file OR is_new_stats_file) Then update_filenames()
   NextScan
 
   SlowSequence

@@ -13,6 +13,9 @@ Next release
 
 * All columns prefixed with "gga30p_" are updated to prefix "ugga_"; this is
   the manufacturer's common name as evidenced by advertising. 
+* Table files are now date-stamped before final storage or email reporting;
+  the time is included and will not be midnight only on the day the logger
+  program started running
 
 
 v0.2.2 [2015-07-11]
