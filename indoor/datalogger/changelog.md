@@ -9,6 +9,11 @@ Next release
 * Keep point 0 (first) at midnight (00:00:00) in data files. 
   [#2](https://bitbucket.org/wsular/2015-iaq-intensive-daq/issues/2/)
 
+### Data table changes
+
+* All columns prefixed with "gga30p_" are updated to prefix "ugga_"; this is
+  the manufacturer's common name as evidenced by advertising. 
+
 
 v0.2.2 [2015-07-11]
 -------------------
