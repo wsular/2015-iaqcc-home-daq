@@ -9,6 +9,21 @@ Next release
 * Keep point 0 (first) at midnight (00:00:00) in data files. 
   [#2](https://bitbucket.org/wsular/2015-iaq-intensive-daq/issues/2/)
 
+### Data table changes
+
+* All columns prefixed with "gga30p_" are updated to prefix "ugga_"; this is
+  the manufacturer's common name as evidenced by advertising. 
+* Table files are now date-stamped before final storage or email reporting;
+  the time is included and will not be midnight only on the day the logger
+  program started running
+* Column `m205_O3_lo_fi` is removed from both tables `tsdata` and `stats`)
+
+### Notes
+
+* No longer recording analog voltage signal from 2B Technologies Model 205 
+  ozone monitor (`m205_O3_lo_fi`); the serial data stream is determined to be
+  sufficiently reliable now
+
 
 v0.2.2 [2015-07-11]
 -------------------

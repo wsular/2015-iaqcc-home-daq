@@ -43,10 +43,6 @@ Const O3_FMT = 3 '8/n/1
 Const O3_REC = 80
 Const O3_BUFF = 1+2*O3_REC
 
-Const O3_DF = 1
-Const O3_MLT = 0.200
-Const O3_OFF = -0.002 * O3_MLT 'typ. 2 mV (+) offset
-
 'Const COM_BT_MFC = 4 'C7/8
 'Const COM_LICOR = ComRS232
 
@@ -64,8 +60,11 @@ Public debug_on As Boolean
 Const FNAME_PREFIX = "IAQ15_" & STATION & "_"
 Const TSDATA_FNAME_FMT = "CRD:" & FNAME_PREFIX & "tsdata_"
 Const STATS_FNAME_FMT = "CRD:" & FNAME_PREFIX & "stats_"
+Dim tsdata_latest As String * 48
 Dim tsdata_fname As String * 48
+Dim stats_latest As String * 48
 Dim stats_fname As String * 48
+Dim datestamp As String * 16
 Dim is_new_tsdata_file As Boolean
 Dim is_new_stats_file As Boolean
 
@@ -99,9 +98,6 @@ Alias o3(3) = m205_cell_P
 Units m205_O3 = ppb
 Units m205_cell_T = degC
 Units m205_cell_P = mbar
-
-Dim m205_O3_lo_fi
-Units m205_O3_lo_fi = ppb
 
 Dim nox_record As String * NOX_REC
 Dim nox(22)
@@ -142,35 +138,35 @@ Units m405_scrubber_T = degC
 Dim ch4_record As String * 400
 Dim ch4_year
 Dim ch4(25)
-'1: date (only year captured)     '2: time (only hour captured)
-Alias ch4(3)  = gga30p_CH4        '4: CH4 s.d.
-Alias ch4(5)  = gga30p_H2O        '6: H2O s.d.
-Alias ch4(7) = gga30p_CO2         '8: CO2 s.d.
-Alias ch4(9) = gga30p_CH4_dry     '10: CH4 dry s.d.
-Alias ch4(11) = gga30p_CO2_dry    '12: CO2 dry s.d.
-Alias ch4(13) = gga30p_gas_P      '14: gas P s.d.
-Alias ch4(15) = gga30p_gas_T      '16: gas T s.d.
-Alias ch4(17) = gga30p_amb_T      '18: amb T s.d.
-Alias ch4(19) = gga30p_ringdown0  '20: ringdown #0 s.d.
-Alias ch4(21) = gga30p_ringdown1  '22: ringdown #1 s.d.
-Alias ch4(23) = gga30p_fit_flag   '24: MIU valve
+'1: date (only year captured)   '2: time (only hour captured)
+Alias ch4(3)  = ugga_CH4        '4: CH4 s.d.
+Alias ch4(5)  = ugga_H2O        '6: H2O s.d.
+Alias ch4(7)  = ugga_CO2        '8: CO2 s.d.
+Alias ch4(9)  = ugga_CH4_dry    '10: CH4 dry s.d.
+Alias ch4(11) = ugga_CO2_dry    '12: CO2 dry s.d.
+Alias ch4(13) = ugga_gas_P      '14: gas P s.d.
+Alias ch4(15) = ugga_gas_T      '16: gas T s.d.
+Alias ch4(17) = ugga_amb_T      '18: amb T s.d.
+Alias ch4(19) = ugga_ringdown0  '20: ringdown #0 s.d.
+Alias ch4(21) = ugga_ringdown1  '22: ringdown #1 s.d.
+Alias ch4(23) = ugga_fit_flag   '24: MIU valve
 '25: MIU description
-Units gga30p_CH4 = ppm (wet)
-Units gga30p_H2O = ppm
-Units gga30p_CO2 = ppm (wet)
-Units gga30p_CH4_dry = ppm
-Units gga30p_CO2_dry = ppm
-Units gga30p_gas_P = mbar
-Units gga30p_gas_T = degC
-Units gga30p_amb_T = degC
-Units gga30p_ringdown0 = usec
-Units gga30p_ringdown1 = usec
-Units gga30p_fit_flag = arb
+Units ugga_CH4 = ppm
+Units ugga_H2O = ppm
+Units ugga_CO2 = ppm
+Units ugga_CH4_dry = ppm (dry)
+Units ugga_CO2_dry = ppm (dry)
+Units ugga_gas_P = mbar
+Units ugga_gas_T = degC
+Units ugga_amb_T = degC
+Units ugga_ringdown0 = usec
+Units ugga_ringdown1 = usec
+Units ugga_fit_flag = arb
 
 Dim disable(5) As Boolean
 Alias disable(1) = disable_tsi
 Alias disable(2) = disable_licor
-Alias disable(3) = disable_gga30p
+Alias disable(3) = disable_ugga
 Alias disable(4) = disable_o3
 Alias disable(5) = disable_nox
 
@@ -198,18 +194,17 @@ Dim t(35)
 't(21) = m405_ref_LED_V
 't(22) = m405_NO_gen_V
 't(23) = m405_scrubber_T
-'t(24) = gga30p_CH4
-'t(25) = gga30p_H2O
-'t(26) = gga30p_CO2
-'t(27) = gga30p_CH4_dry
-'t(28) = gga30p_CO2_dry
-'t(29) = gga30p_gas_P
-'t(30) = gga30p_gas_T
-'t(31) = gga30p_amb_T
-'t(32) = gga30p_ringdown0
-'t(33) = gga30p_ringdown1
-'t(34) = gga30p_fit_flag
-'t(35) = m205_O3_lo_fi
+'t(24) = ugga_CH4
+'t(25) = ugga_H2O
+'t(26) = ugga_CO2
+'t(27) = ugga_CH4_dry
+'t(28) = ugga_CO2_dry
+'t(29) = ugga_gas_P
+'t(30) = ugga_gas_T
+'t(31) = ugga_amb_T
+'t(32) = ugga_ringdown0
+'t(33) = ugga_ringdown1
+'t(34) = ugga_fit_flag
 
 
 '============================ DATA TABLES ===================================
@@ -217,10 +212,9 @@ DataTable(tsdata,True,10000)
   DataInterval(0,1,min,5)
   'HACK TableFile trails by 1 record
   TableFile(TSDATA_FNAME_FMT,8,DAYS_OF_DATA,1439,1440,Min, _
-      is_new_tsdata_file,tsdata_fname)
+      is_new_tsdata_file,tsdata_latest)
   Sample(1,dusttrak2_pm,IEEE4)
   Sample(2,dc1100,IEEE4)
-  Sample(1,m205_O3_lo_fi,FP2)
   Sample(2,o3(1),FP2)
   Sample(1,o3(3),IEEE4)
   Sample(7,nox(1),FP2)
@@ -229,24 +223,23 @@ DataTable(tsdata,True,10000)
   Sample(2,nox(12),IEEE4)
   Sample(2,nox(14),FP2)
   Sample(1,nox(22),UINT2)
-  Sample(1,gga30p_CH4,FP2)
-  Sample(1,gga30p_H2O,IEEE4)
-  Sample(1,gga30p_CO2,FP2)
-  Sample(1,gga30p_CH4_dry,FP2)
-  Sample(1,gga30p_CO2_dry,FP2)
-  Sample(1,gga30p_gas_P,IEEE4)
-  Sample(1,gga30p_gas_T,FP2)
-  Sample(1,gga30p_amb_T,FP2)
+  Sample(1,ugga_CH4,FP2)
+  Sample(1,ugga_H2O,IEEE4)
+  Sample(1,ugga_CO2,FP2)
+  Sample(1,ugga_CH4_dry,FP2)
+  Sample(1,ugga_CO2_dry,FP2)
+  Sample(1,ugga_gas_P,IEEE4)
+  Sample(1,ugga_gas_T,FP2)
+  Sample(1,ugga_amb_T,FP2)
 EndTable
 
 DataTable(stats,True,10000)
   DataInterval(0,30,min,1)
   TableFile(STATS_FNAME_FMT,8,DAYS_OF_DATA,1439,1440,Min, _
-      is_new_stats_file,stats_fname)
+      is_new_stats_file,stats_latest)
   Average(1,dusttrak2_pm,IEEE4,dusttrak2_pm=NAN)
   Average(1,dc1100_pm_small,IEEE4,dc1100_pm_small=NAN)
   Average(1,dc1100_pm_large,IEEE4,dc1100_pm_large=NAN)
-  Average(1,m205_O3_lo_fi,FP2,m205_O3_lo_fi=NAN)
   Average(2,o3(1),FP2,disable_o3)
   Average(1,o3(3),IEEE4,disable_o3)
   Average(7,nox(1),FP2,disable_nox)
@@ -254,14 +247,14 @@ DataTable(stats,True,10000)
   Average(3,nox(9),FP2,disable_nox)
   Average(2,nox(12),IEEE4,disable_nox)
   Average(2,nox(14),FP2,disable_nox)  
-  Average(1,gga30p_CH4,FP2,disable_gga30p OR gga30p_CH4=NAN)
-  Average(1,gga30p_H2O,IEEE4,disable_gga30p OR gga30p_H2O=NAN)
-  Average(1,gga30p_CO2,FP2,disable_gga30p OR gga30p_CO2=NAN)
-  Average(1,gga30p_CH4_dry,FP2,disable_gga30p OR gga30p_CH4_dry=NAN)
-  Average(1,gga30p_CO2_dry,FP2,disable_gga30p OR gga30p_CO2_dry=NAN)
-  Average(1,gga30p_gas_P,IEEE4,disable_gga30p OR gga30p_gas_P=NAN)
-  Average(1,gga30p_gas_T,FP2,disable_gga30p OR gga30p_gas_T=NAN)
-  Average(1,gga30p_amb_T,FP2,disable_gga30p OR gga30p_amb_T=NAN)
+  Average(1,ugga_CH4,FP2,disable_ugga OR ugga_CH4=NAN)
+  Average(1,ugga_H2O,IEEE4,disable_ugga OR ugga_H2O=NAN)
+  Average(1,ugga_CO2,FP2,disable_ugga OR ugga_CO2=NAN)
+  Average(1,ugga_CH4_dry,FP2,disable_ugga OR ugga_CH4_dry=NAN)
+  Average(1,ugga_CO2_dry,FP2,disable_ugga OR ugga_CO2_dry=NAN)
+  Average(1,ugga_gas_P,IEEE4,disable_ugga OR ugga_gas_P=NAN)
+  Average(1,ugga_gas_T,FP2,disable_ugga OR ugga_gas_T=NAN)
+  Average(1,ugga_amb_T,FP2,disable_ugga OR ugga_amb_T=NAN)
 EndTable
 
 DataTable(telemetry,True,1)
@@ -276,24 +269,23 @@ DataTable(telemetry,True,1)
   Average(1,h2o_licor,IEEE4,False)
   Average(3,o3,IEEE4,disable_o3)
   Average(15,nox,IEEE4,disable_nox)
-  Average(1,gga30p_CH4,IEEE4,disable_gga30p OR gga30p_CH4=NAN)
-  Average(1,gga30p_H2O,IEEE4,disable_gga30p OR gga30p_H2O=NAN)
-  Average(1,gga30p_CO2,IEEE4,disable_gga30p OR gga30p_CO2=NAN)
-  Average(1,gga30p_CH4_dry,IEEE4,disable_gga30p OR gga30p_CH4_dry=NAN)
-  Average(1,gga30p_CO2_dry,IEEE4,disable_gga30p OR gga30p_CO2_dry=NAN)
-  Average(1,gga30p_gas_P,IEEE4,disable_gga30p OR gga30p_gas_P=NAN)
-  Average(1,gga30p_gas_T,IEEE4,disable_gga30p OR gga30p_gas_T=NAN)
-  Average(1,gga30p_amb_T,IEEE4,disable_gga30p OR gga30p_amb_T=NAN)
-  Average(1,gga30p_ringdown0,IEEE4,disable_gga30p OR gga30p_ringdown0=NAN)
-  Average(1,gga30p_ringdown1,IEEE4,disable_gga30p OR gga30p_ringdown1=NAN)
-  Average(1,gga30p_fit_flag,IEEE4,disable_gga30p OR gga30p_fit_flag=NAN)
+  Average(1,ugga_CH4,IEEE4,disable_ugga OR ugga_CH4=NAN)
+  Average(1,ugga_H2O,IEEE4,disable_ugga OR ugga_H2O=NAN)
+  Average(1,ugga_CO2,IEEE4,disable_ugga OR ugga_CO2=NAN)
+  Average(1,ugga_CH4_dry,IEEE4,disable_ugga OR ugga_CH4_dry=NAN)
+  Average(1,ugga_CO2_dry,IEEE4,disable_ugga OR ugga_CO2_dry=NAN)
+  Average(1,ugga_gas_P,IEEE4,disable_ugga OR ugga_gas_P=NAN)
+  Average(1,ugga_gas_T,IEEE4,disable_ugga OR ugga_gas_T=NAN)
+  Average(1,ugga_amb_T,IEEE4,disable_ugga OR ugga_amb_T=NAN)
+  Average(1,ugga_ringdown0,IEEE4,disable_ugga OR ugga_ringdown0=NAN)
+  Average(1,ugga_ringdown1,IEEE4,disable_ugga OR ugga_ringdown1=NAN)
+  Average(1,ugga_fit_flag,IEEE4,disable_ugga OR ugga_fit_flag=NAN)
 EndTable
 
 DataTable(debug,True,1)
   Sample(1,dusttrak2_pm,IEEE4)
   Sample(1,disable_tsi,Boolean)
   Sample(2,dc1100(1),IEEE4)
-  Sample(1,m205_O3_lo_fi,IEEE4)
   Sample(1,o3_record,String)
   Sample(3,o3(1),IEEE4)
   Sample(1,disable_o3,Boolean)
@@ -302,18 +294,18 @@ DataTable(debug,True,1)
   Sample(1,nox(22),IEEE4)
   Sample(1,disable_nox,Boolean)
   Sample(1,ch4_record,String)
-  Sample(1,gga30p_CH4,IEEE4)
-  Sample(1,gga30p_H2O,IEEE4)
-  Sample(1,gga30p_CO2,IEEE4)
-  Sample(1,gga30p_CH4_dry,IEEE4)
-  Sample(1,gga30p_CO2_dry,IEEE4)
-  Sample(1,gga30p_gas_P,IEEE4)
-  Sample(1,gga30p_gas_T,IEEE4)
-  Sample(1,gga30p_amb_T,IEEE4)
-  Sample(1,gga30p_ringdown0,IEEE4)
-  Sample(1,gga30p_ringdown1,IEEE4)
-  Sample(1,gga30p_fit_flag,IEEE4)
-  Sample(1,disable_gga30p,Boolean)
+  Sample(1,ugga_CH4,IEEE4)
+  Sample(1,ugga_H2O,IEEE4)
+  Sample(1,ugga_CO2,IEEE4)
+  Sample(1,ugga_CH4_dry,IEEE4)
+  Sample(1,ugga_CO2_dry,IEEE4)
+  Sample(1,ugga_gas_P,IEEE4)
+  Sample(1,ugga_gas_T,IEEE4)
+  Sample(1,ugga_amb_T,IEEE4)
+  Sample(1,ugga_ringdown0,IEEE4)
+  Sample(1,ugga_ringdown1,IEEE4)
+  Sample(1,ugga_fit_flag,IEEE4)
+  Sample(1,disable_ugga,Boolean)
   Sample(1,tsdata_fname,String)
   Sample(1,stats_fname,String)
   Sample(1,is_new_tsdata_file,Boolean)
@@ -340,7 +332,6 @@ DisplayMenu("Indoor AQ", -1)
         DisplayValue("DC1100 large", dc1100_pm_large)
       EndSubMenu
       SubMenu("O3 (2B Tech)")
-        DisplayValue("O3 low-fi", m205_O3_lo_fi)
         DisplayValue("O3", m205_O3)
         DisplayValue("Cell tmpr.", m205_cell_T)
         DisplayValue("Cell press.", m205_cell_P)
@@ -363,17 +354,17 @@ DisplayMenu("Indoor AQ", -1)
         DisplayValue("Status", m405_status)
       EndSubMenu
       SubMenu("CH4/CO2/H2O (LGR)")
-        DisplayValue("CH4", gga30p_CH4)
-        DisplayValue("CO2", gga30p_CO2)
-        DisplayValue("H2O", gga30p_H2O)
-        DisplayValue("CH4 (dry)", gga30p_CH4_dry)
-        DisplayValue("CO2 (dry)", gga30p_CO2_dry)
-        DisplayValue("gas press.", gga30p_gas_P)
-        DisplayValue("gas tmpr.", gga30p_gas_T)
-        DisplayValue("amb. tmpr.", gga30p_amb_T)
-        DisplayValue("ringdown 0", gga30p_ringdown0)
-        DisplayValue("ringdown 1", gga30p_ringdown1)
-        DisplayValue("fit flag", gga30p_fit_flag)
+        DisplayValue("CH4", ugga_CH4)
+        DisplayValue("CO2", ugga_CO2)
+        DisplayValue("H2O", ugga_H2O)
+        DisplayValue("CH4 (dry)", ugga_CH4_dry)
+        DisplayValue("CO2 (dry)", ugga_CO2_dry)
+        DisplayValue("gas press.", ugga_gas_P)
+        DisplayValue("gas tmpr.", ugga_gas_T)
+        DisplayValue("amb. tmpr.", ugga_amb_T)
+        DisplayValue("ringdown 0", ugga_ringdown0)
+        DisplayValue("ringdown 1", ugga_ringdown1)
+        DisplayValue("fit flag", ugga_fit_flag)
       EndSubMenu
     EndSubMenu
     MenuItem("Debug  ON", debug_on)
@@ -414,7 +405,7 @@ Sub send_daily_email()
   msg = "Good morning, it's the " & STATION & " CR3000. Yesterday's data "
   msg &= "files are attached. [" & GIT_TAG & "]"
   Dim attachments As String * 96
-  attachments = stats_fname & "," & tsdata_fname
+  attachments = stats_latest & "," & tsdata_latest
   Dim ok As Boolean
   ok = EmailSend(SMTP_SERV,EMAIL_TO,EMAIL_FROM,EMAIL_DAILY_SUBJECT,msg, _
          attachments,SMTP_USER,SMTP_PASS,smtp_response)
@@ -449,8 +440,8 @@ EndSub
 Const REPORT1 = "&dusttrak2_pm=%.3f&dc1100_pm_small=%.1f&dc1100_pm_large=%.1f&co2_licor=%.3f"
 '                5              6            7                8                9
 Const REPORT2 = "&h2o_licor=%.3f&m205_o3=%.1f&m205_cell_t=%.1f&m205_cell_p=%.1f&m405_no2=%.1f"
-'                10           11            12                 35
-Const REPORT3 = "&m405_no=%.1f&m405_nox=%.1f&m405_no2_zero=%.1f&m205_o3_lo_fi=%.1f"
+'                10           11            12
+Const REPORT3 = "&m405_no=%.1f&m405_nox=%.1f&m405_no2_zero=%.1f"
 '                13                14                    15               16
 Const REPORT4 = "&m405_no_zero=%.1f&m405_flow_factor=%.2f&m405_cell_t=%.1f&m405_cell_p=%.1f"
 '                17                   18               19             20
@@ -458,11 +449,11 @@ Const REPORT5 = "&m405_overflow_f=%.1f&m405_cell_f=%.1f&m405_o3_f=%.1f&m405_samp
 '                21                  22                 23
 Const REPORT6 = "&m405_ref_led_v=%.4f&m405_no_gen_v=%.4f&m405_scrubber_t=%.2f"
 '                24              25              26              27
-Const REPORT7 = "&gga30p_ch4=%.2f&gga30p_h2o=%.1f&gga30p_co2=%.1f&gga30p_ch4_dry=%.2f"
+Const REPORT7 = "&ugga_ch4=%.2f&ugga_h2o=%.1f&ugga_co2=%.1f&ugga_ch4_dry=%.2f"
 '                28                  29                30                31
-Const REPORT8 = "&gga30p_co2_dry=%.1f&gga30p_gas_p=%.1f&gga30p_gas_t=%.1f&gga30p_amb_t=%.1f"
+Const REPORT8 = "&ugga_co2_dry=%.1f&ugga_gas_p=%.1f&ugga_gas_t=%.1f&ugga_amb_t=%.1f"
 '                32                    33                    34
-Const REPORT9 = "&gga30p_ringdown0=%.4f&gga30p_ringdown1=%.4f&gga30p_fit_flag=%.1f"
+Const REPORT9 = "&ugga_ringdown0=%.4f&ugga_ringdown1=%.4f&ugga_fit_flag=%.1f"
 Sub send_telemetry_report()
   Dim msg1 As String * 100, msg2 As String * 100, msg3 As String * 100
   Dim msg4 As String * 100, msg5 As String * 100, msg6 As String * 100
@@ -470,7 +461,7 @@ Sub send_telemetry_report()
   Dim payload As String * 900
   Sprintf(msg1,REPORT1,t(1),t(2),t(3),t(4))
   Sprintf(msg2,REPORT2,t(5),t(6),t(7),t(8),t(9))
-  Sprintf(msg3,REPORT3,t(10),t(11),t(12),t(35))
+  Sprintf(msg3,REPORT3,t(10),t(11),t(12))
   Sprintf(msg4,REPORT4,t(13),t(14),t(15),t(16))
   Sprintf(msg5,REPORT5,t(17),t(18),t(19),t(20))
   Sprintf(msg6,REPORT6,t(21),t(22),t(23))
@@ -490,11 +481,19 @@ EndFunction
 
 
 '============================== SUBROUTINES =================================
+Sub update_filenames()
+  RealTime(rtime)
+  Sprintf(datestamp,"%04u%02u%02u.%02u%02u", rtime(1),rtime(2),rtime(3),rtime(4),rtime(5))
+  tsdata_fname = TSDATA_FNAME_FMT & datestamp
+  stats_fname = STATS_FNAME_FMT & datestamp
+EndSub
+
 Sub setup()
   SerialOpen(DYLOS_COM,DYLOS_BAUD,DYLOS_FMT,0,DYLOS_BUFF)
   SerialOpen(NOX_COM,NOX_BAUD,NOX_FMT,0,NOX_BUFF)
   SerialOpen(CH4_COM,CH4_BAUD,CH4_FMT,0,CH4_BUFF)
   SerialOpen(O3_COM,O3_BAUD,O3_FMT,0,O3_BUFF)
+  update_filenames()
 EndSub
 
 
@@ -508,7 +507,6 @@ BeginProg
   '       not precisely 1Hz... run twice as fast to avoid losing messages.
   Scan(500,mSec,4,0)
     VoltDiff(dusttrak2_pm,1,mv5000,DF_TSI_PM,True,0,INTEG,TSI_PM_MLT,TSI_PM_OFF)
-    VoltDiff(m205_O3_lo_fi,1,mV5000,O3_DF,True,0,INTEG,O3_MLT,O3_OFF)
 
     SerialIn(ch4_record,CH4_COM,5,&h0A,CH4_BUFF)
     If (Len(ch4_record)) Then
@@ -517,8 +515,8 @@ BeginProg
       '       current year. won't work next year, or if analyzer's time is
       '       not set correctly!
       ch4_year = ch4(1) 'convert string->float
-      disable_gga30p = NOT(ch4_year = 2015)
-      gga30p_gas_P *= MBAR_PER_TORR
+      disable_ugga = NOT(ch4_year = 2015)
+      ugga_gas_P *= MBAR_PER_TORR
     EndIf
 
     If (debug_on) Then CallTable(debug)
@@ -562,6 +560,16 @@ BeginProg
     'per minute is included in following data tables
     CallTable(tsdata)
     CallTable(stats)
+    
+    If (is_new_tsdata_file) Then 
+      FileRename(tsdata_latest, tsdata_fname)
+      tsdata_latest = tsdata_fname 'retain for email sending
+    EndIf
+    If (is_new_stats_file) Then 
+      FileRename(stats_latest, stats_fname)
+      stats_latest = stats_fname
+    EndIf
+    If (is_new_tsdata_file OR is_new_stats_file) Then update_filenames()
   NextScan
 
   SlowSequence
