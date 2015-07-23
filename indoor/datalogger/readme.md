@@ -1,7 +1,6 @@
 *Datalogger Program Source Code*
 
-Sensors are wired to a CR3000 as specified in `interior-daq-wiring.docx` 
-([PDF version][1]).
+Sensors are wired to a CR3000 as specified in `wiring.docx` ([PDF version][1]).
 
   [1]: https://bitbucket.org/wsular/2015-iaq-intensive-daq/downloads/interior-daq-wiring.pdf
 
