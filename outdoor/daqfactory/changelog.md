@@ -1,6 +1,13 @@
 Changelog for outdoor AQ DAQFactory program
 ===========================================
 
+outdoor_20150723
+----------------
+
+* Revert changes from "outdoor_20150723-test": determined changes did not
+  improve data signal quality
+
+
 outdoor_20150723-test
 ---------------------
 
