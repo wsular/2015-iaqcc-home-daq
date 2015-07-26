@@ -14,3 +14,7 @@ http://www.airmartechnology.com/uploads/InstallGuide/17-570-01.pdf    Airmar 200
 ftp://ftp.licor.com/perm/env/LI-840/Manual/LI-840_Manual.pdf    Licor LI-840 manual.pdf
 ftp://ftp.licor.com/perm/env/LI-840A/Manual/LI-840A_Manual.pdf    Licor LI-840A manual.pdf
 http://www.lgrinc.com/documents/LGR_Ultraportable_GGA_Datasheet.pdf    Los Gatos Research UGGA datasheet.pdf
+http://www.alphasense.com/WEB1213/wp-content/uploads/2015/04/COB41.pdf    Alphasense CO-B4 Carbon Monoxide Sensor Datasheet.pdf
+http://www.alphasense.com/WEB1213/wp-content/uploads/2015/03/NO-B4.pdf    Alphasense NO-B4 Nitric Oxide Sensor Datasheet.pdf
+http://www.alphasense.com/WEB1213/wp-content/uploads/2013/11/O3B4.pdf    Alphasense O3-B4 Ozone Sensor Datasheet.pdf
+http://www.alphasense.com/WEB1213/wp-content/uploads/2015/06/ISB.pdf    Alphasense ISB Datasheet.pdf
