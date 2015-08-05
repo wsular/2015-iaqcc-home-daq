@@ -1,6 +1,14 @@
 Changelog for indoor AQ datalogger
 ==================================
 
+Next version
+------------
+
+### Issues fixed
+
+* Set methane analyer (UGGA) values to NAN if no new record is received (BB #3)
+
+
 v0.3 [2015-07-23]
 -----------------
 

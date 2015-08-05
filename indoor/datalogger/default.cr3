@@ -517,6 +517,11 @@ BeginProg
       ch4_year = ch4(1) 'convert string->float
       disable_ugga = NOT(ch4_year = 2015)
       ugga_gas_P *= MBAR_PER_TORR
+    ElseIf (ch4_year = NAN) Then
+      'do nothing, UGGA vars already set to NAN
+    Else
+      Move(ch4(1),25,NAN,1)
+      ch4_year = NAN
     EndIf
 
     If (debug_on) Then CallTable(debug)
