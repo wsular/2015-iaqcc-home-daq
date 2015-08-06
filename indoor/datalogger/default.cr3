@@ -321,6 +321,7 @@ Const Yes = True
 Const Cancel = False
 Const No = False
 
+Public test_email As Boolean
 Public test_scadabr As Boolean
 
 DisplayMenu("Indoor AQ", -1)
@@ -369,6 +370,8 @@ DisplayMenu("Indoor AQ", -1)
     EndSubMenu
     MenuItem("Debug  ON", debug_on)
       MenuPick(No,Yes)
+    MenuItem("Test email", test_email)
+      MenuPick(Cancel, Yes)
     MenuItem("Test ScadaBR", test_scadabr)
       MenuPick(Cancel, Yes)
   EndSubMenu
@@ -397,6 +400,14 @@ Sub send_startup_email()
   msg &= "Git tag: " & GIT_TAG & CRLF
   EmailSend(SMTP_SERV,EMAIL_TO,EMAIL_FROM,email_boot_subject,msg,"", _
       SMTP_USER,SMTP_PASS,smtp_response)
+EndSub
+
+Const email_test_subject = "Test email from " & SELF & " CR3000"
+Const email_test_message = "This is the " & SELF & " CR3000. Testing 1.. 2.. 3.." & CRLF
+Sub send_test_email()
+  EmailSend(SMTP_SERV,EMAIL_TO,EMAIL_FROM,email_test_subject,email_test_message,"", _
+      SMTP_USER,SMTP_PASS,smtp_response)
+  test_email = False
 EndSub
 
 Const EMAIL_DAILY_SUBJECT = "Daily notice from " & STATION & " CR3000"
@@ -582,6 +593,9 @@ BeginProg
     If (debug_on) Then CallTable(debug)
     If (test_scadabr) Then
       send_test_scadabr()
+    EndIf
+    If (test_email) Then
+      send_test_email()
     EndIf
 
     If TimeIntoInterval(360,1440,Min) Then '6 AM

@@ -8,6 +8,10 @@ Next version
 
 * Set methane analyer (UGGA) values to NAN if no new record is received (BB #3)
 
+### Enhancements
+
+* Add routine to send test email; accessible via panel menu, Public table
+
 ### Notes
 
 * Routines using network services are relocated from primary scan to a slow
