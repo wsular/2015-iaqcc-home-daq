@@ -419,7 +419,6 @@ Dim scadabr_socket As Long
 Dim rtime(9) As Long
 Dim scadabr_success As Boolean
 Dim scadabr_resp As String * 256
-Dim send_report_now As Boolean
 
 Sub send_scadabr_data(payload As String * 900)
   Dim uri As String * 985
