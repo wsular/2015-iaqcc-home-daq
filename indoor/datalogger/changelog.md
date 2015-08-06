@@ -8,9 +8,16 @@ Next version
 
 * Set methane analyer (UGGA) values to NAN if no new record is received (BB #3)
 
+### Data table changes
+
+* New columns added to end of tables, in order listed here:
+    * Tables `tsdata` and `debug`: `typeK_amb_T`, `cr3000_panel_T`
+    * Tables `stats` and `telemetry`: `typeK_amb_T_Avg`, `cr3000_panel_T_Avg`
+
 ### Enhancements
 
 * Add routine to send test email; accessible via panel menu, Public table
+* Measuring ambient temperature using thermocouple (at gas sampling inlet)
 
 ### Notes
 
