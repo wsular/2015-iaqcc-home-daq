@@ -8,6 +8,13 @@ Next version
 
 * Set methane analyer (UGGA) values to NAN if no new record is received (BB #3)
 
+### Notes
+
+* Routines using network services are relocated from primary scan to a slow
+  sequence (affected: test ScadaBR report) so measurements cannot be impacted
+  by timeouts
+* Data table `debug` is updated at 1Hz when active (half as frequent)
+
 
 v0.3 [2015-07-23]
 -----------------

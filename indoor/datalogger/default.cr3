@@ -522,11 +522,6 @@ BeginProg
       Move(ch4(1),25,NAN,1)
       ch4_year = NAN
     EndIf
-
-    If (debug_on) Then CallTable(debug)
-    If (test_scadabr) Then
-      send_test_scadabr()
-    EndIf
   NextScan
 
   SlowSequence
@@ -577,11 +572,16 @@ BeginProg
   NextScan
 
   SlowSequence
-  Scan(1,Min,1,0)
-    CallTable(telemetry)
+  Scan(1,Sec,1,0)
+    If TimeIntoInterval(0,1,Min) Then CallTable(telemetry)
     If (telemetry.Output(1,1)) Then
       GetRecord(t(1),telemetry,1)
       send_telemetry_report()
+    EndIf
+
+    If (debug_on) Then CallTable(debug)
+    If (test_scadabr) Then
+      send_test_scadabr()
     EndIf
 
     If TimeIntoInterval(360,1440,Min) Then '6 AM
