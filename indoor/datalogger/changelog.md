@@ -1,6 +1,35 @@
 Changelog for indoor AQ datalogger
 ==================================
 
+Next version
+------------
+
+### Issues fixed
+
+* Set methane analyer (UGGA) values to NAN if no new record is received (BB #3)
+
+### Data table changes
+
+* New columns added to end of tables, in order listed here:
+    * Tables `tsdata` and `debug`: `typeK_amb_T`, `cr3000_panel_T`
+    * Tables `stats` and `telemetry`: `typeK_amb_T_Avg`, `cr3000_panel_T_Avg`
+
+### Enhancements
+
+* Add routine to send test email; accessible via panel menu, Public table
+* Measuring ambient temperature using thermocouple (at gas sampling inlet)
+
+### Notes
+
+* Routines using network services are relocated from primary scan to a slow
+  sequence (affected: test ScadaBR report) so measurements cannot be impacted
+  by timeouts
+* Data table `debug` is updated at 1Hz when active (half as frequent)
+* Telemetry reports now include derived value `dc1100_size_ratio`, which
+  is natural logarithm of ratio of small to large particle counts (or NAN if
+  large counts is 0)
+
+
 v0.3 [2015-07-23]
 -----------------
 
