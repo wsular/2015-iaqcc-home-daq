@@ -45,6 +45,18 @@ Const O3_BUFF = 1+2*O3_REC
 
 Const DF_TYPE_K = 6
 
+Const DF_CO = 1
+Const DF_NO = 2
+Const DF_O3 = 3
+
+'Scaling from Maddy Fuch's assessment (ppb/mV, ppb):
+Const CO_MLT = 2.425
+Const CO_OFF = -797
+Const NO_MLT = 1.475
+Const NO_OFF = -569
+Const O3_MLT = 2.511
+Const O3_OFF = -764
+
 'Const COM_BT_MFC = 4 'C7/8
 'Const COM_LICOR = ComRS232
 
@@ -62,13 +74,17 @@ Public debug_on As Boolean
 Const FNAME_PREFIX = "IAQ15_" & STATION & "_"
 Const TSDATA_FNAME_FMT = "CRD:" & FNAME_PREFIX & "tsdata_"
 Const STATS_FNAME_FMT = "CRD:" & FNAME_PREFIX & "stats_"
+Const ALPHA_FNAME_FMT = "CRD:" & FNAME_PREFIX & "B4_sensors_"
 Dim tsdata_latest As String * 48
 Dim tsdata_fname As String * 48
 Dim stats_latest As String * 48
 Dim stats_fname As String * 48
+Dim alpha_latest As String * 48
+Dim alpha_fname As String * 48
 Dim datestamp As String * 16
 Dim is_new_tsdata_file As Boolean
 Dim is_new_stats_file As Boolean
+Dim is_new_alpha_file As Boolean
 
 Const NTP_ADDR = "0.us.pool.ntp.org"
 Const NTP_OFFSET = -8*3600 'sec from UTC = PST
@@ -171,6 +187,18 @@ Dim cr3000_panel_T
 Units typeK_amb_T = degC
 Units cr3000_panel_T = degC
 
+Dim alphasense(3)
+Alias alphasense(1) = B4_CO_mV
+Alias alphasense(2) = B4_NO_mV
+Alias alphasense(3) = B4_O3_mV
+Units alphasense = mV
+
+Dim alphafixme(3)
+Alias alphafixme(1) = B4_CO_est
+Alias alphafixme(2) = B4_NO_est
+Alias alphafixme(3) = B4_O3_est
+Units alphafixme = ppb
+
 Dim disable(5) As Boolean
 Alias disable(1) = disable_tsi
 Alias disable(2) = disable_licor
@@ -269,6 +297,21 @@ DataTable(stats,True,10000)
   Average(1,ugga_amb_T,FP2,disable_ugga OR ugga_amb_T=NAN)
   Average(1,typeK_amb_T,FP2,typeK_amb_T=NAN)
   Average(1,cr3000_panel_T,FP2,cr3000_panel_T=NAN)
+EndTable
+
+'HINT - segregate these 'prototype' sensors until solid
+'calibration curve is derived; ultimately, will probably
+'be integrated into CO2 tracer detection network package
+DataTable(B4_sensors,True,10000)
+  DataInterval(0,1,Min,5)
+  TableFile(ALPHA_FNAME_FMT,8,DAYS_OF_DATA,1439,1440,Min, _
+      is_new_alpha_file,alpha_latest)
+  Average(1,B4_CO_mV,IEEE4,B4_CO_mV=NAN)
+  Average(1,B4_NO_mV,IEEE4,B4_NO_mV=NAN)
+  Average(1,B4_O3_mV,IEEE4,B4_O3_mV=NAN)
+  Average(1,B4_CO_est,IEEE4,B4_CO_est=NAN)
+  Average(1,B4_NO_est,IEEE4,B4_NO_est=NAN)
+  Average(1,B4_O3_est,IEEE4,B4_O3_est=NAN)
 EndTable
 
 DataTable(telemetry,True,1)
@@ -388,6 +431,14 @@ DisplayMenu("Indoor AQ", -1)
         DisplayValue("ringdown 1", ugga_ringdown1)
         DisplayValue("fit flag", ugga_fit_flag)
       EndSubMenu
+      SubMenu("CO/NO/O3 (Alphasense")
+        DisplayValue("CO (mV)", B4_CO_mV)
+        DisplayValue("CO (ppb)",B4_CO_est)
+        DisplayValue("NO (mV)", B4_NO_mV)
+        DisplayValue("NO (ppb)",B4_NO_est)
+        DisplayValue("O3 (mV)", B4_O3_mV)
+        DisplayValue("O3 (ppb)",B4_O3_est)
+      EndSubMenu
     EndSubMenu
     MenuItem("Debug  ON", debug_on)
       MenuPick(No,Yes)
@@ -437,7 +488,7 @@ Sub send_daily_email()
   msg = "Good morning, it's the " & STATION & " CR3000. Yesterday's data "
   msg &= "files are attached. [" & GIT_TAG & "]"
   Dim attachments As String * 96
-  attachments = stats_latest & "," & tsdata_latest
+  attachments = stats_latest & "," & tsdata_latest & "," & alpha_latest
   Dim ok As Boolean
   ok = EmailSend(SMTP_SERV,EMAIL_TO,EMAIL_FROM,EMAIL_DAILY_SUBJECT,msg, _
          attachments,SMTP_USER,SMTP_PASS,smtp_response)
@@ -507,6 +558,16 @@ Sub send_telemetry_report()
   send_scadabr_data(payload)
 EndSub
 
+'HINT - just send most recent value instead of 5-min mean,
+'since that would require a fair amount of infrastructure
+'and time-series data is already emailed daily
+Sub send_alphasensors_report()
+  Dim msg1 As String * 64, msg2 As String * 64
+  Sprintf(msg1,"&b4_co_mv=%.1f&b4_no_mv=%.1f&b4_o3_mv=%.1f",B4_CO_mV,B4_NO_mV,B4_O3_mV)
+  Sprintf(msg2,"&b4_co_est=%.1f&b4_no_est=%.1f&b4_o3_est=%.1f", B4_CO_est,B4_NO_est,B4_O3_est)
+  send_scadabr_data(msg1 & msg2)
+EndSub
+
 
 '================================ FUNCTIONS =================================
 Function convert_dc1100_value(number) As Float
@@ -521,6 +582,7 @@ Sub update_filenames()
   Sprintf(datestamp,"%04u%02u%02u.%02u%02u", rtime(1),rtime(2),rtime(3),rtime(4),rtime(5))
   tsdata_fname = TSDATA_FNAME_FMT & datestamp
   stats_fname = STATS_FNAME_FMT & datestamp
+  alpha_fname = ALPHA_FNAME_FMT & datestamp
 EndSub
 
 Sub setup()
@@ -544,6 +606,14 @@ BeginProg
     VoltDiff(dusttrak2_pm,1,mv5000,DF_TSI_PM,True,0,INTEG,TSI_PM_MLT,TSI_PM_OFF)
     PanelTemp(cr3000_panel_T,INTEG)
     TCDiff(typeK_amb_T,1,mV20,DF_TYPE_K,TypeK,cr3000_panel_T,1,0,INTEG,1,0)
+
+    VoltDiff(B4_CO_mV,1,mv5000,DF_CO,True,0,INTEG,1,0) 'in mV
+    VoltDiff(B4_NO_mV,1,mv5000,DF_NO,True,0,INTEG,1,0) 'FIXME
+    VoltDiff(B4_O3_mV,1,mv5000,DF_O3,True,0,INTEG,1,0)
+    B4_CO_est = B4_CO_mV*CO_MLT + CO_OFF
+    B4_NO_est = B4_NO_mV*NO_MLT + NO_OFF
+    B4_O3_est = B4_O3_mV*O3_MLT + O3_OFF
+    CallTable(B4_sensors)
 
     SerialIn(ch4_record,CH4_COM,5,&h0A,CH4_BUFF)
     If (Len(ch4_record)) Then
@@ -606,6 +676,10 @@ BeginProg
       FileRename(stats_latest, stats_fname)
       stats_latest = stats_fname
     EndIf
+    If (is_new_alpha_file) Then
+      FileRename(alpha_latest, alpha_fname)
+      alpha_latest = alpha_fname
+    EndIf
     If (is_new_tsdata_file OR is_new_stats_file) Then update_filenames()
   NextScan
 
@@ -620,6 +694,7 @@ BeginProg
         dc1100_size_ratio = LOG(t(2)/t(3))
       EndIf
       send_telemetry_report()
+      send_alphasensors_report()
     EndIf
 
     If (debug_on) Then CallTable(debug)

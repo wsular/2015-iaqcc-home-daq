@@ -15,11 +15,21 @@ Next version
 * New columns added to end of tables, in order listed here:
     * Tables `tsdata` and `debug`: `typeK_amb_T`, `cr3000_panel_T`
     * Tables `stats` and `telemetry`: `typeK_amb_T_Avg`, `cr3000_panel_T_Avg`
+* New data table `B4_sensors` containing
+    * Carbon monoxide, millivolts and ppb (`B4_CO_mV`, `B4_CO_est`)
+    * Nitric oxide, millivolts and ppb (`B4_NO_mV`, `B4_NO_est`)
+    * Ozone, millivolts and ppb (`B4_O3_mV`, `B4_O3_est`)
+    * Columns are grouped by units (mV, then ppb), listed in alphabetical order
 
 ### Enhancements
 
 * Add routine to send test email; accessible via panel menu, Public table
 * Measuring ambient temperature using thermocouple (at gas sampling inlet)
+* Perform exploratory measurements of carbon monoxide (CO), nitric oxide (NO),
+  and ozone (O3) using electrochemical sensors (B4-series; Alphasense)
+    * Reported in both measured (mV) and engineering units (ppb)
+    * Scaling determined by linear regression of multi-point cal. assessment
+    * Data stored in separate table file, included with daily report
 
 ### Notes
 
