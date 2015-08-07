@@ -25,6 +25,9 @@ Next version
   sequence (affected: test ScadaBR report) so measurements cannot be impacted
   by timeouts
 * Data table `debug` is updated at 1Hz when active (half as frequent)
+* Telemetry reports now include derived value `dc1100_size_ratio`, which
+  is natural logarithm of ratio of small to large particle counts (or NAN if
+  large counts is 0)
 
 
 v0.3 [2015-07-23]

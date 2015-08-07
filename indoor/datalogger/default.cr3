@@ -80,6 +80,7 @@ Dim dusttrak2_pm
 Units dusttrak2_pm = mg/m^3
 
 Dim dc1100_record As String * 12
+Dim dc1100_size_ratio
 Dim dc1100_vals(2)
 'dc1100_vals(1) = "small" counts / 100 ft^3
 'dc1100_vals(2) = "large" counts / 100 ft^3
@@ -484,7 +485,7 @@ Const REPORT8 = "&ugga_co2_dry=%.1f&ugga_gas_p=%.1f&ugga_gas_t=%.1f&ugga_amb_t=%
 '                32                    33                    34
 Const REPORT9 = "&ugga_ringdown0=%.4f&ugga_ringdown1=%.4f&ugga_fit_flag=%.1f"
 '                35               36
-Const REPORT0 = "&typek_amb_t=%.1f&cr3000_panel_t=%.1f"
+Const REPORT0 = "&typek_amb_t=%.1f&cr3000_panel_t=%.1f&dc1100_size_ratio=%.1f"
 Sub send_telemetry_report()
   Dim msg1 As String * 100, msg2 As String * 100, msg3 As String * 100
   Dim msg4 As String * 100, msg5 As String * 100, msg6 As String * 100
@@ -500,7 +501,7 @@ Sub send_telemetry_report()
   Sprintf(msg7,REPORT7,t(24),t(25),t(26),t(27))
   Sprintf(msg8,REPORT8,t(28),t(29),t(30),t(31))
   Sprintf(msg9,REPORT9,t(32),t(33),t(34))
-  Sprintf(msg0,REPORT0,t(35),t(36))
+  Sprintf(msg0,REPORT0,t(35),t(36),dc1100_size_ratio)
   payload = msg1 & msg2 & msg3 & msg4 & msg5 & msg6 & msg7 & msg8 & msg9 & msg0
   send_scadabr_data(payload)
 EndSub
@@ -612,6 +613,11 @@ BeginProg
     If TimeIntoInterval(0,1,Min) Then CallTable(telemetry)
     If (telemetry.Output(1,1)) Then
       GetRecord(t(1),telemetry,1)
+      If (t(3) = 0) Then
+        dc1100_size_ratio = NAN
+      Else
+        dc1100_size_ratio = LOG(t(2)/t(3))
+      EndIf
       send_telemetry_report()
     EndIf
 
