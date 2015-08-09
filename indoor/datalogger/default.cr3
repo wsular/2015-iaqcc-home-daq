@@ -481,7 +481,7 @@ Const REPORT6 = "&m405_ref_led_v=%.4f&m405_no_gen_v=%.4f&m405_scrubber_t=%.2f"
 '                24              25              26              27
 Const REPORT7 = "&ugga_ch4=%.2f&ugga_h2o=%.1f&ugga_co2=%.1f&ugga_ch4_dry=%.2f"
 '                28                  29                30                31
-Const REPORT8 = "&ugga_co2_dry=%.1f&ugga_gas_p=%.1f&ugga_gas_t=%.1f&ugga_amb_t=%.1f"
+Const REPORT8 = "&ugga_co2_dry=%.1f&ugga_gas_p=%.4f&ugga_gas_t=%.1f&ugga_amb_t=%.1f"
 '                32                    33                    34
 Const REPORT9 = "&ugga_ringdown0=%.4f&ugga_ringdown1=%.4f&ugga_fit_flag=%.1f"
 '                35               36
