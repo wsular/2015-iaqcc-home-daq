@@ -1,8 +1,8 @@
 Changelog for indoor AQ datalogger
 ==================================
 
-Next version
-------------
+v0.4 [2015-08-10]
+-----------------
 
 ### Issues fixed
 
