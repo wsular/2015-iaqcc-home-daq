@@ -7,6 +7,8 @@ Next version
 ### Issues fixed
 
 * Set methane analyer (UGGA) values to NAN if no new record is received (BB #3)
+* Don't truncate UGGA sample cell pressure values in telemetry reports
+* Expose clock drift variable in debug table
 
 ### Data table changes
 
