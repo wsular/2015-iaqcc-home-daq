@@ -331,6 +331,7 @@ DataTable(debug,True,1)
   Sample(1,smtp_response,String)
   Sample(1,scadabr_resp,String)
   Sample(1,scadabr_success,Boolean)
+  Sample(1,cr3k_clock_drift,IEEE4)
 EndTable
 
 
