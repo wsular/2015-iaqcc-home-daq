@@ -17,6 +17,9 @@ next version
 * Verify Los Gatos UGGA records are correctly parsed by comparing year in data
   record with logger's timestamp (instead of hard-coded "2015"); still relies
   on date/time of both UGGA and datalogger being mostly correct. Latent issue.
+* Rename so-called "ambient temperature" measurement from Los Gatos UGGA to
+  better reflect actual measurement: `ugga_amb_T` &rarr; `ugga_self_T`; the
+  measurement itself has not changed at all but new name is more accurate
 
 ### Data table changes
 
@@ -24,13 +27,15 @@ next version
     * All columns now represent 1-minute means; affected columns retain their
       original names for consistency though (ie no "_Avg" suffix)
       (affected: `dusttrak2_pm`, `ugga_CH4`, `ugga_H2O`, `ugga_CO2`,
-      `ugga_CH4_dry`, `ugga_CO2_dry`, `ugga_gas_P`, `ugga_gas_T`, `ugga_amb_T`,
-      `typeK_amb_T`, `cr3000_panel_T`)
+      `ugga_CH4_dry`, `ugga_CO2_dry`, `ugga_gas_P`, `ugga_gas_T`, 
+      <del>`ugga_amb_T`</del> `ugga_self_T`, `typeK_amb_T`, `cr3000_panel_T`)
 * Data tables `stats` and `telemetry`
     * Are now called frequently enough to perform 1-minute averaging of analog
       and 1Hz signals
     * Have inter-scan locking flags to keep 1-minute data (dylos, m205, m405)
       from being duplicated in averaging calculation
+* In all relevant tables, rename the scalar `ugga_amb_T` (& derivatives) to
+  `ugga_self_T` (& analagous); refer to *Issues fixed* above
 * Fixup debug table to include diffusive gas sensors and regroup (unused) data
   flagging variable with UGGA vars.
 

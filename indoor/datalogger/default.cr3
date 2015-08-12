@@ -165,7 +165,7 @@ Alias ch4(9)  = ugga_CH4_dry    '10: CH4 dry s.d.
 Alias ch4(11) = ugga_CO2_dry    '12: CO2 dry s.d.
 Alias ch4(13) = ugga_gas_P      '14: gas P s.d.
 Alias ch4(15) = ugga_gas_T      '16: gas T s.d.
-Alias ch4(17) = ugga_amb_T      '18: amb T s.d.
+Alias ch4(17) = ugga_self_T     '18: self T s.d.
 Alias ch4(19) = ugga_ringdown0  '20: ringdown #0 s.d.
 Alias ch4(21) = ugga_ringdown1  '22: ringdown #1 s.d.
 Alias ch4(23) = ugga_fit_flag   '24: MIU valve
@@ -177,7 +177,7 @@ Units ugga_CH4_dry = ppm (dry)
 Units ugga_CO2_dry = ppm (dry)
 Units ugga_gas_P = mbar
 Units ugga_gas_T = degC
-Units ugga_amb_T = degC
+Units ugga_self_T = degC
 Units ugga_ringdown0 = usec
 Units ugga_ringdown1 = usec
 Units ugga_fit_flag = arb
@@ -241,7 +241,7 @@ Dim t(36)
 't(28) = ugga_CO2_dry
 't(29) = ugga_gas_P
 't(30) = ugga_gas_T
-'t(31) = ugga_amb_T
+'t(31) = ugga_self_T
 't(32) = ugga_ringdown0
 't(33) = ugga_ringdown1
 't(34) = ugga_fit_flag
@@ -280,8 +280,8 @@ DataTable(tsdata,True,10000)
     FieldNames("ugga_gas_P")
   Average(1,ugga_gas_T,FP2,disable_ugga OR ugga_gas_T=NAN)
     FieldNames("ugga_gas_T")
-  Average(1,ugga_amb_T,FP2,disable_ugga OR ugga_amb_T=NAN)
-    FieldNames("ugga_amb_T")
+  Average(1,ugga_self_T,FP2,disable_ugga OR ugga_self_T=NAN)
+    FieldNames("ugga_self_T")
   Average(1,typeK_amb_T,FP2,typeK_amb_T=NAN)
     FieldNames("typeK_amb_T")
   Average(1,cr3000_panel_T,FP2,cr3000_panel_T=NAN)
@@ -309,7 +309,7 @@ DataTable(stats,True,10000)
   Average(1,ugga_CO2_dry,FP2,disable_ugga OR ugga_CO2_dry=NAN)
   Average(1,ugga_gas_P,IEEE4,disable_ugga OR ugga_gas_P=NAN)
   Average(1,ugga_gas_T,FP2,disable_ugga OR ugga_gas_T=NAN)
-  Average(1,ugga_amb_T,FP2,disable_ugga OR ugga_amb_T=NAN)
+  Average(1,ugga_self_T,FP2,disable_ugga OR ugga_self_T=NAN)
   Average(1,typeK_amb_T,FP2,typeK_amb_T=NAN)
   Average(1,cr3000_panel_T,FP2,cr3000_panel_T=NAN)
 EndTable
@@ -348,7 +348,7 @@ DataTable(telemetry,True,1)
   Average(1,ugga_CO2_dry,IEEE4,disable_ugga OR ugga_CO2_dry=NAN)
   Average(1,ugga_gas_P,IEEE4,disable_ugga OR ugga_gas_P=NAN)
   Average(1,ugga_gas_T,IEEE4,disable_ugga OR ugga_gas_T=NAN)
-  Average(1,ugga_amb_T,IEEE4,disable_ugga OR ugga_amb_T=NAN)
+  Average(1,ugga_self_T,IEEE4,disable_ugga OR ugga_self_T=NAN)
   Average(1,ugga_ringdown0,IEEE4,disable_ugga OR ugga_ringdown0=NAN)
   Average(1,ugga_ringdown1,IEEE4,disable_ugga OR ugga_ringdown1=NAN)
   Average(1,ugga_fit_flag,IEEE4,disable_ugga OR ugga_fit_flag=NAN)
@@ -375,7 +375,7 @@ DataTable(debug,True,1)
   Sample(1,ugga_CO2_dry,IEEE4)
   Sample(1,ugga_gas_P,IEEE4)
   Sample(1,ugga_gas_T,IEEE4)
-  Sample(1,ugga_amb_T,IEEE4)
+  Sample(1,ugga_self_T,IEEE4)
   Sample(1,ugga_ringdown0,IEEE4)
   Sample(1,ugga_ringdown1,IEEE4)
   Sample(1,ugga_fit_flag,IEEE4)
@@ -446,7 +446,7 @@ DisplayMenu("Indoor AQ", -1)
         DisplayValue("CO2 (dry)", ugga_CO2_dry)
         DisplayValue("gas press.", ugga_gas_P)
         DisplayValue("gas tmpr.", ugga_gas_T)
-        DisplayValue("amb. tmpr.", ugga_amb_T)
+        DisplayValue("self tmpr.", ugga_self_T)
         DisplayValue("ringdown 0", ugga_ringdown0)
         DisplayValue("ringdown 1", ugga_ringdown1)
         DisplayValue("fit flag", ugga_fit_flag)
@@ -553,7 +553,7 @@ Const REPORT6 = "&m405_ref_led_v=%.4f&m405_no_gen_v=%.4f&m405_scrubber_t=%.2f"
 '                24              25              26              27
 Const REPORT7 = "&ugga_ch4=%.2f&ugga_h2o=%.1f&ugga_co2=%.1f&ugga_ch4_dry=%.2f"
 '                28                  29                30                31
-Const REPORT8 = "&ugga_co2_dry=%.1f&ugga_gas_p=%.4f&ugga_gas_t=%.1f&ugga_amb_t=%.1f"
+Const REPORT8 = "&ugga_co2_dry=%.1f&ugga_gas_p=%.4f&ugga_gas_t=%.1f&ugga_self_t=%.1f"
 '                32                    33                    34
 Const REPORT9 = "&ugga_ringdown0=%.4f&ugga_ringdown1=%.4f&ugga_fit_flag=%.1f"
 '                35               36
