@@ -12,6 +12,12 @@ next version
 * Include data file from diffusive gas sensors in daily report. Has been
   missing because file name is truncated.
 
+### Issues fixed
+
+* Verify Los Gatos UGGA records are correctly parsed by comparing year in data
+  record with logger's timestamp (instead of hard-coded "2015"); still relies
+  on date/time of both UGGA and datalogger being mostly correct. Latent issue.
+
 
 v0.4 [2015-08-10]
 -----------------

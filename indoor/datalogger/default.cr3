@@ -618,11 +618,9 @@ BeginProg
     SerialIn(ch4_record,CH4_COM,5,&h0A,CH4_BUFF)
     If (Len(ch4_record)) Then
       SplitStr(ch4(1),ch4_record,", ",25,6)
-      'HACK - verify message parsed properly by verifying year value against
-      '       current year. won't work next year, or if analyzer's time is
-      '       not set correctly!
       ch4_year = ch4(1) 'convert string->float
-      disable_ugga = NOT(ch4_year = 2015)
+      'HACK - compare record year with logger timestamp to verify correctly parsed
+      disable_ugga = NOT(ch4_year = rtime(1))
       ugga_gas_P *= MBAR_PER_TORR
     ElseIf (ch4_year = NAN) Then
       'do nothing, UGGA vars already set to NAN
@@ -717,6 +715,8 @@ BeginProg
     EndIf
 
     If TimeIntoInterval(0,6,Hr) Then
+      RealTime(rtime(1)) 'HINT - happens implicitly within ScadaBR integration
+                         'but do so explicitly here for the UGGA message parsing check
       cr3k_clock_drift = NetworkTimeProtocol(NTP_ADDR,NTP_OFFSET,NTP_DEV)
       send_scadabr_data(FormatFloat(cr3k_clock_drift,"&cr3k_clock_drift=%f"))
     EndIf
