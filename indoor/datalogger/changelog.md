@@ -20,9 +20,24 @@ next version
 
 ### Data table changes
 
-* No changes to final-storage data tables
+* Data table `tsdata`
+    * All columns now represent 1-minute means; affected columns retain their
+      original names for consistency though (ie no "_Avg" suffix)
+      (affected: `dusttrak2_pm`, `ugga_CH4`, `ugga_H2O`, `ugga_CO2`,
+      `ugga_CH4_dry`, `ugga_CO2_dry`, `ugga_gas_P`, `ugga_gas_T`, `ugga_amb_T`,
+      `typeK_amb_T`, `cr3000_panel_T`)
+* Data tables `stats` and `telemetry`
+    * Are now called frequently enough to perform 1-minute averaging of analog
+      and 1Hz signals
+    * Have inter-scan locking flags to keep 1-minute data (dylos, m205, m405)
+      from being duplicated in averaging calculation
 * Fixup debug table to include diffusive gas sensors and regroup (unused) data
   flagging variable with UGGA vars.
+
+### Notes
+
+* Record 1-minute mean values instead of grab samples for TSI DustTrak II,
+  Los Gatos Research UGGA, thermocouple and Campbell Scientific CR3000
 
 
 v0.4 [2015-08-10]

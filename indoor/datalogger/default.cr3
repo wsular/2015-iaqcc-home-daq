@@ -206,6 +206,10 @@ Alias disable(3) = disable_ugga
 Alias disable(4) = disable_o3
 Alias disable(5) = disable_nox
 
+Dim inbetween_1min_scan As Boolean
+Dim just_had_1min_scan As Boolean
+Dim time_for_telemetry_report As Boolean
+
 Dim t(36)
 't(1)  = dusttrak2_pm
 't(2)  = dc1100_pm_small
@@ -251,7 +255,8 @@ DataTable(tsdata,True,10000)
   'HACK TableFile trails by 1 record
   TableFile(TSDATA_FNAME_FMT,8,DAYS_OF_DATA,1439,1440,Min, _
       is_new_tsdata_file,tsdata_latest)
-  Sample(1,dusttrak2_pm,IEEE4)
+  Average(1,dusttrak2_pm,IEEE4,dusttrak2_pm=NAN)
+    FieldNames("dusttrak2_pm")
   Sample(2,dc1100,IEEE4)
   Sample(2,o3(1),FP2)
   Sample(1,o3(3),IEEE4)
@@ -261,16 +266,26 @@ DataTable(tsdata,True,10000)
   Sample(2,nox(12),IEEE4)
   Sample(2,nox(14),FP2)
   Sample(1,nox(22),UINT2)
-  Sample(1,ugga_CH4,FP2)
-  Sample(1,ugga_H2O,IEEE4)
-  Sample(1,ugga_CO2,FP2)
-  Sample(1,ugga_CH4_dry,FP2)
-  Sample(1,ugga_CO2_dry,FP2)
-  Sample(1,ugga_gas_P,IEEE4)
-  Sample(1,ugga_gas_T,FP2)
-  Sample(1,ugga_amb_T,FP2)
-  Sample(1,typeK_amb_T,FP2)
-  Sample(1,cr3000_panel_T,FP2)
+  Average(1,ugga_CH4,FP2,disable_ugga OR ugga_CH4=NAN)
+    FieldNames("ugga_CH4")
+  Average(1,ugga_H2O,IEEE4,disable_ugga OR ugga_H2O=NAN)
+    FieldNames("ugga_H2O")
+  Average(1,ugga_CO2,FP2,disable_ugga OR ugga_CO2=NAN)
+    FieldNames("ugga_CO2")
+  Average(1,ugga_CH4_dry,FP2,disable_ugga OR ugga_CH4_dry=NAN)
+    FieldNames("ugga_CH4_dry")
+  Average(1,ugga_CO2_dry,FP2,disable_ugga OR ugga_CO2_dry=NAN)
+    FieldNames("ugga_CO2_dry")
+  Average(1,ugga_gas_P,IEEE4,disable_ugga OR ugga_gas_P=NAN)
+    FieldNames("ugga_gas_P")
+  Average(1,ugga_gas_T,FP2,disable_ugga OR ugga_gas_T=NAN)
+    FieldNames("ugga_gas_T")
+  Average(1,ugga_amb_T,FP2,disable_ugga OR ugga_amb_T=NAN)
+    FieldNames("ugga_amb_T")
+  Average(1,typeK_amb_T,FP2,typeK_amb_T=NAN)
+    FieldNames("typeK_amb_T")
+  Average(1,cr3000_panel_T,FP2,cr3000_panel_T=NAN)
+    FieldNames("cr3000_panel_T")
 EndTable
 
 DataTable(stats,True,10000)
@@ -278,15 +293,15 @@ DataTable(stats,True,10000)
   TableFile(STATS_FNAME_FMT,8,DAYS_OF_DATA,1439,1440,Min, _
       is_new_stats_file,stats_latest)
   Average(1,dusttrak2_pm,IEEE4,dusttrak2_pm=NAN)
-  Average(1,dc1100_pm_small,IEEE4,dc1100_pm_small=NAN)
-  Average(1,dc1100_pm_large,IEEE4,dc1100_pm_large=NAN)
-  Average(2,o3(1),FP2,disable_o3)
-  Average(1,o3(3),IEEE4,disable_o3)
-  Average(7,nox(1),FP2,disable_nox)
-  Average(1,nox(8),IEEE4,disable_nox)
-  Average(3,nox(9),FP2,disable_nox)
-  Average(2,nox(12),IEEE4,disable_nox)
-  Average(2,nox(14),FP2,disable_nox)  
+  Average(1,dc1100_pm_small,IEEE4,inbetween_1min_scan OR dc1100_pm_small=NAN)
+  Average(1,dc1100_pm_large,IEEE4,inbetween_1min_scan OR dc1100_pm_large=NAN)
+  Average(2,o3(1),FP2,inbetween_1min_scan OR disable_o3)
+  Average(1,o3(3),IEEE4,inbetween_1min_scan OR disable_o3)
+  Average(7,nox(1),FP2,inbetween_1min_scan OR disable_nox)
+  Average(1,nox(8),IEEE4,inbetween_1min_scan OR disable_nox)
+  Average(3,nox(9),FP2,inbetween_1min_scan OR disable_nox)
+  Average(2,nox(12),IEEE4,inbetween_1min_scan OR disable_nox)
+  Average(2,nox(14),FP2,inbetween_1min_scan OR disable_nox)  
   Average(1,ugga_CH4,FP2,disable_ugga OR ugga_CH4=NAN)
   Average(1,ugga_H2O,IEEE4,disable_ugga OR ugga_H2O=NAN)
   Average(1,ugga_CO2,FP2,disable_ugga OR ugga_CO2=NAN)
@@ -317,15 +332,15 @@ EndTable
 DataTable(telemetry,True,1)
   DataInterval(0,5,min,1)
   Average(1,dusttrak2_pm,IEEE4,dusttrak2_pm=NAN)
-  Average(1,dc1100_pm_small,IEEE4,dc1100_pm_small=NAN)
-  Average(1,dc1100_pm_large,IEEE4,dc1100_pm_large=NAN)
+  Average(1,dc1100_pm_small,IEEE4,inbetween_1min_scan OR dc1100_pm_small=NAN)
+  Average(1,dc1100_pm_large,IEEE4,inbetween_1min_scan OR dc1100_pm_large=NAN)
   'XXXX leave following two lines intact despite removing all other references
   'to LI-840A because telemetry report depends on them & shifting variables
   'is highly resource intensive - wait until RS232 integration occurs
   Average(1,co2_licor,IEEE4,False) 
   Average(1,h2o_licor,IEEE4,False)
-  Average(3,o3,IEEE4,disable_o3)
-  Average(15,nox,IEEE4,disable_nox)
+  Average(3,o3,IEEE4,inbetween_1min_scan OR disable_o3)
+  Average(15,nox,IEEE4,inbetween_1min_scan OR disable_nox)
   Average(1,ugga_CH4,IEEE4,disable_ugga OR ugga_CH4=NAN)
   Average(1,ugga_H2O,IEEE4,disable_ugga OR ugga_H2O=NAN)
   Average(1,ugga_CO2,IEEE4,disable_ugga OR ugga_CO2=NAN)
@@ -633,6 +648,17 @@ BeginProg
       Move(ch4(1),25,NAN,1)
       ch4_year = NAN
     EndIf
+
+    CallTable(tsdata)
+    CallTable(stats)
+    CallTable(telemetry)
+    If (telemetry.Output(1,1)) Then time_for_telemetry_report = True
+
+    inbetween_1min_scan = True
+    If (just_had_1min_scan) Then
+      just_had_1min_scan = False
+      inbetween_1min_scan = False
+    EndIf
   NextScan
 
   SlowSequence
@@ -664,13 +690,11 @@ BeginProg
       SerialFlush(NOX_COM)
     EndIf
 
-    'FIXME TODO
-    'Lack of inter-scan lock flag means that even though DustTrak & GGA-30p
-    'are being evaluated more frequently than minutely, only one data value
-    'per minute is included in following data tables
-    CallTable(tsdata)
-    CallTable(stats)
+    just_had_1min_scan = True
+  NextScan
     
+  SlowSequence
+  Scan(1,Sec,1,0)
     If (is_new_tsdata_file) Then 
       FileRename(tsdata_latest, tsdata_fname)
       tsdata_latest = tsdata_fname 'retain for email sending
@@ -684,23 +708,6 @@ BeginProg
       alpha_latest = alpha_fname
     EndIf
     If (is_new_tsdata_file OR is_new_stats_file) Then update_filenames()
-  NextScan
-
-  SlowSequence
-  Scan(1,Sec,1,0)
-    If TimeIntoInterval(0,1,Min) Then 
-      CallTable(telemetry)
-      If (telemetry.Output(1,1)) Then
-        GetRecord(t(1),telemetry,1)
-        If (t(3) = 0) Then
-          dc1100_size_ratio = NAN
-        Else
-          dc1100_size_ratio = LOG(t(2)/t(3))
-        EndIf
-        send_telemetry_report()
-        send_alphasensors_report()
-      EndIf
-    EndIf
 
     If (debug_on) Then CallTable(debug)
     If (test_scadabr) Then
@@ -708,6 +715,18 @@ BeginProg
     EndIf
     If (test_email) Then
       send_test_email()
+    EndIf
+
+    If (time_for_telemetry_report) Then
+      time_for_telemetry_report = False
+      GetRecord(t(1),telemetry,1)
+      If (t(3) = 0) Then
+        dc1100_size_ratio = NAN
+      Else
+        dc1100_size_ratio = LOG(t(2)/t(3))
+      EndIf
+      send_telemetry_report()
+      send_alphasensors_report()
     EndIf
 
     If TimeIntoInterval(360,1440,Min) Then '6 AM
