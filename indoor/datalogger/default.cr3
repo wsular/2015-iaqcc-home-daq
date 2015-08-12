@@ -487,7 +487,7 @@ Sub send_daily_email()
   Dim msg As String * 512
   msg = "Good morning, it's the " & STATION & " CR3000. Yesterday's data "
   msg &= "files are attached. [" & GIT_TAG & "]"
-  Dim attachments As String * 96
+  Dim attachments As String * 144
   attachments = stats_latest & "," & tsdata_latest & "," & alpha_latest
   Dim ok As Boolean
   ok = EmailSend(SMTP_SERV,EMAIL_TO,EMAIL_FROM,EMAIL_DAILY_SUBJECT,msg, _

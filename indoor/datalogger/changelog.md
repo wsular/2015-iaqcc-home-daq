@@ -9,6 +9,8 @@ next version
 * Trigger only 1 telemetry report per data table output interval. 96c69a5d19c
   introduced problem causing reports to be sent each second for one minute, 
   per output interval (5min). Fixes #4
+* Include data file from diffusive gas sensors in daily report. Has been
+  missing because file name is truncated.
 
 
 v0.4 [2015-08-10]
