@@ -685,16 +685,18 @@ BeginProg
 
   SlowSequence
   Scan(1,Sec,1,0)
-    If TimeIntoInterval(0,1,Min) Then CallTable(telemetry)
-    If (telemetry.Output(1,1)) Then
-      GetRecord(t(1),telemetry,1)
-      If (t(3) = 0) Then
-        dc1100_size_ratio = NAN
-      Else
-        dc1100_size_ratio = LOG(t(2)/t(3))
+    If TimeIntoInterval(0,1,Min) Then 
+      CallTable(telemetry)
+      If (telemetry.Output(1,1)) Then
+        GetRecord(t(1),telemetry,1)
+        If (t(3) = 0) Then
+          dc1100_size_ratio = NAN
+        Else
+          dc1100_size_ratio = LOG(t(2)/t(3))
+        EndIf
+        send_telemetry_report()
+        send_alphasensors_report()
       EndIf
-      send_telemetry_report()
-      send_alphasensors_report()
     EndIf
 
     If (debug_on) Then CallTable(debug)
