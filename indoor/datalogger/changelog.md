@@ -18,6 +18,12 @@ next version
   record with logger's timestamp (instead of hard-coded "2015"); still relies
   on date/time of both UGGA and datalogger being mostly correct. Latent issue.
 
+### Data table changes
+
+* No changes to final-storage data tables
+* Fixup debug table to include diffusive gas sensors and regroup (unused) data
+  flagging variable with UGGA vars.
+
 
 v0.4 [2015-08-10]
 -----------------
