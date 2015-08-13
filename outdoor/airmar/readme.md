@@ -87,6 +87,17 @@ C:\Users\lar\Desktop> git clone https://bitbucket.org/wsular/2015-iaq-intensive-
         `C:\Users\lar\Desktop\2015-iaq-intensive-daq\outdoor\airmar\juice_airmar_files.py`
         * Add directory arguments  
         `"C:\Users\lar\Desktop\200WX raw data" -d "C:\Users\lar\Desktop\200WX csv format"`
+* Schedule the on-site backup script to run hourly:
+    * Launch Task Scheduler and choose Create Task...
+    * Provide name "Backup IAQ data" under 'General' tab
+    * Switch to 'Triggers' and choose New...
+        * Leave schedule as 'One time'
+        * But set repeat time to '1hour/indefinitely'
+        * Stop task if it runs longer than 30 minutes
+        * Set task to expire after approximate deployment end date
+    * Switch to 'Actions' and choose New...
+        * Provide path to batch file as 'Program/script'
+        `C:\Users\lar\Desktop\2015-iaq-intensive-daq\outdoor\airmar\backup_WX_data.bat`
 * Other changes
     * Stop & disable the Windows Update service
     * [Enable automatic login of "lar" user account at boot][7]
