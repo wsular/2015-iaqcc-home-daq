@@ -1,8 +1,17 @@
 Changelog for indoor AQ datalogger
 ==================================
 
-next version
-------------
+v0.5.1 [2015-08-18]
+-------------------
+
+### Hotfixes
+
+* Rename data table files. Specifically, check for file renaming conditions at
+  same frequency as table is called. Fixes regression introduced by 61a9bcfc0b
+
+
+v0.5 [2015-08-12]
+-----------------
 
 ### Hotfixes
 

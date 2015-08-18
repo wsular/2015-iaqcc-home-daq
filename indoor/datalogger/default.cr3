@@ -653,6 +653,19 @@ BeginProg
     CallTable(stats)
     CallTable(telemetry)
     If (telemetry.Output(1,1)) Then time_for_telemetry_report = True
+    If (is_new_tsdata_file) Then 
+      FileRename(tsdata_latest, tsdata_fname)
+      tsdata_latest = tsdata_fname 'retain for email sending
+    EndIf
+    If (is_new_stats_file) Then 
+      FileRename(stats_latest, stats_fname)
+      stats_latest = stats_fname
+    EndIf
+    If (is_new_alpha_file) Then
+      FileRename(alpha_latest, alpha_fname)
+      alpha_latest = alpha_fname
+    EndIf
+    If (is_new_tsdata_file OR is_new_stats_file) Then update_filenames()
 
     inbetween_1min_scan = True
     If (just_had_1min_scan) Then
@@ -695,20 +708,6 @@ BeginProg
     
   SlowSequence
   Scan(1,Sec,1,0)
-    If (is_new_tsdata_file) Then 
-      FileRename(tsdata_latest, tsdata_fname)
-      tsdata_latest = tsdata_fname 'retain for email sending
-    EndIf
-    If (is_new_stats_file) Then 
-      FileRename(stats_latest, stats_fname)
-      stats_latest = stats_fname
-    EndIf
-    If (is_new_alpha_file) Then
-      FileRename(alpha_latest, alpha_fname)
-      alpha_latest = alpha_fname
-    EndIf
-    If (is_new_tsdata_file OR is_new_stats_file) Then update_filenames()
-
     If (debug_on) Then CallTable(debug)
     If (test_scadabr) Then
       send_test_scadabr()
