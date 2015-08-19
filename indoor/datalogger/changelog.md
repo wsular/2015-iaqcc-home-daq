@@ -1,6 +1,14 @@
 Changelog for indoor AQ datalogger
 ==================================
 
+v0.5.3 [2015-08-19]
+-------------------
+
+### Issues fixed
+
+* Validate parsed messages from Model 205 and Model 405 nm. 
+
+
 v0.5.2 [2015-08-19]
 -------------------
 

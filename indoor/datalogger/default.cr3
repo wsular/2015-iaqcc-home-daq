@@ -681,14 +681,14 @@ BeginProg
     SerialIn(o3_record,O3_COM,100,&h0D,O3_REC)
     If (Len(o3_record)) Then
       SplitStr(o3(1),o3_record,"",9,0)
-      'TODO detect bad input
+      If (o3(9)=NAN) Then Move(o3(1),9,NAN,1)
       SerialFlush(O3_COM)
     EndIf
 
     SerialIn(nox_record,NOX_COM,100,&h0D,NOX_REC)
     If (Len(nox_record)) Then
       SplitStr(nox(1),nox_record,"",22,0)
-      'TODO detect bad input
+      If (nox(21) = NAN) Then Move(nox(1),21,NAN,1)
       SerialFlush(NOX_COM)
     EndIf
 
