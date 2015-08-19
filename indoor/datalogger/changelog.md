@@ -1,6 +1,15 @@
 Changelog for indoor AQ datalogger
 ==================================
 
+v0.5.2 [2015-08-19]
+-------------------
+
+### Data Table Changes
+
+* Expose all variables (Model 405 nm/NOx, Model 205/O3, UGGA/CH4,CO2)
+  in debug table
+
+
 v0.5.1 [2015-08-18]
 -------------------
 
