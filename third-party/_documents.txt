@@ -23,3 +23,7 @@ http://www.alphasense.com/WEB1213/wp-content/uploads/2015/06/ISB.pdf    Alphasen
 #   TECO Model 42C NO,NO2,NOx Analyzer Manual.pdf
 #   TECO Model 48 CO Analyzer Manual.pdf
 #   TECO Model 49 O3 Analyzer Instruction Manual.pdf
+http://www.mcu-turkey.com/wp-content/uploads/2013/01/HC-Serial-Bluetooth-Products-201104.pdf    HC-series Serial Bluetooth Products.pdf
+http://elecfreaks.com/store/download/datasheet/Bluetooth/HC-0305%20serail%20module%20AT%20commamd%20set%20201104%20revised.pdf    HC-series Serial module AT command set 201104 revised.pdf
+# solid overview: http://mcuoneclipse.com/2013/06/19/using-the-hc-06-bluetooth-module/
+# use w/ Arudino: http://www.martyncurrey.com/arduino-and-hc-06-zs-040/
