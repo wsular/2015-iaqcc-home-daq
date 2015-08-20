@@ -330,7 +330,7 @@ DataTable(B4_sensors,True,10000)
 EndTable
 
 DataTable(telemetry,True,1)
-  DataInterval(0,5,min,1)
+  DataInterval(299,300,Sec,1)
   Average(1,dusttrak2_pm,IEEE4,dusttrak2_pm=NAN)
   Average(1,dc1100_pm_small,IEEE4,inbetween_1min_scan OR dc1100_pm_small=NAN)
   Average(1,dc1100_pm_large,IEEE4,inbetween_1min_scan OR dc1100_pm_large=NAN)
