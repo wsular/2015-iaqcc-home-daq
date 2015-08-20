@@ -187,6 +187,9 @@ Dim cr3000_panel_T
 Units typeK_amb_T = degC
 Units cr3000_panel_T = degC
 
+Dim cr3k_lithium_battery
+Units cr3k_lithium_battery = Volts
+
 Dim alphasense(3)
 Alias alphasense(1) = B4_CO_mV
 Alias alphasense(2) = B4_NO_mV
@@ -732,6 +735,9 @@ BeginProg
                          'but do so explicitly here for the UGGA message parsing check
       cr3k_clock_drift = NetworkTimeProtocol(NTP_ADDR,NTP_OFFSET,NTP_DEV)
       send_scadabr_data(FormatFloat(cr3k_clock_drift,"&cr3k_clock_drift=%f"))
+
+      cr3k_lithium_battery = Status.LithiumBattery
+      send_scadabr_data(FormatFloat(cr3k_lithium_battery,"&cr3k_lithium_battery=%f"))
     EndIf
   NextScan
 EndProg

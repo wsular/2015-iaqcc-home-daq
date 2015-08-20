@@ -13,6 +13,10 @@ v0.5.3 [2015-08-19]
   very first file); avoids uncertainty associated with inter-scan triggering by
   simply waiting until a few seconds after midnight to update file names.
 
+### Enhancements
+
+* Send telemetry report of logger clock battery voltage every 6 hours
+
 
 v0.5.2 [2015-08-19]
 -------------------
