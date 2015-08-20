@@ -603,6 +603,10 @@ Sub setup()
   SerialOpen(CH4_COM,CH4_BAUD,CH4_FMT,0,CH4_BUFF)
   SerialOpen(O3_COM,O3_BAUD,O3_FMT,0,O3_BUFF)
   update_filenames()
+  Move(dc1100_vals(1),2,NAN,1) 'HACK ensure serial dest vars begin @ NAN to prevent
+  Move(ch4(1),25,NAN,1)         'inclusion of 0 in first averages produced
+  Move(o3(1),3,NAN,1)
+  Move(nox(1),15,NAN,1)
 EndSub
 
 

@@ -1,6 +1,30 @@
 Changelog for indoor AQ datalogger
 ==================================
 
+v0.5.4 [2015-08-19]
+-------------------
+
+### Known Issues
+
+* See note below.
+
+### Issues fixed
+
+* For serial interface devices, ensure averaged values only include data parsed 
+  from received records. Prior to fix, first averages include initialization 
+  value of 0, which can have dramatic detrimental impact.
+
+    **N.B.** A special condition exists where all values reported via 
+    telemetry are 0! This situation is preferrable because of it's 
+    apparentness and it arises because the telemetry data table is 
+    triggered 1-second before the start of each minute as an inter-scan 
+    time-alignment hack. If the logger program begins within 1-minute
+    of the next telemetry output interval, the first serial records 
+    received will not be included (because they are not checked for
+    until 1-second later) and a "NAN" is sent, which ScadaBR interprets 
+    as 0. **Final storage data tables are UNAFFECTED.**
+
+
 v0.5.3 [2015-08-19]
 -------------------
 
