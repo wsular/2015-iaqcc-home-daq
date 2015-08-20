@@ -1,6 +1,56 @@
 Changelog for indoor AQ datalogger
 ==================================
 
+v0.5.4 [2015-08-19]
+-------------------
+
+### Known Issues
+
+* See note below.
+
+### Issues fixed
+
+* For serial interface devices, ensure averaged values only include data parsed 
+  from received records. Prior to fix, first averages include initialization 
+  value of 0, which can have dramatic detrimental impact.
+
+    **N.B.** A special condition exists where all values reported via 
+    telemetry are 0! This situation is preferrable because of it's 
+    apparentness and it arises because the telemetry data table is 
+    triggered 1-second before the start of each minute as an inter-scan 
+    time-alignment hack. If the logger program begins within 1-minute
+    of the next telemetry output interval, the first serial records 
+    received will not be included (because they are not checked for
+    until 1-second later) and a "NAN" is sent, which ScadaBR interprets 
+    as 0. **Final storage data tables are UNAFFECTED.**
+
+
+v0.5.3 [2015-08-19]
+-------------------
+
+### Issues fixed
+
+* Validate parsed messages from Model 205 and Model 405 nm. 
+* Re-align telemetry reports to 5-min time base (fixes timestamps trailing
+  actual record creation by 1-second)
+* Always use midnight as timestamp in data table files (or start-up time, for
+  very first file); avoids uncertainty associated with inter-scan triggering by
+  simply waiting until a few seconds after midnight to update file names.
+
+### Enhancements
+
+* Send telemetry report of logger clock battery voltage every 6 hours
+
+
+v0.5.2 [2015-08-19]
+-------------------
+
+### Data Table Changes
+
+* Expose all variables (Model 405 nm/NOx, Model 205/O3, UGGA/CH4,CO2)
+  in debug table
+
+
 v0.5.1 [2015-08-18]
 -------------------
 

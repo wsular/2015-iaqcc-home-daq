@@ -187,6 +187,9 @@ Dim cr3000_panel_T
 Units typeK_amb_T = degC
 Units cr3000_panel_T = degC
 
+Dim cr3k_lithium_battery
+Units cr3k_lithium_battery = Volts
+
 Dim alphasense(3)
 Alias alphasense(1) = B4_CO_mV
 Alias alphasense(2) = B4_NO_mV
@@ -330,7 +333,7 @@ DataTable(B4_sensors,True,10000)
 EndTable
 
 DataTable(telemetry,True,1)
-  DataInterval(0,5,min,1)
+  DataInterval(299,300,Sec,1)
   Average(1,dusttrak2_pm,IEEE4,dusttrak2_pm=NAN)
   Average(1,dc1100_pm_small,IEEE4,inbetween_1min_scan OR dc1100_pm_small=NAN)
   Average(1,dc1100_pm_large,IEEE4,inbetween_1min_scan OR dc1100_pm_large=NAN)
@@ -361,24 +364,13 @@ DataTable(debug,True,1)
   Sample(1,disable_tsi,Boolean)
   Sample(2,dc1100(1),IEEE4)
   Sample(1,o3_record,String)
-  Sample(3,o3(1),IEEE4)
+  Sample(9,o3(1),IEEE4)
   Sample(1,disable_o3,Boolean)
   Sample(1,nox_record,String)
-  Sample(15,nox(1),IEEE4)
-  Sample(1,nox(22),IEEE4)
+  Sample(22,nox(1),IEEE4)
   Sample(1,disable_nox,Boolean)
   Sample(1,ch4_record,String)
-  Sample(1,ugga_CH4,IEEE4)
-  Sample(1,ugga_H2O,IEEE4)
-  Sample(1,ugga_CO2,IEEE4)
-  Sample(1,ugga_CH4_dry,IEEE4)
-  Sample(1,ugga_CO2_dry,IEEE4)
-  Sample(1,ugga_gas_P,IEEE4)
-  Sample(1,ugga_gas_T,IEEE4)
-  Sample(1,ugga_self_T,IEEE4)
-  Sample(1,ugga_ringdown0,IEEE4)
-  Sample(1,ugga_ringdown1,IEEE4)
-  Sample(1,ugga_fit_flag,IEEE4)
+  Sample(25,ch4(1),IEEE4)
   Sample(1,disable_ugga,Boolean)
   Sample(1,typeK_amb_T,IEEE4)
   Sample(1,cr3000_panel_T,IEEE4)
@@ -611,6 +603,10 @@ Sub setup()
   SerialOpen(CH4_COM,CH4_BAUD,CH4_FMT,0,CH4_BUFF)
   SerialOpen(O3_COM,O3_BAUD,O3_FMT,0,O3_BUFF)
   update_filenames()
+  Move(dc1100_vals(1),2,NAN,1) 'HACK ensure serial dest vars begin @ NAN to prevent
+  Move(ch4(1),25,NAN,1)         'inclusion of 0 in first averages produced
+  Move(o3(1),3,NAN,1)
+  Move(nox(1),15,NAN,1)
 EndSub
 
 
@@ -665,7 +661,8 @@ BeginProg
       FileRename(alpha_latest, alpha_fname)
       alpha_latest = alpha_fname
     EndIf
-    If (is_new_tsdata_file OR is_new_stats_file) Then update_filenames()
+    'HINT wait a few seconds - lots of processing happens on the hour
+    If TimeIntoInterval(10,86400,Sec) Then update_filenames()
 
     inbetween_1min_scan = True
     If (just_had_1min_scan) Then
@@ -692,14 +689,14 @@ BeginProg
     SerialIn(o3_record,O3_COM,100,&h0D,O3_REC)
     If (Len(o3_record)) Then
       SplitStr(o3(1),o3_record,"",9,0)
-      'TODO detect bad input
+      If (o3(9)=NAN) Then Move(o3(1),9,NAN,1)
       SerialFlush(O3_COM)
     EndIf
 
     SerialIn(nox_record,NOX_COM,100,&h0D,NOX_REC)
     If (Len(nox_record)) Then
       SplitStr(nox(1),nox_record,"",22,0)
-      'TODO detect bad input
+      If (nox(21) = NAN) Then Move(nox(1),21,NAN,1)
       SerialFlush(NOX_COM)
     EndIf
 
@@ -742,6 +739,9 @@ BeginProg
                          'but do so explicitly here for the UGGA message parsing check
       cr3k_clock_drift = NetworkTimeProtocol(NTP_ADDR,NTP_OFFSET,NTP_DEV)
       send_scadabr_data(FormatFloat(cr3k_clock_drift,"&cr3k_clock_drift=%f"))
+
+      cr3k_lithium_battery = Status.LithiumBattery
+      send_scadabr_data(FormatFloat(cr3k_lithium_battery,"&cr3k_lithium_battery=%f"))
     EndIf
   NextScan
 EndProg
