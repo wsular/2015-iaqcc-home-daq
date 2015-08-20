@@ -654,7 +654,8 @@ BeginProg
       FileRename(alpha_latest, alpha_fname)
       alpha_latest = alpha_fname
     EndIf
-    If (is_new_tsdata_file OR is_new_stats_file) Then update_filenames()
+    'HINT wait a few seconds - lots of processing happens on the hour
+    If TimeIntoInterval(10,86400,Sec) Then update_filenames()
 
     inbetween_1min_scan = True
     If (just_had_1min_scan) Then

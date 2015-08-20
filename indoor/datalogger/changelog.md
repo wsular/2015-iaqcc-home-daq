@@ -9,6 +9,9 @@ v0.5.3 [2015-08-19]
 * Validate parsed messages from Model 205 and Model 405 nm. 
 * Re-align telemetry reports to 5-min time base (fixes timestamps trailing
   actual record creation by 1-second)
+* Always use midnight as timestamp in data table files (or start-up time, for
+  very first file); avoids uncertainty associated with inter-scan triggering by
+  simply waiting until a few seconds after midnight to update file names.
 
 
 v0.5.2 [2015-08-19]
