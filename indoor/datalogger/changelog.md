@@ -4,6 +4,12 @@ Changelog for indoor AQ datalogger
 Next version
 ------------
 
+### Data Table Changes
+
+* Write data table files to CompactFlash memory card as cumulative, not daily,
+  files. Don't date-stamp files, either. File capacities are 60 days, which is
+  much longer than anticipated deployments.
+
 ### Notes
 
 * Remove daily data file report, both for technical (difficulty of inter-scan
