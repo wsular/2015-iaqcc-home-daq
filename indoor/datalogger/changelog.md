@@ -14,6 +14,9 @@ Next version
   `IAQ15_homeinterior_TABLE_YYYYMMDD.dat` becomes 
   `TOA5_homeinterior(vX.X)_TABLE_N.dat`. The sequential value is automatically
   appended by the datalogger.
+* New column tracking 'fit flag' metric from Los Gatos UGGA:
+    * `tsdata`: `ugga_fit_flag` after `ugga_self_T`
+    * `stats`: `ugga_fit_flag_Avg` after `ugga_self_T_Avg`
 
 ### Notes
 
