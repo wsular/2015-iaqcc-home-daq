@@ -72,10 +72,9 @@ Const MBAR_PER_TORR = 1.3332237
 
 Public debug_on As Boolean
 
-Const FNAME_PREFIX = "IAQ15_" & STATION & "_"
-Const TSDATA_FNAME_FMT = "CRD:" & FNAME_PREFIX & "tsdata_"
-Const STATS_FNAME_FMT = "CRD:" & FNAME_PREFIX & "stats_"
-Const ALPHA_FNAME_FMT = "CRD:" & FNAME_PREFIX & "B4_sensors_"
+Const TSDATA_FNAME_FMT = "CRD:" & SELF & "_tsdata_"
+Const STATS_FNAME_FMT = "CRD:" & SELF & "_stats_"
+Const ALPHA_FNAME_FMT = "CRD:" & SELF & "_B4_sensors_"
 
 Const NTP_ADDR = "0.us.pool.ntp.org"
 Const NTP_OFFSET = -8*3600 'sec from UTC = PST

@@ -9,6 +9,11 @@ Next version
 * Write data table files to CompactFlash memory card as cumulative, not daily,
   files. Don't date-stamp files, either. File capacities are 60 days, which is
   much longer than anticipated deployments.
+* Change file name formats; where `TABLE` is table name, `YYYYMMDD` is a 
+  date-stamp, `X.X` is the program version, and `N` is a sequential value:
+  `IAQ15_homeinterior_TABLE_YYYYMMDD.dat` becomes 
+  `TOA5_homeinterior(vX.X)_TABLE_N.dat`. The sequential value is automatically
+  appended by the datalogger.
 
 ### Notes
 
