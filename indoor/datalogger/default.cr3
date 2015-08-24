@@ -10,12 +10,12 @@
 ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 
 'update before deployment but DO NOT check-in other than empty string!
-Const GIT_TAG = ""
+Const VERSION = ""
 
 'uniquely identify this location/datalogger
 Const STATION = "homeinterior"
 'version-stamped name for data file headers
-Const SELF = STATION & "(" & GIT_TAG & ")"
+Const SELF = STATION & "(" & VERSION & ")"
 
 Const DF_TSI_PM = 7
 Const TSI_PM_OFF = 0
@@ -481,7 +481,7 @@ Sub send_startup_email()
   msg &= "Run signature: " & Status.RunSignature & CRLF
   msg &= "Program signature: " & Status.ProgSignature & CRLF
   msg &= "Power input (Volts): " & Status.Battery & CRLF
-  msg &= "Git tag: " & GIT_TAG & CRLF
+  msg &= "Git tag: " & SELF & CRLF
   EmailSend(SMTP_SERV,EMAIL_TO,EMAIL_FROM,email_boot_subject,msg,"", _
       SMTP_USER,SMTP_PASS,smtp_response)
 EndSub
@@ -498,7 +498,7 @@ Const EMAIL_DAILY_SUBJECT = "Daily notice from " & STATION & " CR3000"
 Sub send_daily_email()
   Dim msg As String * 512
   msg = "Good morning, it's the " & STATION & " CR3000. Yesterday's data "
-  msg &= "files are attached. [" & GIT_TAG & "]"
+  msg &= "files are attached. [" & VERSION & "]"
   Dim attachments As String * 144
   attachments = stats_latest & "," & tsdata_latest & "," & alpha_latest
   Dim ok As Boolean
