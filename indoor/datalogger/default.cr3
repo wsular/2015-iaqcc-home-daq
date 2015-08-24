@@ -684,9 +684,9 @@ BeginProg
 
     If TimeIntoInterval(360,1440,Min) Then '6 AM
       send_daily_email()
-    ElseIf TimeIntoInterval(365, 1440, Min) Then
+    ElseIf TimeIntoInterval(375, 1440, Min) Then
       If (email_failed) Then send_daily_email()
-    ElseIf TimeIntoInterval(370, 1440, Min) Then
+    ElseIf TimeIntoInterval(390, 1440, Min) Then
       If (email_failed) Then send_daily_email()
       email_failed = False 'give up until tomorrow
     EndIf

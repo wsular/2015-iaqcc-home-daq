@@ -20,6 +20,7 @@ Next version
 * Remove daily data file report, both for technical (difficulty of inter-scan
   timing combined with latency of data table generation) and security (high
   susceptibility of email to third-party interception) reasons.
+* Increase retry period of daily check-in email from 5- to 15-minutes
 
 
 v0.5.4 [2015-08-19]
