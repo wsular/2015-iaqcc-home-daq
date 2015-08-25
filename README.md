@@ -6,6 +6,9 @@ Indoor Air Quality (2015)
 
     > This repository is not comprehensive (yet).
 
+> **Rebase notice:** this repo was rebased on 2015-08-19 to remove PII.
+> Fetch and rebase as necessary.
+
 This repository covers the data acquisition systems deployed during intensive,
 relatively brief in-home measurement campaigns. The wireless sensor network
 (CO2/T/P/RH) is hosted [in a separate repository][1].
