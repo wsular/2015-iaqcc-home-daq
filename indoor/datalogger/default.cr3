@@ -10,12 +10,12 @@
 ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 
 'update before deployment but DO NOT check-in other than empty string!
-Const GIT_TAG = ""
+Const VERSION = ""
 
 'uniquely identify this location/datalogger
 Const STATION = "homeinterior"
 'version-stamped name for data file headers
-Const SELF = STATION & "(" & GIT_TAG & ")"
+Const SELF = STATION & "(" & VERSION & ")"
 
 Const DF_TSI_PM = 7
 Const TSI_PM_OFF = 0
@@ -64,27 +64,17 @@ Dim co2_licor, h2o_licor 'XXXX req'd for proper telemetry reports
 
 '============================== INTERNALS ===================================
 Const INTEG = 250
-Const DAYS_OF_DATA = 60
+Const DAYS_OF_DATA = 60   'per written file
+Const FILES_TO_RETAIN = 5 'max files written
 
 Const FT3_PER_M3 = 35.314667
 Const MBAR_PER_TORR = 1.3332237
 
 Public debug_on As Boolean
 
-Const FNAME_PREFIX = "IAQ15_" & STATION & "_"
-Const TSDATA_FNAME_FMT = "CRD:" & FNAME_PREFIX & "tsdata_"
-Const STATS_FNAME_FMT = "CRD:" & FNAME_PREFIX & "stats_"
-Const ALPHA_FNAME_FMT = "CRD:" & FNAME_PREFIX & "B4_sensors_"
-Dim tsdata_latest As String * 48
-Dim tsdata_fname As String * 48
-Dim stats_latest As String * 48
-Dim stats_fname As String * 48
-Dim alpha_latest As String * 48
-Dim alpha_fname As String * 48
-Dim datestamp As String * 16
-Dim is_new_tsdata_file As Boolean
-Dim is_new_stats_file As Boolean
-Dim is_new_alpha_file As Boolean
+Const TSDATA_FNAME_FMT = "CRD:" & SELF & "_tsdata_"
+Const STATS_FNAME_FMT = "CRD:" & SELF & "_stats_"
+Const ALPHA_FNAME_FMT = "CRD:" & SELF & "_B4_sensors_"
 
 Const NTP_ADDR = "0.us.pool.ntp.org"
 Const NTP_OFFSET = -8*3600 'sec from UTC = PST
@@ -256,8 +246,7 @@ Dim t(36)
 DataTable(tsdata,True,10000)
   DataInterval(0,1,min,5)
   'HACK TableFile trails by 1 record
-  TableFile(TSDATA_FNAME_FMT,8,DAYS_OF_DATA,1439,1440,Min, _
-      is_new_tsdata_file,tsdata_latest)
+  TableFile(TSDATA_FNAME_FMT,8,FILES_TO_RETAIN,DAYS_OF_DATA*1440,0,Min,0,0)
   Average(1,dusttrak2_pm,IEEE4,dusttrak2_pm=NAN)
     FieldNames("dusttrak2_pm")
   Sample(2,dc1100,IEEE4)
@@ -285,6 +274,8 @@ DataTable(tsdata,True,10000)
     FieldNames("ugga_gas_T")
   Average(1,ugga_self_T,FP2,disable_ugga OR ugga_self_T=NAN)
     FieldNames("ugga_self_T")
+  Average(1,ugga_fit_flag,FP2,disable_ugga OR ugga_fit_flag=NAN)
+    FieldNames("ugga_fit_flag")
   Average(1,typeK_amb_T,FP2,typeK_amb_T=NAN)
     FieldNames("typeK_amb_T")
   Average(1,cr3000_panel_T,FP2,cr3000_panel_T=NAN)
@@ -293,8 +284,7 @@ EndTable
 
 DataTable(stats,True,10000)
   DataInterval(0,30,min,1)
-  TableFile(STATS_FNAME_FMT,8,DAYS_OF_DATA,1439,1440,Min, _
-      is_new_stats_file,stats_latest)
+  TableFile(STATS_FNAME_FMT,8,FILES_TO_RETAIN,DAYS_OF_DATA*48,0,Min,0,0)
   Average(1,dusttrak2_pm,IEEE4,dusttrak2_pm=NAN)
   Average(1,dc1100_pm_small,IEEE4,inbetween_1min_scan OR dc1100_pm_small=NAN)
   Average(1,dc1100_pm_large,IEEE4,inbetween_1min_scan OR dc1100_pm_large=NAN)
@@ -313,6 +303,7 @@ DataTable(stats,True,10000)
   Average(1,ugga_gas_P,IEEE4,disable_ugga OR ugga_gas_P=NAN)
   Average(1,ugga_gas_T,FP2,disable_ugga OR ugga_gas_T=NAN)
   Average(1,ugga_self_T,FP2,disable_ugga OR ugga_self_T=NAN)
+  Average(1,ugga_fit_flag,FP2,disable_ugga OR ugga_fit_flag=NAN)
   Average(1,typeK_amb_T,FP2,typeK_amb_T=NAN)
   Average(1,cr3000_panel_T,FP2,cr3000_panel_T=NAN)
 EndTable
@@ -322,8 +313,7 @@ EndTable
 'be integrated into CO2 tracer detection network package
 DataTable(B4_sensors,True,10000)
   DataInterval(0,1,Min,5)
-  TableFile(ALPHA_FNAME_FMT,8,DAYS_OF_DATA,1439,1440,Min, _
-      is_new_alpha_file,alpha_latest)
+  TableFile(ALPHA_FNAME_FMT,8,FILES_TO_RETAIN,DAYS_OF_DATA*1440,0,Min,0,0)
   Average(1,B4_CO_mV,IEEE4,B4_CO_mV=NAN)
   Average(1,B4_NO_mV,IEEE4,B4_NO_mV=NAN)
   Average(1,B4_O3_mV,IEEE4,B4_O3_mV=NAN)
@@ -333,6 +323,7 @@ DataTable(B4_sensors,True,10000)
 EndTable
 
 DataTable(telemetry,True,1)
+  'HINT called in fast scan, processed & timestamped in slow scan 1s later
   DataInterval(299,300,Sec,1)
   Average(1,dusttrak2_pm,IEEE4,dusttrak2_pm=NAN)
   Average(1,dc1100_pm_small,IEEE4,inbetween_1min_scan OR dc1100_pm_small=NAN)
@@ -377,12 +368,6 @@ DataTable(debug,True,1)
   Sample(1,B4_CO_mV,IEEE4)
   Sample(1,B4_NO_mV,IEEE4)
   Sample(1,B4_O3_mV,IEEE4)
-  Sample(1,tsdata_fname,String)
-  Sample(1,stats_fname,String)
-  Sample(1,alpha_fname,String)
-  Sample(1,is_new_tsdata_file,Boolean)
-  Sample(1,is_new_stats_file,Boolean)
-  Sample(1,is_new_alpha_file,Boolean)
   Sample(1,smtp_response,String)
   Sample(1,scadabr_resp,String)
   Sample(1,scadabr_success,Boolean)
@@ -481,7 +466,7 @@ Sub send_startup_email()
   msg &= "Run signature: " & Status.RunSignature & CRLF
   msg &= "Program signature: " & Status.ProgSignature & CRLF
   msg &= "Power input (Volts): " & Status.Battery & CRLF
-  msg &= "Git tag: " & GIT_TAG & CRLF
+  msg &= "Git tag: " & SELF & CRLF
   EmailSend(SMTP_SERV,EMAIL_TO,EMAIL_FROM,email_boot_subject,msg,"", _
       SMTP_USER,SMTP_PASS,smtp_response)
 EndSub
@@ -498,12 +483,10 @@ Const EMAIL_DAILY_SUBJECT = "Daily notice from " & STATION & " CR3000"
 Sub send_daily_email()
   Dim msg As String * 512
   msg = "Good morning, it's the " & STATION & " CR3000. Yesterday's data "
-  msg &= "files are attached. [" & GIT_TAG & "]"
-  Dim attachments As String * 144
-  attachments = stats_latest & "," & tsdata_latest & "," & alpha_latest
+  msg &= "files are attached. [" & VERSION & "]"
   Dim ok As Boolean
   ok = EmailSend(SMTP_SERV,EMAIL_TO,EMAIL_FROM,EMAIL_DAILY_SUBJECT,msg, _
-         attachments,SMTP_USER,SMTP_PASS,smtp_response)
+         "",SMTP_USER,SMTP_PASS,smtp_response)
   email_failed = NOT ok
 EndSub
 
@@ -589,20 +572,11 @@ EndFunction
 
 
 '============================== SUBROUTINES =================================
-Sub update_filenames()
-  RealTime(rtime)
-  Sprintf(datestamp,"%04u%02u%02u.%02u%02u", rtime(1),rtime(2),rtime(3),rtime(4),rtime(5))
-  tsdata_fname = TSDATA_FNAME_FMT & datestamp
-  stats_fname = STATS_FNAME_FMT & datestamp
-  alpha_fname = ALPHA_FNAME_FMT & datestamp
-EndSub
-
 Sub setup()
   SerialOpen(DYLOS_COM,DYLOS_BAUD,DYLOS_FMT,0,DYLOS_BUFF)
   SerialOpen(NOX_COM,NOX_BAUD,NOX_FMT,0,NOX_BUFF)
   SerialOpen(CH4_COM,CH4_BAUD,CH4_FMT,0,CH4_BUFF)
   SerialOpen(O3_COM,O3_BAUD,O3_FMT,0,O3_BUFF)
-  update_filenames()
   Move(dc1100_vals(1),2,NAN,1) 'HACK ensure serial dest vars begin @ NAN to prevent
   Move(ch4(1),25,NAN,1)         'inclusion of 0 in first averages produced
   Move(o3(1),3,NAN,1)
@@ -649,20 +623,6 @@ BeginProg
     CallTable(stats)
     CallTable(telemetry)
     If (telemetry.Output(1,1)) Then time_for_telemetry_report = True
-    If (is_new_tsdata_file) Then 
-      FileRename(tsdata_latest, tsdata_fname)
-      tsdata_latest = tsdata_fname 'retain for email sending
-    EndIf
-    If (is_new_stats_file) Then 
-      FileRename(stats_latest, stats_fname)
-      stats_latest = stats_fname
-    EndIf
-    If (is_new_alpha_file) Then
-      FileRename(alpha_latest, alpha_fname)
-      alpha_latest = alpha_fname
-    EndIf
-    'HINT wait a few seconds - lots of processing happens on the hour
-    If TimeIntoInterval(10,86400,Sec) Then update_filenames()
 
     inbetween_1min_scan = True
     If (just_had_1min_scan) Then
@@ -727,9 +687,9 @@ BeginProg
 
     If TimeIntoInterval(360,1440,Min) Then '6 AM
       send_daily_email()
-    ElseIf TimeIntoInterval(365, 1440, Min) Then
+    ElseIf TimeIntoInterval(375, 1440, Min) Then
       If (email_failed) Then send_daily_email()
-    ElseIf TimeIntoInterval(370, 1440, Min) Then
+    ElseIf TimeIntoInterval(390, 1440, Min) Then
       If (email_failed) Then send_daily_email()
       email_failed = False 'give up until tomorrow
     EndIf

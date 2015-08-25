@@ -1,6 +1,31 @@
 Changelog for indoor AQ datalogger
 ==================================
 
+v0.6 [2015-08-25]
+-----------------
+
+### Data Table Changes
+
+* Write data table files to CompactFlash memory card as cumulative, not daily,
+  files. Don't date-stamp files, either. File capacities are 60 days, which is
+  much longer than anticipated deployments.
+* Change file name formats; where `TABLE` is table name, `YYYYMMDD` is a 
+  date-stamp, `X.X` is the program version, and `N` is a sequential value:
+  `IAQ15_homeinterior_TABLE_YYYYMMDD.dat` becomes 
+  `TOA5_homeinterior(vX.X)_TABLE_N.dat`. The sequential value is automatically
+  appended by the datalogger.
+* New column tracking 'fit flag' metric from Los Gatos UGGA:
+    * `tsdata`: `ugga_fit_flag` after `ugga_self_T`
+    * `stats`: `ugga_fit_flag_Avg` after `ugga_self_T_Avg`
+
+### Notes
+
+* Remove daily data file report, both for technical (difficulty of inter-scan
+  timing combined with latency of data table generation) and security (high
+  susceptibility of email to third-party interception) reasons.
+* Increase retry period of daily check-in email from 5- to 15-minutes
+
+
 v0.5.4 [2015-08-19]
 -------------------
 
