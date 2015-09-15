@@ -25,10 +25,13 @@ if __name__ == '__main__':
         sys.exit(1)
 
     for line in f.readlines():
+        if line.startswith('#'):
+            print("Skipping comment: " + line.strip())
+            continue
         try:
             url, fname = [s.strip() for s in line.split('    ')]
-        except ValueError:
-            print("Could not parse this input: " + line)
+        except Exception:
+            print("Could not parse this input: " + line.strip())
             continue
         if osp.isfile(fname):
             print('Skipping existing file %s' % fname)
