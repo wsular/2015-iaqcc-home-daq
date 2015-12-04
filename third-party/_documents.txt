@@ -18,3 +18,8 @@ http://www.alphasense.com/WEB1213/wp-content/uploads/2015/04/COB41.pdf    Alphas
 http://www.alphasense.com/WEB1213/wp-content/uploads/2015/03/NO-B4.pdf    Alphasense NO-B4 Nitric Oxide Sensor Datasheet.pdf
 http://www.alphasense.com/WEB1213/wp-content/uploads/2013/11/O3B4.pdf    Alphasense O3-B4 Ozone Sensor Datasheet.pdf
 http://www.alphasense.com/WEB1213/wp-content/uploads/2015/06/ISB.pdf    Alphasense ISB Datasheet.pdf
+# ssh access only (for now) to:
+#   TECO Model 42 NO,NO2,NOx Analyzer Manual.pdf
+#   TECO Model 42C NO,NO2,NOx Analyzer Manual.pdf
+#   TECO Model 48 CO Analyzer Manual.pdf
+#   TECO Model 49 O3 Analyzer Instruction Manual.pdf
