@@ -1,19 +1,17 @@
- ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
-' Indoor Air Quality 2015 | Home interior DAQ
-'
-' Data acquistion program
+''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+' Data acquistion program for outdoor air rack
+' Indoor Air Quality and Climate Change study (2015-2016)
 '
 ' Laboratory for Atmospheric Research
 ' Department of Civil & Environmental Engineering
 ' Washington State University
-'
 ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 
 'update before deployment but DO NOT check-in other than empty string!
 Const VERSION = ""
 
 'uniquely identify this location/datalogger
-Const STATION = "homeinterior"
+Const STATION = "outdoorair"
 'version-stamped name for data file headers
 Const SELF = STATION & "(" & VERSION & ")"
 

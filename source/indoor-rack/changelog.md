@@ -1,6 +1,27 @@
 Changelog for indoor AQ datalogger
 ==================================
 
+next version
+------------
+
+> After the first round of (summer) measurements, the sampling protocol was
+> modified to lower power consumption and limit pump noise. Indoor analyzers
+> get consolidated with the outdoor set and redundant devices leave. The
+> "outdoor rack" alternates between indoor and outdoor air at 15-min intervals.
+> The "indoor rack" still has the Dylos and TSI dust monitors, plus a new
+> CO2/H2O analyzer (LI840A; LICOR Biosciences) joins them.
+
+### New instrument line-up
+
+* Alphasense B4-series diffusive gas sensors for CO/NO/O3 (no change)
+* Type K thermocouple for ambient air temperature (no change)
+* Dylos DC1100 dust monitor (now with wireless DAQ)
+* TSI DustTrak II (now monitoring only, using built-in data collection)
+* Licor Biosciences LI-840A CO2/H2O analyzer (replacing LGR UGGA for CO2/H2O)
+
+
+
+
 v0.6 [2015-08-25]
 -----------------
 
