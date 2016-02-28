@@ -19,7 +19,25 @@ next version
 * TSI DustTrak II (now monitoring only, using built-in data collection)
 * Licor Biosciences LI-840A CO2/H2O analyzer (replacing LGR UGGA for CO2/H2O)
 
+### Issues fixed
 
+* Gas concentration units now correctly specify 'by volume' using a 'v' suffix.
+  That is, ppth/ppm/ppb are now ppthv/ppmv/ppbv
+
+### Data Table Changes
+
+* Reduces total days of data retained from 60 to 7
+* No data is output to a CompactFlash card -- it all fits within CPU memory.
+* Similar to last point, no TOA5-formatted `.dat` files are created (they are
+  more difficult to work with and can only be saved to CF card).
+* Structure of data tables w.r.t. original indoor air sampling program has
+  substantially changed (pre-existing devices do appear in the same order).
+
+### Notes
+
+* DustTrak II signal is monitored and viewable via `debug` data table, but
+  values are not recorded -- use TrakPro or a USB flash drive to retrieve the
+  data set directly from the device.
 
 
 v0.6 [2015-08-25]

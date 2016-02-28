@@ -15,36 +15,25 @@ Const STATION = "indoorair"
 'version-stamped name for data file headers
 Const SELF = STATION & "(" & VERSION & ")"
 
-Const DF_TSI_PM = 7
+Const DF_TSI_PM = 4
 Const TSI_PM_OFF = 0
 Const TSI_PM_MLT = (1.0 - TSI_PM_OFF)/5000 '0-1.0 mg/m^3, 0-5V
 
-Const DYLOS_COM = Com4
+Const DYLOS_COM = Com1
 Const DYLOS_BAUD = 9600
 Const DYLOS_FMT = 19 '8/n/1, TTL logic
 Const DYLOS_BUFF = 12
 
-Const NOX_COM = ComRS232
-Const NOX_BAUD = 19200
-Const NOX_FMT = 3 '8/n/1
-Const NOX_REC = 128
-Const NOX_BUFF = 1+2*NOX_REC
+Const LI840A_COM = Com2
+Const LI840A_BAUD = 9600
+Const LI840A_FMT = 3 '8/n/1, RS232 logic
+Const LI840A_REC = 350
+Const LI840A_BUFF = LI840A_REC*2 + 1
 
-Const CH4_COM = Com2
-Const CH4_BAUD = 19200
-Const CH4_FMT = 3 '8/n/1
-Const CH4_BUFF = 800
+Const DF_TYPE_K = 8
 
-Const O3_COM = Com3
-Const O3_BAUD = 19200
-Const O3_FMT = 3 '8/n/1
-Const O3_REC = 80
-Const O3_BUFF = 1+2*O3_REC
-
-Const DF_TYPE_K = 6
-
-Const DF_CO = 1
-Const DF_NO = 2
+Const DF_CO = 2
+Const DF_NO = 1
 Const DF_O3 = 3
 
 'Scaling from Maddy Fuch's assessment (ppb/mV, ppb):
@@ -55,24 +44,15 @@ Const NO_OFF = -569
 Const O3_MLT = 2.511
 Const O3_OFF = -764
 
-'Const COM_BT_MFC = 4 'C7/8
-'Const COM_LICOR = ComRS232
-
-Dim co2_licor, h2o_licor 'XXXX req'd for proper telemetry reports
-
 '============================== INTERNALS ===================================
 Const INTEG = 250
-Const DAYS_OF_DATA = 60   'per written file
-Const FILES_TO_RETAIN = 5 'max files written
+Const DAYS_OF_DATA = 7 'to save to card
 
 Const FT3_PER_M3 = 35.314667
 Const MBAR_PER_TORR = 1.3332237
+Const MBAR_PER_KPA = 10
 
 Public debug_on As Boolean
-
-Const TSDATA_FNAME_FMT = "CRD:" & SELF & "_tsdata_"
-Const STATS_FNAME_FMT = "CRD:" & SELF & "_stats_"
-Const ALPHA_FNAME_FMT = "CRD:" & SELF & "_B4_sensors_"
 
 Const NTP_ADDR = "0.us.pool.ntp.org"
 Const NTP_OFFSET = -8*3600 'sec from UTC = PST
@@ -80,7 +60,7 @@ Const NTP_DEV = 100 'ms, tolerable drift
 Dim cr3k_clock_drift
 Units cr3k_clock_drift = ms
 
-Dim dusttrak2_pm
+Public dusttrak2_pm
 Units dusttrak2_pm = mg/m^3
 
 Dim dc1100_record As String * 12
@@ -94,81 +74,47 @@ Alias dc1100(2) = dc1100_pm_large
 Units dc1100_pm_small = counts/m^3
 Units dc1100_pm_large = counts/m^3
 
-Dim o3_record As String * O3_REC
-Dim o3(9)
-Alias o3(1) = m205_O3
-Alias o3(2) = m205_cell_T
-Alias o3(3) = m205_cell_P
-'4: date, day of month    '7: time, hour
-'5: date, month           '8: time, minute
-'6: date, short year      '9: time, second
-Units m205_O3 = ppb
-Units m205_cell_T = degC
-Units m205_cell_P = mbar
-
-Dim nox_record As String * NOX_REC
-Dim nox(22)
-Alias nox(1)  = m405_NO2
-Alias nox(2)  = m405_NO
-Alias nox(3)  = m405_NOx
-Alias nox(4)  = m405_NO2_zero
-Alias nox(5)  = m405_NO_zero
-Alias nox(6)  = m405_flow_factor
-Alias nox(7)  = m405_cell_T
-Alias nox(8)  = m405_cell_P
-Alias nox(9)  = m405_overflow_F
-Alias nox(10) = m405_cell_F
-Alias nox(11) = m405_O3_F
-Alias nox(12) = m405_samp_LED_V
-Alias nox(13) = m405_ref_LED_V
-Alias nox(14) = m405_NO_gen_V
-Alias nox(15) = m405_scrubber_T
-'16: date, day of month    '19: time, hour
-'17: date, month           '20: time, minutes
-'18: date, short year      '21: time, seconds
-Alias nox(22) = m405_status
-Units m405_NO2 = ppb
-Units m405_NO = ppb
-Units m405_NOx = ppb
-Units m405_NO2_zero = ppb
-Units m405_NO_zero = ppb
-Units m405_cell_T = degC
-Units m405_cell_P = mbar
-Units m405_overflow_F = cc/min
-Units m405_cell_F = cc/min
-Units m405_O3_F = cc/min
-Units m405_samp_LED_V = volts
-Units m405_ref_LED_V = volts
-Units m405_NO_gen_V = volts
-Units m405_scrubber_T = degC
-
-Dim ch4_record As String * 400
-Dim ch4_year
-Dim ch4(25)
-'1: date (only year captured)   '2: time (only hour captured)
-Alias ch4(3)  = ugga_CH4        '4: CH4 s.d.
-Alias ch4(5)  = ugga_H2O        '6: H2O s.d.
-Alias ch4(7)  = ugga_CO2        '8: CO2 s.d.
-Alias ch4(9)  = ugga_CH4_dry    '10: CH4 dry s.d.
-Alias ch4(11) = ugga_CO2_dry    '12: CO2 dry s.d.
-Alias ch4(13) = ugga_gas_P      '14: gas P s.d.
-Alias ch4(15) = ugga_gas_T      '16: gas T s.d.
-Alias ch4(17) = ugga_self_T     '18: self T s.d.
-Alias ch4(19) = ugga_ringdown0  '20: ringdown #0 s.d.
-Alias ch4(21) = ugga_ringdown1  '22: ringdown #1 s.d.
-Alias ch4(23) = ugga_fit_flag   '24: MIU valve
-'25: MIU description
-Units ugga_CH4 = ppm
-Units ugga_H2O = ppm
-Units ugga_CO2 = ppm
-Units ugga_CH4_dry = ppm (dry)
-Units ugga_CO2_dry = ppm (dry)
-Units ugga_gas_P = mbar
-Units ugga_gas_T = degC
-Units ugga_self_T = degC
-Units ugga_ringdown0 = usec
-Units ugga_ringdown1 = usec
-Units ugga_fit_flag = arb
+Dim li840a_record As String * LI840A_REC
+Dim li840a(32)
+'HINT dumb-parsing method ("on non-numeric") also catches numbers within XML tag names
+'(1) <li840>
+Alias li840a(2) = li840a_cell_T
+Alias li840a(3) = li840a_cell_P 'read as kPa, converted to mbar
+'(4) <co2>
+Alias li840a(5) = li840a_CO2
+'(6) </co2>
+'(7) <co2abs>
+'(8) CO2 absorbance value
+'(9) </co2abs>
+'(10) <h2o>
+Alias li840a(11) = li840a_H2O
+'(12) </h2o>
+'(13) <h2oabs>
+'(14) H2O absorbance value
+'(15) </h2oabs>
+'(16) <h2odewpoint>
+Alias li840a(17) = li840a_dewpoint
+'(18) </h2odewpoint>
+Alias li840a(19) = li840a_pwr_src
+'(20) <co2> (raw)
+'(21) raw CO2 number
+'(22) </co2>
+'(23) <co2ref>
+'(24) raw CO2 ref. number
+'(25) </co2ref>
+'(26) <h2o>
+'(27) raw H2O number
+'(28) </h2o>
+'(29) <h2oref>
+'(30) raw H2O number
+'(31) </h2oref>
+'(32) </li840a>
+Units li840a_cell_T = degC
+Units li840a_cell_P = mbar
+Units li840a_CO2 = ppmv
+Units li840a_H2O = ppthv
+Units li840a_dewpoint = degC
+Units li840a_pwr_src = Vdc
 
 Dim typeK_amb_T
 Dim cr3000_panel_T
@@ -188,120 +134,50 @@ Dim alphafixme(3)
 Alias alphafixme(1) = B4_CO_est
 Alias alphafixme(2) = B4_NO_est
 Alias alphafixme(3) = B4_O3_est
-Units alphafixme = ppb
-
-Dim disable(5) As Boolean
-Alias disable(1) = disable_tsi
-Alias disable(2) = disable_licor
-Alias disable(3) = disable_ugga
-Alias disable(4) = disable_o3
-Alias disable(5) = disable_nox
+Units alphafixme = ppbv
 
 Dim inbetween_1min_scan As Boolean
 Dim just_had_1min_scan As Boolean
-Dim time_for_telemetry_report As Boolean
-
-Dim t(36)
-'t(1)  = dusttrak2_pm
-'t(2)  = dc1100_pm_small
-'t(3)  = dc1100_pm_large
-'t(4)  = co2_licor
-'t(5)  = h2o_licor
-'t(6)  = m205_O3     'Average(3,...)
-'t(7)  = m205_cell_T
-'t(8)  = m205_cell_P
-'t(9)  = m405_NO2    'Average(15,...)
-'t(10) = m405_NO
-'t(11) = m405_NOx
-'t(12) = m405_NO2_zero
-'t(13) = m405_NO_zero
-'t(14) = m405_flow_factor
-'t(15) = m405_cell_T
-'t(16) = m405_cell_P
-'t(17) = m405_overflow_F
-'t(18) = m405_cell_F
-'t(19) = m405_O3_F
-'t(20) = m405_samp_LED_V
-'t(21) = m405_ref_LED_V
-'t(22) = m405_NO_gen_V
-'t(23) = m405_scrubber_T
-'t(24) = ugga_CH4
-'t(25) = ugga_H2O
-'t(26) = ugga_CO2
-'t(27) = ugga_CH4_dry
-'t(28) = ugga_CO2_dry
-'t(29) = ugga_gas_P
-'t(30) = ugga_gas_T
-'t(31) = ugga_self_T
-'t(32) = ugga_ringdown0
-'t(33) = ugga_ringdown1
-'t(34) = ugga_fit_flag
-'t(35) = typek_amb_T
-'t(36) = cr3000_panel_T
+'Dim time_for_telemetry_report As Boolean
 
 
 '============================ DATA TABLES ===================================
-DataTable(tsdata,True,10000)
+DataTable(tsdata,True,1440)
   DataInterval(0,1,min,5)
-  'HACK TableFile trails by 1 record
-  TableFile(TSDATA_FNAME_FMT,8,FILES_TO_RETAIN,DAYS_OF_DATA*1440,0,Min,0,0)
-  Average(1,dusttrak2_pm,IEEE4,dusttrak2_pm=NAN)
-    FieldNames("dusttrak2_pm")
+'  CardOut(0,1440*DAYS_OF_DATA)
+'  Average(1,dusttrak2_pm,IEEE4,dusttrak2_pm=NAN)
+'    FieldNames("dusttrak2_pm")
   Sample(2,dc1100,IEEE4)
-  Sample(2,o3(1),FP2)
-  Sample(1,o3(3),IEEE4)
-  Sample(7,nox(1),FP2)
-  Sample(1,nox(8),IEEE4)
-  Sample(3,nox(9),FP2)
-  Sample(2,nox(12),IEEE4)
-  Sample(2,nox(14),FP2)
-  Sample(1,nox(22),UINT2)
-  Average(1,ugga_CH4,FP2,disable_ugga OR ugga_CH4=NAN)
-    FieldNames("ugga_CH4")
-  Average(1,ugga_H2O,IEEE4,disable_ugga OR ugga_H2O=NAN)
-    FieldNames("ugga_H2O")
-  Average(1,ugga_CO2,FP2,disable_ugga OR ugga_CO2=NAN)
-    FieldNames("ugga_CO2")
-  Average(1,ugga_CH4_dry,FP2,disable_ugga OR ugga_CH4_dry=NAN)
-    FieldNames("ugga_CH4_dry")
-  Average(1,ugga_CO2_dry,FP2,disable_ugga OR ugga_CO2_dry=NAN)
-    FieldNames("ugga_CO2_dry")
-  Average(1,ugga_gas_P,IEEE4,disable_ugga OR ugga_gas_P=NAN)
-    FieldNames("ugga_gas_P")
-  Average(1,ugga_gas_T,FP2,disable_ugga OR ugga_gas_T=NAN)
-    FieldNames("ugga_gas_T")
-  Average(1,ugga_self_T,FP2,disable_ugga OR ugga_self_T=NAN)
-    FieldNames("ugga_self_T")
-  Average(1,ugga_fit_flag,FP2,disable_ugga OR ugga_fit_flag=NAN)
-    FieldNames("ugga_fit_flag")
+  Average(1,li840a_CO2,IEEE4,li840a_CO2=NAN)
+    FieldNames("li840a_CO2")
+  Average(1,li840a_H2O,IEEE4,li840a_H2O=NAN)
+    FieldNames("li840a_H2O")
+  Average(1,li840a_cell_T,IEEE4,li840a_cell_T=NAN)
+    FieldNames("li840a_cell_T")
+  Average(1,li840a_cell_P,IEEE4,li840a_cell_P=NAN)
+    FieldNames("li840a_cell_P")
+  Average(1,li840a_dewpoint,IEEE4,li840a_dewpoint=NAN)
+    FieldNames("li840a_dewpoint")
+  Average(1,li840a_pwr_src,IEEE4,li840a_pwr_src=NAN)
+    FieldNames("li840a_pwr_src")
   Average(1,typeK_amb_T,FP2,typeK_amb_T=NAN)
     FieldNames("typeK_amb_T")
   Average(1,cr3000_panel_T,FP2,cr3000_panel_T=NAN)
     FieldNames("cr3000_panel_T")
 EndTable
 
-DataTable(stats,True,10000)
+DataTable(stats,True,48) '1 week
   DataInterval(0,30,min,1)
-  TableFile(STATS_FNAME_FMT,8,FILES_TO_RETAIN,DAYS_OF_DATA*48,0,Min,0,0)
-  Average(1,dusttrak2_pm,IEEE4,dusttrak2_pm=NAN)
+'  CardOut(0,48*DAYS_OF_DATA)
+'  Average(1,dusttrak2_pm,IEEE4,dusttrak2_pm=NAN)
   Average(1,dc1100_pm_small,IEEE4,inbetween_1min_scan OR dc1100_pm_small=NAN)
   Average(1,dc1100_pm_large,IEEE4,inbetween_1min_scan OR dc1100_pm_large=NAN)
-  Average(2,o3(1),FP2,inbetween_1min_scan OR disable_o3)
-  Average(1,o3(3),IEEE4,inbetween_1min_scan OR disable_o3)
-  Average(7,nox(1),FP2,inbetween_1min_scan OR disable_nox)
-  Average(1,nox(8),IEEE4,inbetween_1min_scan OR disable_nox)
-  Average(3,nox(9),FP2,inbetween_1min_scan OR disable_nox)
-  Average(2,nox(12),IEEE4,inbetween_1min_scan OR disable_nox)
-  Average(2,nox(14),FP2,inbetween_1min_scan OR disable_nox)  
-  Average(1,ugga_CH4,FP2,disable_ugga OR ugga_CH4=NAN)
-  Average(1,ugga_H2O,IEEE4,disable_ugga OR ugga_H2O=NAN)
-  Average(1,ugga_CO2,FP2,disable_ugga OR ugga_CO2=NAN)
-  Average(1,ugga_CH4_dry,FP2,disable_ugga OR ugga_CH4_dry=NAN)
-  Average(1,ugga_CO2_dry,FP2,disable_ugga OR ugga_CO2_dry=NAN)
-  Average(1,ugga_gas_P,IEEE4,disable_ugga OR ugga_gas_P=NAN)
-  Average(1,ugga_gas_T,FP2,disable_ugga OR ugga_gas_T=NAN)
-  Average(1,ugga_self_T,FP2,disable_ugga OR ugga_self_T=NAN)
-  Average(1,ugga_fit_flag,FP2,disable_ugga OR ugga_fit_flag=NAN)
+  Average(1,li840a_CO2,IEEE4,li840a_CO2=NAN)
+  Average(1,li840a_H2O,IEEE4,li840a_H2O=NAN)
+  Average(1,li840a_cell_T,IEEE4,li840a_cell_T=NAN)
+  Average(1,li840a_cell_P,IEEE4,li840a_cell_P=NAN)
+  Average(1,li840a_dewpoint,IEEE4,li840a_dewpoint=NAN)
+  Average(1,li840a_pwr_src,IEEE4,li840a_pwr_src=NAN)
   Average(1,typeK_amb_T,FP2,typeK_amb_T=NAN)
   Average(1,cr3000_panel_T,FP2,cr3000_panel_T=NAN)
 EndTable
@@ -309,9 +185,9 @@ EndTable
 'HINT - segregate these 'prototype' sensors until solid
 'calibration curve is derived; ultimately, will probably
 'be integrated into CO2 tracer detection network package
-DataTable(B4_sensors,True,10000)
+DataTable(B4_sensors,True,1440)
   DataInterval(0,1,Min,5)
-  TableFile(ALPHA_FNAME_FMT,8,FILES_TO_RETAIN,DAYS_OF_DATA*1440,0,Min,0,0)
+  'CardOut(0,-1)
   Average(1,B4_CO_mV,IEEE4,B4_CO_mV=NAN)
   Average(1,B4_NO_mV,IEEE4,B4_NO_mV=NAN)
   Average(1,B4_O3_mV,IEEE4,B4_O3_mV=NAN)
@@ -320,56 +196,48 @@ DataTable(B4_sensors,True,10000)
   Average(1,B4_O3_est,IEEE4,B4_O3_est=NAN)
 EndTable
 
-DataTable(telemetry,True,1)
-  'HINT called in fast scan, processed & timestamped in slow scan 1s later
-  DataInterval(299,300,Sec,1)
-  Average(1,dusttrak2_pm,IEEE4,dusttrak2_pm=NAN)
-  Average(1,dc1100_pm_small,IEEE4,inbetween_1min_scan OR dc1100_pm_small=NAN)
-  Average(1,dc1100_pm_large,IEEE4,inbetween_1min_scan OR dc1100_pm_large=NAN)
-  'XXXX leave following two lines intact despite removing all other references
-  'to LI-840A because telemetry report depends on them & shifting variables
-  'is highly resource intensive - wait until RS232 integration occurs
-  Average(1,co2_licor,IEEE4,False) 
-  Average(1,h2o_licor,IEEE4,False)
-  Average(3,o3,IEEE4,inbetween_1min_scan OR disable_o3)
-  Average(15,nox,IEEE4,inbetween_1min_scan OR disable_nox)
-  Average(1,ugga_CH4,IEEE4,disable_ugga OR ugga_CH4=NAN)
-  Average(1,ugga_H2O,IEEE4,disable_ugga OR ugga_H2O=NAN)
-  Average(1,ugga_CO2,IEEE4,disable_ugga OR ugga_CO2=NAN)
-  Average(1,ugga_CH4_dry,IEEE4,disable_ugga OR ugga_CH4_dry=NAN)
-  Average(1,ugga_CO2_dry,IEEE4,disable_ugga OR ugga_CO2_dry=NAN)
-  Average(1,ugga_gas_P,IEEE4,disable_ugga OR ugga_gas_P=NAN)
-  Average(1,ugga_gas_T,IEEE4,disable_ugga OR ugga_gas_T=NAN)
-  Average(1,ugga_self_T,IEEE4,disable_ugga OR ugga_self_T=NAN)
-  Average(1,ugga_ringdown0,IEEE4,disable_ugga OR ugga_ringdown0=NAN)
-  Average(1,ugga_ringdown1,IEEE4,disable_ugga OR ugga_ringdown1=NAN)
-  Average(1,ugga_fit_flag,IEEE4,disable_ugga OR ugga_fit_flag=NAN)
-  Average(1,typeK_amb_T,IEEE4,typeK_amb_T=NAN)
-  Average(1,cr3000_panel_T,IEEE4,cr3000_panel_T=NAN)
-EndTable
+'DataTable(telemetry,True,1)
+'  'HINT called in fast scan, processed & timestamped in slow scan 1s later
+'  DataInterval(299,300,Sec,1)
+'  Average(1,dusttrak2_pm,IEEE4,dusttrak2_pm=NAN)
+'  Average(1,dc1100_pm_small,IEEE4,inbetween_1min_scan OR dc1100_pm_small=NAN)
+'  Average(1,dc1100_pm_large,IEEE4,inbetween_1min_scan OR dc1100_pm_large=NAN)
+'  'XXXX leave following two lines intact despite removing all other references
+'  'to LI-840A because telemetry report depends on them & shifting variables
+'  'is highly resource intensive - wait until RS232 integration occurs
+'  Average(1,co2_licor,IEEE4,False) 
+'  Average(1,h2o_licor,IEEE4,False)
+'  Average(3,o3,IEEE4,inbetween_1min_scan OR disable_o3)
+'  Average(15,nox,IEEE4,inbetween_1min_scan OR disable_nox)
+'  Average(1,ugga_CH4,IEEE4,disable_ugga OR ugga_CH4=NAN)
+'  Average(1,ugga_H2O,IEEE4,disable_ugga OR ugga_H2O=NAN)
+'  Average(1,ugga_CO2,IEEE4,disable_ugga OR ugga_CO2=NAN)
+'  Average(1,ugga_CH4_dry,IEEE4,disable_ugga OR ugga_CH4_dry=NAN)
+'  Average(1,ugga_CO2_dry,IEEE4,disable_ugga OR ugga_CO2_dry=NAN)
+'  Average(1,ugga_gas_P,IEEE4,disable_ugga OR ugga_gas_P=NAN)
+'  Average(1,ugga_gas_T,IEEE4,disable_ugga OR ugga_gas_T=NAN)
+'  Average(1,ugga_self_T,IEEE4,disable_ugga OR ugga_self_T=NAN)
+'  Average(1,ugga_ringdown0,IEEE4,disable_ugga OR ugga_ringdown0=NAN)
+'  Average(1,ugga_ringdown1,IEEE4,disable_ugga OR ugga_ringdown1=NAN)
+'  Average(1,ugga_fit_flag,IEEE4,disable_ugga OR ugga_fit_flag=NAN)
+'  Average(1,typeK_amb_T,IEEE4,typeK_amb_T=NAN)
+'  Average(1,cr3000_panel_T,IEEE4,cr3000_panel_T=NAN)
+'EndTable
 
 DataTable(debug,True,1)
   Sample(1,dusttrak2_pm,IEEE4)
-  Sample(1,disable_tsi,Boolean)
   Sample(1,dc1100_record,String)
   Sample(2,dc1100(1),IEEE4)
-  Sample(1,o3_record,String)
-  Sample(9,o3(1),IEEE4)
-  Sample(1,disable_o3,Boolean)
-  Sample(1,nox_record,String)
-  Sample(22,nox(1),IEEE4)
-  Sample(1,disable_nox,Boolean)
-  Sample(1,ch4_record,String)
-  Sample(25,ch4(1),IEEE4)
-  Sample(1,disable_ugga,Boolean)
+  Sample(1,li840a_record,String)
+  Sample(32,li840a(1),IEEE4)
   Sample(1,typeK_amb_T,IEEE4)
   Sample(1,cr3000_panel_T,IEEE4)
   Sample(1,B4_CO_mV,IEEE4)
   Sample(1,B4_NO_mV,IEEE4)
   Sample(1,B4_O3_mV,IEEE4)
-  Sample(1,smtp_response,String)
-  Sample(1,scadabr_resp,String)
-  Sample(1,scadabr_success,Boolean)
+'  Sample(1,smtp_response,String)
+'  Sample(1,scadabr_resp,String)
+'  Sample(1,scadabr_success,Boolean)
   Sample(1,cr3k_clock_drift,IEEE4)
 EndTable
 
@@ -379,8 +247,8 @@ Const Yes = True
 Const Cancel = False
 Const No = False
 
-Public test_email As Boolean
-Public test_scadabr As Boolean
+'Public test_email As Boolean
+'Public test_scadabr As Boolean
 
 DisplayMenu("Indoor AQ", -1)
   SubMenu("Debug")
@@ -392,40 +260,13 @@ DisplayMenu("Indoor AQ", -1)
         DisplayValue("DC1100 small", dc1100_pm_small)
         DisplayValue("DC1100 large", dc1100_pm_large)
       EndSubMenu
-      SubMenu("O3 (2B Tech)")
-        DisplayValue("O3", m205_O3)
-        DisplayValue("Cell tmpr.", m205_cell_T)
-        DisplayValue("Cell press.", m205_cell_P)
-      EndSubMenu
-      SubMenu("NO/NO2 (2B Tech)")
-        DisplayValue("NO2", m405_NO2)
-        DisplayValue("NO", m405_NO)
-        DisplayValue("NOx", m405_NOx)
-        DisplayValue("NO2 zero", m405_NO2_zero)
-        DisplayValue("NO zero", m405_NO_zero)
-        DisplayValue("Flow factor", m405_flow_factor)
-        DisplayValue("Cell tmpr.", m405_cell_T)
-        DisplayValue("Cell press.", m405_cell_P)
-        DisplayValue("Cell flow", m405_cell_F)
-        DisplayValue("Overflow", m405_overflow_F)
-        DisplayValue("O3 flow", m405_O3_F)
-        DisplayValue("Smp LED V", m405_samp_LED_V)
-        DisplayValue("Ref LED V", m405_ref_LED_V)
-        DisplayValue("NO gen. V", m405_NO_gen_V)
-        DisplayValue("Status", m405_status)
-      EndSubMenu
-      SubMenu("CH4/CO2/H2O (LGR)")
-        DisplayValue("CH4", ugga_CH4)
-        DisplayValue("CO2", ugga_CO2)
-        DisplayValue("H2O", ugga_H2O)
-        DisplayValue("CH4 (dry)", ugga_CH4_dry)
-        DisplayValue("CO2 (dry)", ugga_CO2_dry)
-        DisplayValue("gas press.", ugga_gas_P)
-        DisplayValue("gas tmpr.", ugga_gas_T)
-        DisplayValue("self tmpr.", ugga_self_T)
-        DisplayValue("ringdown 0", ugga_ringdown0)
-        DisplayValue("ringdown 1", ugga_ringdown1)
-        DisplayValue("fit flag", ugga_fit_flag)
+      SubMenu("CO2/H2O (Licor)")
+        DisplayValue("CO2", li840a_CO2)
+        DisplayValue("H2O", li840a_H2O)
+        DisplayValue("Cell tmpr.", li840a_cell_T)
+        DisplayValue("Cell press.", li840a_cell_P)
+        DisplayValue("Dewpoint", li840a_dewpoint)
+        DisplayValue("Power in", li840a_pwr_src)
       EndSubMenu
       SubMenu("CO/NO/O3 (Alphasense")
         DisplayValue("CO (mV)", B4_CO_mV)
@@ -438,129 +279,129 @@ DisplayMenu("Indoor AQ", -1)
     EndSubMenu
     MenuItem("Debug  ON", debug_on)
       MenuPick(No,Yes)
-    MenuItem("Test email", test_email)
-      MenuPick(Cancel, Yes)
-    MenuItem("Test ScadaBR", test_scadabr)
-      MenuPick(Cancel, Yes)
+'    MenuItem("Test email", test_email)
+'      MenuPick(Cancel, Yes)
+'    MenuItem("Test ScadaBR", test_scadabr)
+'      MenuPick(Cancel, Yes)
   EndSubMenu
 EndMenu
 
 
 '================================ EMAIL ====================================
-Include "CPU:email_Enc.cr3"  'contains non-public settings
-Const CRLF = CHR(13) & CHR(10)
-Dim smtp_response As String * 80
-Dim email_failed As Boolean
-
-Const email_boot_subject = "Start-up notice from " & STATION & " CR3000"
-Sub send_startup_email()
-  Dim msg As String * 512
-  msg = ("This is the " & STATION & " CR3000. Starting up..." & CRLF & CRLF)
-  'HINT both CompileResults and CardStatus come with a trailing <CR><LF> but 
-  'CardStatus has a CRLF pair in the middle which must be stripped out
-  msg &= "Compile results: " & RTrim(Status.CompileResults(1))
-  msg &= "Card status: " & RTrim(Replace(Status.CardStatus(1), CRLF, " "))
-  msg &= CRLF & "Program error count: " & Status.ProgErrors & CRLF
-  msg &= "Watchdog error count: " & Status.WatchdogErrors & CRLF
-  msg &= "Run signature: " & Status.RunSignature & CRLF
-  msg &= "Program signature: " & Status.ProgSignature & CRLF
-  msg &= "Power input (Volts): " & Status.Battery & CRLF
-  msg &= "Git tag: " & SELF & CRLF
-  EmailSend(SMTP_SERV,EMAIL_TO,EMAIL_FROM,email_boot_subject,msg,"", _
-      SMTP_USER,SMTP_PASS,smtp_response)
-EndSub
-
-Const email_test_subject = "Test email from " & SELF & " CR3000"
-Const email_test_message = "This is the " & SELF & " CR3000. Testing 1.. 2.. 3.." & CRLF
-Sub send_test_email()
-  EmailSend(SMTP_SERV,EMAIL_TO,EMAIL_FROM,email_test_subject,email_test_message,"", _
-      SMTP_USER,SMTP_PASS,smtp_response)
-  test_email = False
-EndSub
-
-Const EMAIL_DAILY_SUBJECT = "Daily notice from " & STATION & " CR3000"
-Sub send_daily_email()
-  Dim msg As String * 512
-  msg = "Good morning, it's the " & STATION & " CR3000. Yesterday's data "
-  msg &= "files are attached. [" & VERSION & "]"
-  Dim ok As Boolean
-  ok = EmailSend(SMTP_SERV,EMAIL_TO,EMAIL_FROM,EMAIL_DAILY_SUBJECT,msg, _
-         "",SMTP_USER,SMTP_PASS,smtp_response)
-  email_failed = NOT ok
-EndSub
+'Include "CPU:email_Enc.cr3"  'contains non-public settings
+'Const CRLF = CHR(13) & CHR(10)
+'Dim smtp_response As String * 80
+'Dim email_failed As Boolean
+'
+'Const email_boot_subject = "Start-up notice from " & STATION & " CR3000"
+'Sub send_startup_email()
+'  Dim msg As String * 512
+'  msg = ("This is the " & STATION & " CR3000. Starting up..." & CRLF & CRLF)
+'  'HINT both CompileResults and CardStatus come with a trailing <CR><LF> but 
+'  'CardStatus has a CRLF pair in the middle which must be stripped out
+'  msg &= "Compile results: " & RTrim(Status.CompileResults(1))
+'  msg &= "Card status: " & RTrim(Replace(Status.CardStatus(1), CRLF, " "))
+'  msg &= CRLF & "Program error count: " & Status.ProgErrors & CRLF
+'  msg &= "Watchdog error count: " & Status.WatchdogErrors & CRLF
+'  msg &= "Run signature: " & Status.RunSignature & CRLF
+'  msg &= "Program signature: " & Status.ProgSignature & CRLF
+'  msg &= "Power input (Volts): " & Status.Battery & CRLF
+'  msg &= "Git tag: " & SELF & CRLF
+'  EmailSend(SMTP_SERV,EMAIL_TO,EMAIL_FROM,email_boot_subject,msg,"", _
+'      SMTP_USER,SMTP_PASS,smtp_response)
+'EndSub
+'
+'Const email_test_subject = "Test email from " & SELF & " CR3000"
+'Const email_test_message = "This is the " & SELF & " CR3000. Testing 1.. 2.. 3.." & CRLF
+'Sub send_test_email()
+'  EmailSend(SMTP_SERV,EMAIL_TO,EMAIL_FROM,email_test_subject,email_test_message,"", _
+'      SMTP_USER,SMTP_PASS,smtp_response)
+'  test_email = False
+'EndSub
+'
+'Const EMAIL_DAILY_SUBJECT = "Daily notice from " & STATION & " CR3000"
+'Sub send_daily_email()
+'  Dim msg As String * 512
+'  msg = "Good morning, it's the " & STATION & " CR3000. Yesterday's data "
+'  msg &= "files are attached. [" & VERSION & "]"
+'  Dim ok As Boolean
+'  ok = EmailSend(SMTP_SERV,EMAIL_TO,EMAIL_FROM,EMAIL_DAILY_SUBJECT,msg, _
+'         "",SMTP_USER,SMTP_PASS,smtp_response)
+'  email_failed = NOT ok
+'EndSub
 
 
 '============================= SCADABR INTEGRATION ==================================
-Include("CPU:scadabr_Enc.cr3")
-Dim scadabr_socket As Long
+'Include("CPU:scadabr_Enc.cr3")
+'Dim scadabr_socket As Long
 Dim rtime(9) As Long
-Dim scadabr_success As Boolean
-Dim scadabr_resp As String * 256
-
-Sub send_scadabr_data(payload As String * 1000)
-  Dim uri As String * 1085
-  Dim tstamp As String * 18
-  RealTime(rtime)
-  Sprintf(tstamp,"%04u%02u%02u%02u%02u%02u", rtime(1),rtime(2),rtime(3),rtime(4),rtime(5),rtime(6))
-  uri = REPORT_URL & tstamp & payload
-  scadabr_socket = HTTPGet(uri, scadabr_resp, "")
-  scadabr_success = NOT (scadabr_socket OR Len(scadabr_resp))
-EndSub
-
-Sub send_test_ScadaBR()
-  send_scadabr_data("&testing=0")
-  test_scadabr = False
-EndSub
-
-'                1                 2                    3                    4
-Const REPORT1 = "&dusttrak2_pm=%.3f&dc1100_pm_small=%.1f&dc1100_pm_large=%.1f&co2_licor=%.3f"
-'                5              6            7                8                9
-Const REPORT2 = "&h2o_licor=%.3f&m205_o3=%.1f&m205_cell_t=%.1f&m205_cell_p=%.1f&m405_no2=%.1f"
-'                10           11            12
-Const REPORT3 = "&m405_no=%.1f&m405_nox=%.1f&m405_no2_zero=%.1f"
-'                13                14                    15               16
-Const REPORT4 = "&m405_no_zero=%.1f&m405_flow_factor=%.2f&m405_cell_t=%.1f&m405_cell_p=%.1f"
-'                17                   18               19             20
-Const REPORT5 = "&m405_overflow_f=%.1f&m405_cell_f=%.1f&m405_o3_f=%.1f&m405_samp_led_v=%.4f"
-'                21                  22                 23
-Const REPORT6 = "&m405_ref_led_v=%.4f&m405_no_gen_v=%.4f&m405_scrubber_t=%.2f"
-'                24              25              26              27
-Const REPORT7 = "&ugga_ch4=%.2f&ugga_h2o=%.1f&ugga_co2=%.1f&ugga_ch4_dry=%.2f"
-'                28                  29                30                31
-Const REPORT8 = "&ugga_co2_dry=%.1f&ugga_gas_p=%.4f&ugga_gas_t=%.1f&ugga_self_t=%.1f"
-'                32                    33                    34
-Const REPORT9 = "&ugga_ringdown0=%.4f&ugga_ringdown1=%.4f&ugga_fit_flag=%.1f"
-'                35               36
-Const REPORT0 = "&typek_amb_t=%.1f&cr3000_panel_t=%.1f&dc1100_size_ratio=%.1f"
-Sub send_telemetry_report()
-  Dim msg1 As String * 100, msg2 As String * 100, msg3 As String * 100
-  Dim msg4 As String * 100, msg5 As String * 100, msg6 As String * 100
-  Dim msg7 As String * 100, msg8 As String * 100, msg9 As String * 100
-  Dim msg0 As String * 100
-  Dim payload As String * 1000
-  Sprintf(msg1,REPORT1,t(1),t(2),t(3),t(4))
-  Sprintf(msg2,REPORT2,t(5),t(6),t(7),t(8),t(9))
-  Sprintf(msg3,REPORT3,t(10),t(11),t(12))
-  Sprintf(msg4,REPORT4,t(13),t(14),t(15),t(16))
-  Sprintf(msg5,REPORT5,t(17),t(18),t(19),t(20))
-  Sprintf(msg6,REPORT6,t(21),t(22),t(23))
-  Sprintf(msg7,REPORT7,t(24),t(25),t(26),t(27))
-  Sprintf(msg8,REPORT8,t(28),t(29),t(30),t(31))
-  Sprintf(msg9,REPORT9,t(32),t(33),t(34))
-  Sprintf(msg0,REPORT0,t(35),t(36),dc1100_size_ratio)
-  payload = msg1 & msg2 & msg3 & msg4 & msg5 & msg6 & msg7 & msg8 & msg9 & msg0
-  send_scadabr_data(payload)
-EndSub
-
-'HINT - just send most recent value instead of 5-min mean,
-'since that would require a fair amount of infrastructure
-'and time-series data is already emailed daily
-Sub send_alphasensors_report()
-  Dim msg1 As String * 64, msg2 As String * 64
-  Sprintf(msg1,"&b4_co_mv=%.1f&b4_no_mv=%.1f&b4_o3_mv=%.1f",B4_CO_mV,B4_NO_mV,B4_O3_mV)
-  Sprintf(msg2,"&b4_co_est=%.1f&b4_no_est=%.1f&b4_o3_est=%.1f", B4_CO_est,B4_NO_est,B4_O3_est)
-  send_scadabr_data(msg1 & msg2)
-EndSub
+'Dim scadabr_success As Boolean
+'Dim scadabr_resp As String * 256
+'
+'Sub send_scadabr_data(payload As String * 1000)
+'  Dim uri As String * 1085
+'  Dim tstamp As String * 18
+'  RealTime(rtime)
+'  Sprintf(tstamp,"%04u%02u%02u%02u%02u%02u", rtime(1),rtime(2),rtime(3),rtime(4),rtime(5),rtime(6))
+'  uri = REPORT_URL & tstamp & payload
+'  scadabr_socket = HTTPGet(uri, scadabr_resp, "")
+'  scadabr_success = NOT (scadabr_socket OR Len(scadabr_resp))
+'EndSub
+'
+'Sub send_test_ScadaBR()
+'  send_scadabr_data("&testing=0")
+'  test_scadabr = False
+'EndSub
+'
+''                1                 2                    3                    4
+'Const REPORT1 = "&dusttrak2_pm=%.3f&dc1100_pm_small=%.1f&dc1100_pm_large=%.1f&co2_licor=%.3f"
+''                5              6            7                8                9
+'Const REPORT2 = "&h2o_licor=%.3f&m205_o3=%.1f&m205_cell_t=%.1f&m205_cell_p=%.1f&m405_no2=%.1f"
+''                10           11            12
+'Const REPORT3 = "&m405_no=%.1f&m405_nox=%.1f&m405_no2_zero=%.1f"
+''                13                14                    15               16
+'Const REPORT4 = "&m405_no_zero=%.1f&m405_flow_factor=%.2f&m405_cell_t=%.1f&m405_cell_p=%.1f"
+''                17                   18               19             20
+'Const REPORT5 = "&m405_overflow_f=%.1f&m405_cell_f=%.1f&m405_o3_f=%.1f&m405_samp_led_v=%.4f"
+''                21                  22                 23
+'Const REPORT6 = "&m405_ref_led_v=%.4f&m405_no_gen_v=%.4f&m405_scrubber_t=%.2f"
+''                24              25              26              27
+'Const REPORT7 = "&ugga_ch4=%.2f&ugga_h2o=%.1f&ugga_co2=%.1f&ugga_ch4_dry=%.2f"
+''                28                  29                30                31
+'Const REPORT8 = "&ugga_co2_dry=%.1f&ugga_gas_p=%.4f&ugga_gas_t=%.1f&ugga_self_t=%.1f"
+''                32                    33                    34
+'Const REPORT9 = "&ugga_ringdown0=%.4f&ugga_ringdown1=%.4f&ugga_fit_flag=%.1f"
+''                35               36
+'Const REPORT0 = "&typek_amb_t=%.1f&cr3000_panel_t=%.1f&dc1100_size_ratio=%.1f"
+'Sub send_telemetry_report()
+'  Dim msg1 As String * 100, msg2 As String * 100, msg3 As String * 100
+'  Dim msg4 As String * 100, msg5 As String * 100, msg6 As String * 100
+'  Dim msg7 As String * 100, msg8 As String * 100, msg9 As String * 100
+'  Dim msg0 As String * 100
+'  Dim payload As String * 1000
+'  Sprintf(msg1,REPORT1,t(1),t(2),t(3),t(4))
+'  Sprintf(msg2,REPORT2,t(5),t(6),t(7),t(8),t(9))
+'  Sprintf(msg3,REPORT3,t(10),t(11),t(12))
+'  Sprintf(msg4,REPORT4,t(13),t(14),t(15),t(16))
+'  Sprintf(msg5,REPORT5,t(17),t(18),t(19),t(20))
+'  Sprintf(msg6,REPORT6,t(21),t(22),t(23))
+'  Sprintf(msg7,REPORT7,t(24),t(25),t(26),t(27))
+'  Sprintf(msg8,REPORT8,t(28),t(29),t(30),t(31))
+'  Sprintf(msg9,REPORT9,t(32),t(33),t(34))
+'  Sprintf(msg0,REPORT0,t(35),t(36),dc1100_size_ratio)
+'  payload = msg1 & msg2 & msg3 & msg4 & msg5 & msg6 & msg7 & msg8 & msg9 & msg0
+'  send_scadabr_data(payload)
+'EndSub
+'
+''HINT - just send most recent value instead of 5-min mean,
+''since that would require a fair amount of infrastructure
+''and time-series data is already emailed daily
+'Sub send_alphasensors_report()
+'  Dim msg1 As String * 64, msg2 As String * 64
+'  Sprintf(msg1,"&b4_co_mv=%.1f&b4_no_mv=%.1f&b4_o3_mv=%.1f",B4_CO_mV,B4_NO_mV,B4_O3_mV)
+'  Sprintf(msg2,"&b4_co_est=%.1f&b4_no_est=%.1f&b4_o3_est=%.1f", B4_CO_est,B4_NO_est,B4_O3_est)
+'  send_scadabr_data(msg1 & msg2)
+'EndSub
 
 
 '================================ FUNCTIONS =================================
@@ -573,28 +414,30 @@ EndFunction
 '============================== SUBROUTINES =================================
 Sub setup()
   SerialOpen(DYLOS_COM,DYLOS_BAUD,DYLOS_FMT,0,DYLOS_BUFF)
-  SerialOpen(NOX_COM,NOX_BAUD,NOX_FMT,0,NOX_BUFF)
-  SerialOpen(CH4_COM,CH4_BAUD,CH4_FMT,0,CH4_BUFF)
-  SerialOpen(O3_COM,O3_BAUD,O3_FMT,0,O3_BUFF)
+  SerialOpen(LI840A_COM,LI840A_BAUD,LI840A_FMT,0,LI840A_BUFF)
   Move(dc1100_vals(1),2,NAN,1) 'HACK ensure serial dest vars begin @ NAN to prevent
-  Move(ch4(1),25,NAN,1)         'inclusion of 0 in first averages produced
-  Move(o3(1),3,NAN,1)
-  Move(nox(1),15,NAN,1)
+  Move(li840a(1),32,NAN,1)         'inclusion of 0 in first averages produced
 EndSub
 
 
 '========================= MAIN PROGRAM =====================================
 BeginProg
   SetStatus("StationName", SELF)
-  send_startup_email()
+'  send_startup_email()
   setup()
 
-  'HINT - Los Gatos Research GGA-30p CH4/CO2/H2O analyzer sends messages at
+  'HINT - Licor LI840A CO2/H2O analyzer sends messages at
   '       not precisely 1Hz... run twice as fast to avoid losing messages.
-  Scan(500,mSec,4,0)
+  Scan(500,mSec,1,0)
     VoltDiff(dusttrak2_pm,1,mv5000,DF_TSI_PM,True,0,INTEG,TSI_PM_MLT,TSI_PM_OFF)
     PanelTemp(cr3000_panel_T,INTEG)
-    TCDiff(typeK_amb_T,1,mV20,DF_TYPE_K,TypeK,cr3000_panel_T,1,0,INTEG,1,0)
+    TCDiff(typeK_amb_T,1,mV25,DF_TYPE_K,TypeK,cr3000_panel_T,1,0,INTEG,1,0)
+
+    SerialIn(li840a_record,LI840A_COM,5,&h0A,LI840A_BUFF)
+    If (Len(li840a_record)) Then
+      SplitStr(li840a(1),li840a_record,"",32,0)
+      li840a_cell_P *= MBAR_PER_KPA
+    EndIf
 
     VoltDiff(B4_CO_mV,1,mv5000,DF_CO,True,0,INTEG,1,0) 'in mV
     VoltDiff(B4_NO_mV,1,mv5000,DF_NO,True,0,INTEG,1,0) 'FIXME
@@ -604,34 +447,21 @@ BeginProg
     B4_O3_est = B4_O3_mV*O3_MLT + O3_OFF
     CallTable(B4_sensors)
 
-    SerialIn(ch4_record,CH4_COM,5,&h0A,CH4_BUFF)
-    If (Len(ch4_record)) Then
-      SplitStr(ch4(1),ch4_record,", ",25,6)
-      ch4_year = ch4(1) 'convert string->float
-      'HACK - compare record year with logger timestamp to verify correctly parsed
-      disable_ugga = NOT(ch4_year = rtime(1))
-      ugga_gas_P *= MBAR_PER_TORR
-    ElseIf (ch4_year = NAN) Then
-      'do nothing, UGGA vars already set to NAN
-    Else
-      Move(ch4(1),25,NAN,1)
-      ch4_year = NAN
-    EndIf
-
     CallTable(tsdata)
     CallTable(stats)
-    CallTable(telemetry)
-    If (telemetry.Output(1,1)) Then time_for_telemetry_report = True
+'    CallTable(telemetry)
+'    If (telemetry.Output(1,1)) Then time_for_telemetry_report = True
 
     inbetween_1min_scan = True
     If (just_had_1min_scan) Then
       just_had_1min_scan = False
       inbetween_1min_scan = False
     EndIf
-  NextScan
-
-  SlowSequence
-  Scan(1,Min,1,0)
+'  NextScan
+'
+'  SlowSequence
+'  Scan(1,Min,1,0)
+  If TimeIntoInterval(0,1,Min) Then
     SerialIn(dc1100_record,DYLOS_COM,100,&h0D,DYLOS_BUFF)
     If (Len(dc1100_record)) Then
       SplitStr(dc1100_vals(1),dc1100_record,"",2,0)
@@ -645,62 +475,49 @@ BeginProg
       SerialFlush(DYLOS_COM)
     EndIf
 
-    SerialIn(o3_record,O3_COM,100,&h0D,O3_REC)
-    If (Len(o3_record)) Then
-      SplitStr(o3(1),o3_record,"",9,0)
-      If (o3(9)=NAN) Then Move(o3(1),9,NAN,1)
-      SerialFlush(O3_COM)
-    EndIf
-
-    SerialIn(nox_record,NOX_COM,100,&h0D,NOX_REC)
-    If (Len(nox_record)) Then
-      SplitStr(nox(1),nox_record,"",22,0)
-      If (nox(21) = NAN) Then Move(nox(1),21,NAN,1)
-      SerialFlush(NOX_COM)
-    EndIf
-
     just_had_1min_scan = True
-  NextScan
+'  NextScan
+  EndIf
     
-  SlowSequence
-  Scan(1,Sec,1,0)
+'  SlowSequence
+'  Scan(1,Sec,1,0)
     If (debug_on) Then CallTable(debug)
-    If (test_scadabr) Then
-      send_test_scadabr()
-    EndIf
-    If (test_email) Then
-      send_test_email()
-    EndIf
+'    If (test_scadabr) Then
+'      send_test_scadabr()
+'    EndIf
+'    If (test_email) Then
+'      send_test_email()
+'    EndIf
+'
+'    If (time_for_telemetry_report) Then
+'      time_for_telemetry_report = False
+'      GetRecord(t(1),telemetry,1)
+'      If (t(3) = 0) Then
+'        dc1100_size_ratio = NAN
+'      Else
+'        dc1100_size_ratio = LOG(t(2)/t(3))
+'      EndIf
+'      send_telemetry_report()
+'      send_alphasensors_report()
+'    EndIf
+'
+'    If TimeIntoInterval(360,1440,Min) Then '6 AM
+'      send_daily_email()
+'    ElseIf TimeIntoInterval(375, 1440, Min) Then
+'      If (email_failed) Then send_daily_email()
+'    ElseIf TimeIntoInterval(390, 1440, Min) Then
+'      If (email_failed) Then send_daily_email()
+'      email_failed = False 'give up until tomorrow
+'    EndIf
 
-    If (time_for_telemetry_report) Then
-      time_for_telemetry_report = False
-      GetRecord(t(1),telemetry,1)
-      If (t(3) = 0) Then
-        dc1100_size_ratio = NAN
-      Else
-        dc1100_size_ratio = LOG(t(2)/t(3))
-      EndIf
-      send_telemetry_report()
-      send_alphasensors_report()
-    EndIf
-
-    If TimeIntoInterval(360,1440,Min) Then '6 AM
-      send_daily_email()
-    ElseIf TimeIntoInterval(375, 1440, Min) Then
-      If (email_failed) Then send_daily_email()
-    ElseIf TimeIntoInterval(390, 1440, Min) Then
-      If (email_failed) Then send_daily_email()
-      email_failed = False 'give up until tomorrow
-    EndIf
-
-    If TimeIntoInterval(0,6,Hr) Then
+    If TimeIntoInterval(0,10,Min) Then
       RealTime(rtime(1)) 'HINT - happens implicitly within ScadaBR integration
                          'but do so explicitly here for the UGGA message parsing check
       cr3k_clock_drift = NetworkTimeProtocol(NTP_ADDR,NTP_OFFSET,NTP_DEV)
-      send_scadabr_data(FormatFloat(cr3k_clock_drift,"&cr3k_clock_drift=%f"))
-
-      cr3k_lithium_battery = Status.LithiumBattery
-      send_scadabr_data(FormatFloat(cr3k_lithium_battery,"&cr3k_lithium_battery=%f"))
+'      send_scadabr_data(FormatFloat(cr3k_clock_drift,"&cr3k_clock_drift=%f"))
+'
+'      cr3k_lithium_battery = Status.LithiumBattery
+'      send_scadabr_data(FormatFloat(cr3k_lithium_battery,"&cr3k_lithium_battery=%f"))
     EndIf
   NextScan
 EndProg
