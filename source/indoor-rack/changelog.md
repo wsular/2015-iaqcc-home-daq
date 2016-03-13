@@ -1,6 +1,24 @@
 Changelog for indoor AQ datalogger
 ==================================
 
+v1.1 [2016-03-12]
+-----------------
+
+### Data Table Changes
+
+* Datalogger panel (internal) temperature column renamed from `cr3000_panel_T`
+  to `logger_panel_T` in all tables
+* Remove CO2 analyzer power source column (`li840a_pwr_src`) from statistics
+  table (`stats`)
+
+### Notes
+
+* Increase data retained to internal memory from 7->14 days
+* Rename DustTrak II monitoring-only variable from `dusttrak2_pm` to
+  `dusttrak2_analog_pm25` and declare private (get via debug table)
+* Rename datalogger clock drift from `cr3k_clock_drift` to `clock_drift`
+
+
 v1.0 [2016-02-24]
 -----------------
 
@@ -18,6 +36,11 @@ v1.0 [2016-02-24]
 * Dylos DC1100 dust monitor (now with wireless DAQ)
 * TSI DustTrak II (now monitoring only, using built-in data collection)
 * Licor Biosciences LI-840A CO2/H2O analyzer (replacing LGR UGGA for CO2/H2O)
+
+### Known Issues
+
+* Was deployed without Git tag specified so data files will have empty version
+  field within station name (first line, second field)
 
 ### Issues fixed
 
