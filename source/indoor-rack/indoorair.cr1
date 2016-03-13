@@ -46,7 +46,7 @@ Const O3_OFF = -764
 
 '============================== INTERNALS ===================================
 Const INTEG = 250
-Const DAYS_OF_DATA = 7 'to save to card
+Const DAYS_OF_DATA = 14 'saved to CPU
 
 Const FT3_PER_M3 = 35.314667
 Const MBAR_PER_TORR = 1.3332237
@@ -57,11 +57,11 @@ Public debug_on As Boolean
 Const NTP_ADDR = "0.us.pool.ntp.org"
 Const NTP_OFFSET = -8*3600 'sec from UTC = PST
 Const NTP_DEV = 100 'ms, tolerable drift
-Dim cr3k_clock_drift
-Units cr3k_clock_drift = ms
+Dim clock_drift
+Units clock_drift = ms
 
-Public dusttrak2_pm
-Units dusttrak2_pm = mg/m^3
+Dim dusttrak2_analog_pm25
+Units dusttrak2_analog_pm25 = mg/m^3
 
 Dim dc1100_record As String * 12
 Dim dc1100_size_ratio
@@ -117,12 +117,12 @@ Units li840a_dewpoint = degC
 Units li840a_pwr_src = Vdc
 
 Dim typeK_amb_T
-Dim cr3000_panel_T
+Dim logger_panel_T
 Units typeK_amb_T = degC
-Units cr3000_panel_T = degC
+Units logger_panel_T = degC
 
-Dim cr3k_lithium_battery
-Units cr3k_lithium_battery = Volts
+'Dim cr3k_lithium_battery
+'Units cr3k_lithium_battery = Volts
 
 Dim alphasense(3)
 Alias alphasense(1) = B4_CO_mV
@@ -145,8 +145,8 @@ Dim just_had_1min_scan As Boolean
 DataTable(tsdata,True,1440)
   DataInterval(0,1,min,5)
 '  CardOut(0,1440*DAYS_OF_DATA)
-'  Average(1,dusttrak2_pm,IEEE4,dusttrak2_pm=NAN)
-'    FieldNames("dusttrak2_pm")
+'  Average(1,dusttrak2_analog_pm25,IEEE4,dusttrak2_analog_pm25=NAN)
+'    FieldNames("dusttrak2_analog_pm25")
   Sample(2,dc1100,IEEE4)
   Average(1,li840a_CO2,IEEE4,li840a_CO2=NAN)
     FieldNames("li840a_CO2")
@@ -162,14 +162,14 @@ DataTable(tsdata,True,1440)
     FieldNames("li840a_pwr_src")
   Average(1,typeK_amb_T,FP2,typeK_amb_T=NAN)
     FieldNames("typeK_amb_T")
-  Average(1,cr3000_panel_T,FP2,cr3000_panel_T=NAN)
-    FieldNames("cr3000_panel_T")
+  Average(1,logger_panel_T,FP2,logger_panel_T=NAN)
+    FieldNames("logger_panel_T")
 EndTable
 
 DataTable(stats,True,48) '1 week
   DataInterval(0,30,min,1)
 '  CardOut(0,48*DAYS_OF_DATA)
-'  Average(1,dusttrak2_pm,IEEE4,dusttrak2_pm=NAN)
+'  Average(1,dusttrak2_analog_pm25,IEEE4,dusttrak2_analog_pm25=NAN)
   Average(1,dc1100_pm_small,IEEE4,inbetween_1min_scan OR dc1100_pm_small=NAN)
   Average(1,dc1100_pm_large,IEEE4,inbetween_1min_scan OR dc1100_pm_large=NAN)
   Average(1,li840a_CO2,IEEE4,li840a_CO2=NAN)
@@ -177,9 +177,8 @@ DataTable(stats,True,48) '1 week
   Average(1,li840a_cell_T,IEEE4,li840a_cell_T=NAN)
   Average(1,li840a_cell_P,IEEE4,li840a_cell_P=NAN)
   Average(1,li840a_dewpoint,IEEE4,li840a_dewpoint=NAN)
-  Average(1,li840a_pwr_src,IEEE4,li840a_pwr_src=NAN)
   Average(1,typeK_amb_T,FP2,typeK_amb_T=NAN)
-  Average(1,cr3000_panel_T,FP2,cr3000_panel_T=NAN)
+  Average(1,logger_panel_T,FP2,logger_panel_T=NAN)
 EndTable
 
 'HINT - segregate these 'prototype' sensors until solid
@@ -199,7 +198,7 @@ EndTable
 'DataTable(telemetry,True,1)
 '  'HINT called in fast scan, processed & timestamped in slow scan 1s later
 '  DataInterval(299,300,Sec,1)
-'  Average(1,dusttrak2_pm,IEEE4,dusttrak2_pm=NAN)
+'  Average(1,dusttrak2_analog_pm25,IEEE4,dusttrak2_analog_pm25=NAN)
 '  Average(1,dc1100_pm_small,IEEE4,inbetween_1min_scan OR dc1100_pm_small=NAN)
 '  Average(1,dc1100_pm_large,IEEE4,inbetween_1min_scan OR dc1100_pm_large=NAN)
 '  'XXXX leave following two lines intact despite removing all other references
@@ -221,24 +220,24 @@ EndTable
 '  Average(1,ugga_ringdown1,IEEE4,disable_ugga OR ugga_ringdown1=NAN)
 '  Average(1,ugga_fit_flag,IEEE4,disable_ugga OR ugga_fit_flag=NAN)
 '  Average(1,typeK_amb_T,IEEE4,typeK_amb_T=NAN)
-'  Average(1,cr3000_panel_T,IEEE4,cr3000_panel_T=NAN)
+'  Average(1,logger_panel_T,IEEE4,logger_panel_T=NAN)
 'EndTable
 
 DataTable(debug,True,1)
-  Sample(1,dusttrak2_pm,IEEE4)
+  Sample(1,dusttrak2_analog_pm25,IEEE4)
   Sample(1,dc1100_record,String)
   Sample(2,dc1100(1),IEEE4)
   Sample(1,li840a_record,String)
   Sample(32,li840a(1),IEEE4)
   Sample(1,typeK_amb_T,IEEE4)
-  Sample(1,cr3000_panel_T,IEEE4)
+  Sample(1,logger_panel_T,IEEE4)
   Sample(1,B4_CO_mV,IEEE4)
   Sample(1,B4_NO_mV,IEEE4)
   Sample(1,B4_O3_mV,IEEE4)
 '  Sample(1,smtp_response,String)
 '  Sample(1,scadabr_resp,String)
 '  Sample(1,scadabr_success,Boolean)
-  Sample(1,cr3k_clock_drift,IEEE4)
+  Sample(1,clock_drift,IEEE4)
 EndTable
 
 
@@ -254,8 +253,8 @@ DisplayMenu("Indoor AQ", -1)
   SubMenu("Debug")
     SubMenu("Monitor sensors")
       DisplayValue("TypeK tmpr.", typeK_amb_T)
-      DisplayValue("Panel tmpr.", cr3000_panel_T)
-      DisplayValue("Dusttrak PM", dusttrak2_pm)
+      DisplayValue("Panel tmpr.", logger_panel_T)
+      DisplayValue("Dusttrak PM", dusttrak2_analog_pm25)
       SubMenu("PM (Dylos)")
         DisplayValue("DC1100 small", dc1100_pm_small)
         DisplayValue("DC1100 large", dc1100_pm_large)
@@ -354,7 +353,7 @@ Dim rtime(9) As Long
 'EndSub
 '
 ''                1                 2                    3                    4
-'Const REPORT1 = "&dusttrak2_pm=%.3f&dc1100_pm_small=%.1f&dc1100_pm_large=%.1f&co2_licor=%.3f"
+'Const REPORT1 = "&dusttrak2_analog_pm25=%.3f&dc1100_pm_small=%.1f&dc1100_pm_large=%.1f&co2_licor=%.3f"
 ''                5              6            7                8                9
 'Const REPORT2 = "&h2o_licor=%.3f&m205_o3=%.1f&m205_cell_t=%.1f&m205_cell_p=%.1f&m405_no2=%.1f"
 ''                10           11            12
@@ -372,7 +371,7 @@ Dim rtime(9) As Long
 ''                32                    33                    34
 'Const REPORT9 = "&ugga_ringdown0=%.4f&ugga_ringdown1=%.4f&ugga_fit_flag=%.1f"
 ''                35               36
-'Const REPORT0 = "&typek_amb_t=%.1f&cr3000_panel_t=%.1f&dc1100_size_ratio=%.1f"
+'Const REPORT0 = "&typek_amb_t=%.1f&logger_panel_T=%.1f&dc1100_size_ratio=%.1f"
 'Sub send_telemetry_report()
 '  Dim msg1 As String * 100, msg2 As String * 100, msg3 As String * 100
 '  Dim msg4 As String * 100, msg5 As String * 100, msg6 As String * 100
@@ -429,9 +428,9 @@ BeginProg
   'HINT - Licor LI840A CO2/H2O analyzer sends messages at
   '       not precisely 1Hz... run twice as fast to avoid losing messages.
   Scan(500,mSec,1,0)
-    VoltDiff(dusttrak2_pm,1,mv5000,DF_TSI_PM,True,0,INTEG,TSI_PM_MLT,TSI_PM_OFF)
-    PanelTemp(cr3000_panel_T,INTEG)
-    TCDiff(typeK_amb_T,1,mV25,DF_TYPE_K,TypeK,cr3000_panel_T,1,0,INTEG,1,0)
+    VoltDiff(dusttrak2_analog_pm25,1,mv5000,DF_TSI_PM,True,0,INTEG,TSI_PM_MLT,TSI_PM_OFF)
+    PanelTemp(logger_panel_T,INTEG)
+    TCDiff(typeK_amb_T,1,mV25,DF_TYPE_K,TypeK,logger_panel_T,1,0,INTEG,1,0)
 
     SerialIn(li840a_record,LI840A_COM,5,&h0A,LI840A_BUFF)
     If (Len(li840a_record)) Then
@@ -513,8 +512,8 @@ BeginProg
     If TimeIntoInterval(0,10,Min) Then
       RealTime(rtime(1)) 'HINT - happens implicitly within ScadaBR integration
                          'but do so explicitly here for the UGGA message parsing check
-      cr3k_clock_drift = NetworkTimeProtocol(NTP_ADDR,NTP_OFFSET,NTP_DEV)
-'      send_scadabr_data(FormatFloat(cr3k_clock_drift,"&cr3k_clock_drift=%f"))
+      clock_drift = NetworkTimeProtocol(NTP_ADDR,NTP_OFFSET,NTP_DEV)
+'      send_scadabr_data(FormatFloat(clock_drift,"&clock_drift=%f"))
 '
 '      cr3k_lithium_battery = Status.LithiumBattery
 '      send_scadabr_data(FormatFloat(cr3k_lithium_battery,"&cr3k_lithium_battery=%f"))
