@@ -1,6 +1,48 @@
 Changelog for outdoor AQ DAQFactory program
 ===========================================
 
+v1.1 [2016-03-12]
+-----------------
+
+### Changes to instrument line-up
+
+* Remove LGR CO2/CH4/H2O (UGGA) since it's loaned out to another project (and
+  also because we need a control port for PTR-MS zero valve control)
+* Remove TECO CO (Model 48) since it's lamp intensity has degraded below 
+  minimum required for good measurements
+
+### Issues Fixed
+
+* Rename TECO NOx internal temperature column from `teco_nox` to `m42c_tmpr`
+* Add missing units to TECO NOX internal temperature
+* Indoor/outdoor separated statistics tables now working properly
+* Verify LI-840A serial records parsed correctly by checking cell temperature
+  is between 45 and 55 *C (typ. 51 +/- 0.5 *C)
+
+### Data Table Changes
+
+* Datalogger panel (internal) temperature column renamed from `cr3000_panel_T`
+  to `logger_panel_T` in all tables
+* Remove CO2 analyzer power source column (`li840a_pwr_src`) from statistics
+  table (`stats`)
+* New columns `is_zeroing_PTRMS` and `zflag`, corresponding to PTR-MS zero
+  valve control status
+* Reduce precision in stats tables where appropriate (most places):
+    `m48_CO`, `m48_CO_zero_Avg`, `m48_cell_T`, `m42C_NO2`, `m42C_NO`, 
+    `m42C_NOx`, `m42C_tmpr`, `li840a_cell_T`, `li840a_dewpoint`
+
+### Notes
+
+* Increase data retained to internal memory from 7->14 days
+* Rename DustTrak II monitoring-only variable from `dusttrak2_pm` to
+  `dusttrak2_analog_pm25` and declare private (get via debug table)
+* Rename datalogger clock drift from `cr3k_clock_drift` to `clock_drift`
+* Despite removal of CO monitor, update zeroing schedule for CO from 4->3 times
+  daily and 5->7 min in duration
+* Control/record PTR-MS zero valve, using the same updated schedule as for CO
+* Decrease NTP update interval 60->10 min (to match indoor)
+
+
 v1.0 [2016-02-24]
 -----------------
 
