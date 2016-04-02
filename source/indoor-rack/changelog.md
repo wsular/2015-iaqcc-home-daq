@@ -1,6 +1,15 @@
 Changelog for indoor AQ datalogger
 ==================================
 
+next version
+------------
+
+### Issues Fixed
+
+* Improve error handling for LI-840A
+
+
+
 v1.1 [2016-03-12]
 -----------------
 

@@ -617,11 +617,11 @@ BeginProg
     SerialIn(li840a_record,LI840A_COM,5,&h0A,LI840A_BUFF)
     If (Len(li840a_record)) Then
       SplitStr(li840a(1),li840a_record,"",32,0)
-      li840a_cell_P *= MBAR_PER_KPA
-      'HACK: messages can get parsed even if only partially received,
-      'so throw away data if parsed cell tmpr value is not about 51*C
-      If (li840a_cell_T < 45 OR li840a_cell_T > 55) Then
+      If (li840a(1)=840 AND li840a(32)=840) Then
+        li840a_cell_P *= MBAR_PER_KPA
+      Else
         Move(li840a(1),32,NAN,1)
+        SerialFlush(LI840A_COM)
       EndIf
     EndIf
 
