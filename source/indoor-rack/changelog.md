@@ -7,6 +7,7 @@ next version
 ### Issues Fixed
 
 * Improve error handling for LI-840A
+* Store NANs, not zeros, in dust monitor (Dylos DC1100) variables at start-up
 
 ### Data Table Changes
 

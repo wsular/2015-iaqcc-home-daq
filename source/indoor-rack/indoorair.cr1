@@ -363,6 +363,7 @@ Sub setup()
   SerialOpen(DYLOS_COM,DYLOS_BAUD,DYLOS_FMT,0,DYLOS_BUFF)
   SerialOpen(LI840A_COM,LI840A_BAUD,LI840A_FMT,0,LI840A_BUFF)
   Move(dc1100_vals(1),2,NAN,1) 'HACK ensure serial dest vars begin @ NAN to prevent
+  Move(dc1100(1),2,NAN,1)
   Move(li840a(1),32,NAN,1)         'inclusion of 0 in first averages produced
 EndSub
 
