@@ -18,6 +18,10 @@ next version
   parts-per-thousand for consistency with other water vapor columns; won't take
   effect for end-users until device returns from other projects
 
+### Enhancements
+
+* Restore telemetry reporting (to ScadaBR)
+
 
 v1.1 [2016-03-12]
 -----------------

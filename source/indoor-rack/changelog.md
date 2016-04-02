@@ -12,6 +12,10 @@ next version
 
 * Rename `li840a_dewpoint` to li840a_dew_T` for internal consistency
 
+### Enhancements
+
+* Restore telemetry reporting (to ScadaBR)
+
 
 v1.1 [2016-03-12]
 -----------------

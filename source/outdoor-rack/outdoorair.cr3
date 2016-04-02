@@ -197,45 +197,6 @@ Dim is_zeroing_PTRMS As Boolean
 Dim rtime(9) As Long
 Dim inbetween_1min_scan As Boolean
 Dim just_had_1min_scan As Boolean
-'Dim time_for_telemetry_report As Boolean
-
-'Dim t(36)
-'t(1)  = 
-'t(2)  = dc1100_pm_small
-'t(3)  = dc1100_pm_large
-'t(4)  = co2_licor
-'t(5)  = h2o_licor
-'t(6)  = m205_O3     'Average(3,...)
-'t(7)  = m205_cell_T
-'t(8)  = m205_cell_P
-'t(9)  = m405_NO2    'Average(15,...)
-'t(10) = m405_NO
-'t(11) = m405_NOx
-'t(12) = m405_NO2_zero
-'t(13) = m405_NO_zero
-'t(14) = m405_flow_factor
-'t(15) = m405_cell_T
-'t(16) = m405_cell_P
-'t(17) = m405_overflow_F
-'t(18) = m405_cell_F
-'t(19) = m405_O3_F
-'t(20) = m405_samp_LED_V
-'t(21) = m405_ref_LED_V
-'t(22) = m405_NO_gen_V
-'t(23) = m405_scrubber_T
-'t(24) = ugga_CH4
-'t(25) = ugga_H2O
-'t(26) = ugga_CO2
-'t(27) = ugga_CH4_dry
-'t(28) = ugga_CO2_dry
-'t(29) = ugga_gas_P
-'t(30) = ugga_gas_T
-'t(31) = ugga_self_T
-'t(32) = ugga_ringdown0
-'t(33) = ugga_ringdown1
-'t(34) = ugga_fit_flag
-'t(35) = typek_amb_T
-'t(36) = logger_panel_T
 
 
 '============================ DATA TABLES ===================================
@@ -370,8 +331,8 @@ DataTable(debug,True,1)
   Sample(1,typeT_sample_T,IEEE4)
   Sample(1,logger_panel_T,IEEE4)
 '  Sample(1,smtp_response,String)
-'  Sample(1,scadabr_resp,String)
-'  Sample(1,scadabr_success,Boolean)
+  Sample(1,scadabr_resp,String)
+  Sample(1,scadabr_success,Boolean)
   Sample(1,clock_drift,IEEE4)
   Sample(1,ctrl_smp_vlv,IEEE4)
   Sample(1,ctrl_co_zero,IEEE4)
@@ -390,7 +351,7 @@ Const Cancel = False
 Const No = False
 
 'Public test_email As Boolean
-'Public test_scadabr As Boolean
+Public test_scadabr As Boolean
 
 DisplayMenu("Indoor AQ", -1)
   SubMenu("Debug")
@@ -439,8 +400,8 @@ DisplayMenu("Indoor AQ", -1)
       MenuPick(No,Yes)
 '    MenuItem("Test email", test_email)
 '      MenuPick(Cancel, Yes)
-'    MenuItem("Test ScadaBR", test_scadabr)
-'      MenuPick(Cancel, Yes)
+    MenuItem("Test ScadaBR", test_scadabr)
+      MenuPick(Cancel, Yes)
     DisplayValue("Indoor air?", is_sampling_indoor)
 '    DisplayValue("Zero CO?", is_zeroing_CO)
     DisplayValue("Zero PTRMS?", is_zeroing_PTRMS)
@@ -490,79 +451,54 @@ EndMenu
 '         "",SMTP_USER,SMTP_PASS,smtp_response)
 '  email_failed = NOT ok
 'EndSub
-'
-'
-''============================= SCADABR INTEGRATION ==================================
-'Include("CPU:scadabr_Enc.cr3")
-'Dim scadabr_socket As Long
-'Dim rtime(9) As Long
-'Dim scadabr_success As Boolean
-'Dim scadabr_resp As String * 256
-'
-'Sub send_scadabr_data(payload As String * 1000)
-'  Dim uri As String * 1085
-'  Dim tstamp As String * 18
-'  RealTime(rtime)
-'  Sprintf(tstamp,"%04u%02u%02u%02u%02u%02u", rtime(1),rtime(2),rtime(3),rtime(4),rtime(5),rtime(6))
-'  uri = REPORT_URL & tstamp & payload
-'  scadabr_socket = HTTPGet(uri, scadabr_resp, "")
-'  scadabr_success = NOT (scadabr_socket OR Len(scadabr_resp))
-'EndSub
-'
-'Sub send_test_ScadaBR()
-'  send_scadabr_data("&testing=0")
-'  test_scadabr = False
-'EndSub
-'
-''                1                 2                    3                    4
-'Const REPORT1 = "&dusttrak2_pm=%.3f&dc1100_pm_small=%.1f&dc1100_pm_large=%.1f&co2_licor=%.3f"
-''                5              6            7                8                9
-'Const REPORT2 = "&h2o_licor=%.3f&m205_o3=%.1f&m205_cell_t=%.1f&m205_cell_p=%.1f&m405_no2=%.1f"
-''                10           11            12
-'Const REPORT3 = "&m405_no=%.1f&m405_nox=%.1f&m405_no2_zero=%.1f"
-''                13                14                    15               16
-'Const REPORT4 = "&m405_no_zero=%.1f&m405_flow_factor=%.2f&m405_cell_t=%.1f&m405_cell_p=%.1f"
-''                17                   18               19             20
-'Const REPORT5 = "&m405_overflow_f=%.1f&m405_cell_f=%.1f&m405_o3_f=%.1f&m405_samp_led_v=%.4f"
-''                21                  22                 23
-'Const REPORT6 = "&m405_ref_led_v=%.4f&m405_no_gen_v=%.4f&m405_scrubber_t=%.2f"
-''                24              25              26              27
-'Const REPORT7 = "&ugga_ch4=%.2f&ugga_h2o=%.1f&ugga_co2=%.1f&ugga_ch4_dry=%.2f"
-''                28                  29                30                31
-'Const REPORT8 = "&ugga_co2_dry=%.1f&ugga_gas_p=%.4f&ugga_gas_t=%.1f&ugga_self_t=%.1f"
-''                32                    33                    34
-'Const REPORT9 = "&ugga_ringdown0=%.4f&ugga_ringdown1=%.4f&ugga_fit_flag=%.1f"
-''                35               36
-'Const REPORT0 = "&typek_amb_t=%.1f&logger_panel_T=%.1f&dc1100_size_ratio=%.1f"
-'Sub send_telemetry_report()
-'  Dim msg1 As String * 100, msg2 As String * 100, msg3 As String * 100
-'  Dim msg4 As String * 100, msg5 As String * 100, msg6 As String * 100
-'  Dim msg7 As String * 100, msg8 As String * 100, msg9 As String * 100
-'  Dim msg0 As String * 100
-'  Dim payload As String * 1000
-'  Sprintf(msg1,REPORT1,t(1),t(2),t(3),t(4))
-'  Sprintf(msg2,REPORT2,t(5),t(6),t(7),t(8),t(9))
-'  Sprintf(msg3,REPORT3,t(10),t(11),t(12))
-'  Sprintf(msg4,REPORT4,t(13),t(14),t(15),t(16))
-'  Sprintf(msg5,REPORT5,t(17),t(18),t(19),t(20))
-'  Sprintf(msg6,REPORT6,t(21),t(22),t(23))
-'  Sprintf(msg7,REPORT7,t(24),t(25),t(26),t(27))
-'  Sprintf(msg8,REPORT8,t(28),t(29),t(30),t(31))
-'  Sprintf(msg9,REPORT9,t(32),t(33),t(34))
-'  Sprintf(msg0,REPORT0,t(35),t(36),dc1100_size_ratio)
-'  payload = msg1 & msg2 & msg3 & msg4 & msg5 & msg6 & msg7 & msg8 & msg9 & msg0
-'  send_scadabr_data(payload)
-'EndSub
-'
-''HINT - just send most recent value instead of 5-min mean,
-''since that would require a fair amount of infrastructure
-''and time-series data is already emailed daily
-'Sub send_alphasensors_report()
-'  Dim msg1 As String * 64, msg2 As String * 64
-'  Sprintf(msg1,"&b4_co_mv=%.1f&b4_no_mv=%.1f&b4_o3_mv=%.1f",B4_CO_mV,B4_NO_mV,B4_O3_mV)
-'  Sprintf(msg2,"&b4_co_est=%.1f&b4_no_est=%.1f&b4_o3_est=%.1f", B4_CO_est,B4_NO_est,B4_O3_est)
-'  send_scadabr_data(msg1 & msg2)
-'EndSub
+
+
+'============================= SCADABR INTEGRATION ==================================
+Include("CPU:scadabr_Enc.cr3")
+Dim scadabr_socket As Long
+Dim scadabr_success As Boolean
+Dim scadabr_resp As String * 256
+
+Sub send_scadabr_data(payload As String * 1000)
+  Dim uri As String * 1085
+  Dim tstamp As String * 18
+  RealTime(rtime)
+  Sprintf(tstamp,"%04u%02u%02u%02u%02u%02u", rtime(1),rtime(2),rtime(3),rtime(4),rtime(5),rtime(6))
+  uri = REPORT_URL & tstamp & payload
+  scadabr_socket = HTTPGet(uri, scadabr_resp, "")
+  scadabr_success = NOT (scadabr_socket OR Len(scadabr_resp))
+EndSub
+
+Sub send_test_ScadaBR()
+  send_scadabr_data("&testing=0")
+  test_scadabr = False
+EndSub
+
+'2B Tech. O3
+Const REPORT1 = "&m205_o3=%.3f&m205_cell_t=%.1f&m205_cell_p=%.1f"
+'TECO NOX
+Const REPORT2 = "&m42c_no2=%.2f&m42c_no=%.2f&m42c_nox=%.2f&m42c_self_t=%.1f"
+'LGR UGGA
+'Const REPORT3 = "" ' TODO
+'Licor LI-840A CO2/H2O
+Const REPORT4 = "&li840a_cell_t=%.1f&li840a_cell_p=%.1f&li840a_co2=%.1f"
+Const REPORT5 = "&li840a_h2o=%.1f&li840a_dew_t=%.1f&li840a_pwr_src=%.1f"
+'misc
+Const REPORT6 = "&typet_sample_t=%.1f&logger_panel_t=%.1f"
+Sub send_telemetry_report()
+  Dim msg1 As String * 100, msg2 As String * 100, msg3 As String * 100
+  Dim msg4 As String * 100, msg5 As String * 100, msg6 As String * 100
+  Dim payload As String * 1000
+  Sprintf(msg1,REPORT1,m205_O3,m205_cell_T,m205_cell_P)
+  Sprintf(msg2,REPORT2,m42C_NO2,m42C_NO,m42C_NOx,m42C_self_T)
+'  Sprintf(msg3,REPORT3,
+  Sprintf(msg4,REPORT4,li840a_cell_T,li840a_cell_P,li840a_CO2)
+  Sprintf(msg5,REPORT5,li840a_H2O,li840a_dew_T,li840a_pwr_src)
+  Sprintf(msg6,REPORT6,typeT_sample_T,logger_panel_T)
+'  payload = msg1 & msg2 & msg3 & msg4 & msg5 & msg6
+  payload = msg1 & msg2 & msg4 & msg5 & msg6
+  send_scadabr_data(payload)
+EndSub
 
 
 '============================== SUBROUTINES =================================
@@ -636,8 +572,9 @@ BeginProg
     ElseIf (NOT is_sampling_indoor) Then 
       CallTable(stats_outdoor)
     EndIf
-'    CallTable(telemetry)
-'    If (telemetry.Output(1,1)) Then time_for_telemetry_report = True
+    If TimeIntoInterval(0,60,Sec) Then
+      send_telemetry_report()
+    EndIf
 
     'state init'd during setup()
     If TimeIntoInterval(0,30,Min) Then
@@ -676,6 +613,10 @@ BeginProg
     If TimeIntoInterval(1,10,Min) Then
       'RealTime(rtime(1)) 'for UGGA message check
       clock_drift = NetworkTimeProtocol(NTP_ADDR,NTP_OFFSET,NTP_DEV)
+      send_scadabr_data(FormatFloat(clock_drift,"&clock_drift=%f"))
+    EndIf
+    If (test_scadabr) Then
+      send_test_scadabr()
     EndIf
 
     inbetween_1min_scan = True
@@ -723,24 +664,8 @@ BeginProg
     
 '  SlowSequence
 '  Scan(1,Sec,1,0)
-'    If (debug_on) Then CallTable(debug)
-'    If (test_scadabr) Then
-'      send_test_scadabr()
-'    EndIf
 '    If (test_email) Then
 '      send_test_email()
-'    EndIf
-'
-'    If (time_for_telemetry_report) Then
-'      time_for_telemetry_report = False
-'      GetRecord(t(1),telemetry,1)
-'      If (t(3) = 0) Then
-'        dc1100_size_ratio = NAN
-'      Else
-'        dc1100_size_ratio = LOG(t(2)/t(3))
-'      EndIf
-'      send_telemetry_report()
-'      send_alphasensors_report()
 '    EndIf
 '
 '    If TimeIntoInterval(360,1440,Min) Then '6 AM

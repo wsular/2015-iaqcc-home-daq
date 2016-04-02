@@ -1,9 +1,9 @@
 
 # Private config files
-/source/indoorair/scadabr.cr3
-/source/indoorair/scadabr_Enc.cr3
-/source/indoorair/email.cr3
-/source/indoorair/email_Enc.cr3
+/source/*/scadabr.*
+/source/*/scadabr_Enc.*
+/source/*/email.*
+/source/*/email_Enc.*
 
 # Third-party files
 /third-party/*.pdf
