@@ -124,7 +124,7 @@ Units m42C_self_T = degC
 'Alias ch4(23) = ugga_fit_flag   '24: MIU valve
 ''25: MIU description
 'Units ugga_CH4 = ppmv
-'Units ugga_H2O = ppmv
+'Units ugga_H2O = ppthv
 'Units ugga_CO2 = ppmv
 'Units ugga_CH4_dry = ppmv
 'Units ugga_CO2_dry = ppmv
@@ -607,6 +607,7 @@ BeginProg
 '      'HACK - compare record year with logger timestamp to verify correctly parsed
 '      disable_ugga = NOT(ch4_year = rtime(1))
 '      ugga_gas_P *= MBAR_PER_TORR
+'      ugga_h2o /= 1000 'ppmv -> ppthv
 '    ElseIf (ch4_year = NAN) Then
 '      'do nothing, UGGA vars already set to NAN
 '    Else

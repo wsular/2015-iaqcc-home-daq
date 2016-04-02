@@ -14,6 +14,9 @@ next version
 * Rename columns for internal consistency:
     * `m42C_tmpr` -> `m42C_self_T`
     * `li840a_dewpoint` -> li840a_dew_T`
+* (hidden change) Change units of LGR UGGA H2O column from parts-per-million to
+  parts-per-thousand for consistency with other water vapor columns; won't take
+  effect for end-users until device returns from other projects
 
 
 v1.1 [2016-03-12]
