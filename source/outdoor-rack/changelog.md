@@ -8,6 +8,11 @@ next version
 
 * Improve error handling for LI-840A
 
+### Data Table Changes
+
+* Rename columns for internal consistency:
+    * `m42C_tmpr` -> `m42C_self_T`
+    * `li840a_dewpoint` -> li840a_dew_T`
 
 
 v1.1 [2016-03-12]

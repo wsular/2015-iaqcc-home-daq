@@ -8,6 +8,9 @@ next version
 
 * Improve error handling for LI-840A
 
+### Data Table Changes
+
+* Rename `li840a_dewpoint` to li840a_dew_T` for internal consistency
 
 
 v1.1 [2016-03-12]
