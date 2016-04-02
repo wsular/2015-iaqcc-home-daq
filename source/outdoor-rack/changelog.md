@@ -7,6 +7,7 @@ next version
 ### Issues Fixed
 
 * Improve error handling for LI-840A
+* Reject messages from Model 205 if cell pressure value outside 800-1300 bar
 
 ### Data Table Changes
 
