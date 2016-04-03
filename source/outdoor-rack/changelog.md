@@ -4,6 +4,11 @@ Changelog for outdoor AQ DAQFactory program
 next version
 ------------
 
+### Changes to instrument line-up
+
+* Add new CO monitor (T300U2; Teledyne API) with just CO being monitored via
+  analog output channel #1 (0-1.0 ppmv over 5Vdc)
+
 ### Issues Fixed
 
 * Improve error handling for LI-840A
@@ -11,12 +16,15 @@ next version
 
 ### Data Table Changes
 
+* Add new column `t300_CO` to table `tsdata` before column `m205_O3`
 * Rename columns for internal consistency:
     * `m42C_tmpr` -> `m42C_self_T`
     * `li840a_dewpoint` -> li840a_dew_T`
 * (hidden change) Change units of LGR UGGA H2O column from parts-per-million to
   parts-per-thousand for consistency with other water vapor columns; won't take
   effect for end-users until device returns from other projects
+* Move columns `is_zeroing_PTRMS` and `zflag` to front of file between
+  `tflag` and (new column) `t300_CO`
 
 ### Enhancements
 
