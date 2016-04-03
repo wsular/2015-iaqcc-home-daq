@@ -57,6 +57,13 @@ Const CAO_SMP_VLV = 2 'sample source: indoor/outdoor
 Const CAO_CO_ZERO = 1 'CO monitor: sample/zero air (scrubbed)
 Const C_PTR_ZERO = 7 'PTR-MS: sample/zero air (generated)
 
+Const ZERO_INTV = 480   'every 8 hours
+Const ZERO_OFF = 210    'wait 3-1/2 hrs into interval = 3:30a, 11:30a, 19:30p
+Const ZERO_PREFLAG = 1  'flag 1 minute after starting
+Const ZERO_DUR = 7      'zero for 7 minutes (<50% of that 15-min interval)
+Const ZERO_POSTFLAG = 1 'flag 1 minute after ending
+
+
 '============================== INTERNALS ===================================
 Const INTEG = 250
 Const DAYS_OF_DATA = 14 'saved to CPU
@@ -582,17 +589,17 @@ BeginProg
     ExciteCAO(CAO_SMP_VLV,ctrl_smp_vlv,True)
 
     'not init'd so possibility of 1st event being skipped
-    If TimeIntoInterval(60,1440,Min) Then '01:00
+    If TimeIntoInterval(ZERO_OFF,ZERO_INTV,Min) Then '01:00
       ctrl_co_zero = 5000 'on
       ctrl_ptr_zero = 5000 'on
       zflag = 1
-    ElseIf TimeIntoInterval(2,1440,Min) Then '01:02
+    ElseIf TimeIntoInterval(ZERO_OFF+ZERO_PREFLAG,ZERO_INTV,Min) Then '01:02
       zflag = 0
-    ElseIf TimeIntoInterval(120,1440,Min) Then '02:00
+    ElseIf TimeIntoInterval(ZERO_OFF+ZERO_DUR,ZERO_INTV,Min) Then '02:00
       ctrl_co_zero = 0 'off
       ctrl_ptr_zero = 0 'off
       zflag = 1
-    ElseIf TimeIntoInterval(122,360,Min) Then '02:02
+    ElseIf TimeIntoInterval(ZERO_OFF+ZERO_DUR+ZERO_POSTFLAG,ZERO_INTV,Min) Then '02:02
       zflag = 0
     EndIf
     is_zeroing_CO = (ctrl_co_zero > 0)

@@ -13,6 +13,10 @@ next version
 
 * Improve error handling for LI-840A
 * Reject messages from Model 205 if cell pressure value outside 800-1300 bar
+* Fix zero-sampling schedule for CO & PTR-MS and change to these times:
+    * 3:30 - 3:37 AM
+    * 11:30 - 11:37 AM
+    * 7:30 - 7:37 PM
 
 ### Data Table Changes
 
@@ -33,6 +37,11 @@ next version
 
 v1.1 [2016-03-12]
 -----------------
+
+### Known Issues
+
+* Auto-zero schedule for PTR-MS was not setup correctly... TODO: figure it out
+
 
 ### Changes to instrument line-up
 
