@@ -319,7 +319,7 @@ DataTable(debug,True,1)
   Sample(1,co(1),IEEE4)
   Sample(1,o3_record,String)
   Sample(9,o3(1),IEEE4)
-  Sample(1,nox_record,String)
+  Sample(4,nox_record,String)
   Sample(1,nox_bytes,IEEE4)
   Sample(6,nox(1),IEEE4)
 '  Sample(1,ch4_record,String)
@@ -515,6 +515,28 @@ Sub setup()
   ctrl_smp_vlv = IIF((rtime(5) MOD 30) < 15, 0, 5000)
   is_sampling_indoor = ctrl_smp_vlv
   'WARN: not waiting to flush plumbing...
+
+  'setup NOX instrument since RS232 locks out panel control
+  SerialOut(NOX_COM,(PREFIX & "set avg time 6" & CR),"",0,0) '6=60s
+  Delay(0,500,mSec)
+  SerialOut(NOX_COM,(PREFIX & "set meas mode no/nox" & CR),"",0,0)
+  Delay(0,500,mSec)
+  SerialOut(NOX_COM,(PREFIX & "set gas unit ppb" & CR),"",0,0)
+  Delay(0,500,mSec)
+  SerialOut(NOX_COM,(PREFIX & "set temp comp on" & CR),"",0,0)
+  Delay(0,500,mSec)
+  SerialOut(NOX_COM,(PREFIX & "set pres comp on" & CR),"",0,0)
+  Delay(0,500,mSec)
+  SerialFlush(NOX_COM)
+  'all relevants commands & responses, fyi:
+  '    "set avg time 6"          "set avg time 6 ok"
+  '    "set meas mode no/nox"    "set meas mode no/nox ok"
+  '    "set gas unit ppb"        "set gas unit ppb ok"
+  '    "set temp comp on"        "set temp comp on ok"
+  '    "set pres comp on"        "set pres comp on ok"
+  '    "set time HH:mm"          "set time HH:mm ok" (zero padded; 24hr)
+  '    "set date mm-dd-yy"       "set date mm-dd-yy ok" (zero padded)
+  '    "set save params"         "set save params ok"
 EndSub
 
 
@@ -639,6 +661,7 @@ BeginProg
     '
     'Bench tests reveal a delay of at least 300ms be introduced 
     'between queries to prevent incomplete responses
+    SerialFlush(NOX_COM)
     SerialOut(NOX_COM,(PREFIX & "no2" & CR),"",0,0)
     SerialIn(nox_record(1),NOX_COM,100,&H0d,NOX_REC)
     Delay(1,NOX_DELAY,mSec)

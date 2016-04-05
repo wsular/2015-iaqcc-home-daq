@@ -12,6 +12,13 @@ next version
   truncated, but unaffected data can be collected directly from the analyzer)
 * (hidden fix since we always specify device names..) Correctly construct
   reporting URL to ScadaBR if no device name is not specified (`""`)
+* Force TECO NOx analyzer into correct operating mode by sending relevant
+  commands at start-up
+
+### Data Table Changes
+
+* Monitoring table `debug` now exposes all RS232 (string) records from TECO NOx
+  box for review
 
 ### Notes
 
