@@ -20,6 +20,13 @@ next version
 * Monitoring table `debug` now exposes all RS232 (string) records from TECO NOx
   box for review
 
+### Enhancements
+
+* Split the telemetry reporting into (3) distinct channel groups:
+    * **outdoor-rack** = continuous data from rack (i.e. logger temperature)
+    * **outdoor-rack-inside** = gas analyzer data for indoor air sampling
+    * **outdoor-rack-outside** = gas analyzer data for outdoor air sampling
+
 ### Notes
 
 * Rename `clock_drift` to `NTP_offset` for clarity
