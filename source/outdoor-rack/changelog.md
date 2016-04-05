@@ -8,6 +8,10 @@ next version
 
 * Add DustTrak PM2.5 (analog output) to telemetry reports
 
+### Notes
+
+* Rename `clock_drift` to `NTP_offset` for clarity
+
 
 v1.2 [2016-04-02]
 -----------------
