@@ -7,6 +7,9 @@ next version
 ### Issues Fixed
 
 * Add DustTrak PM2.5 (analog output) to telemetry reports
+* Increase upper range limit of Teledyne CO analyzer from 1.0->10 ppm;
+  highest measurement yet has been ~4ppm (data recorded before this fix is 
+  truncated, but unaffected data can be collected directly from the analyzer)
 
 ### Notes
 

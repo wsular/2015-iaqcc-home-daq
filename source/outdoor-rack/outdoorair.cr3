@@ -21,7 +21,7 @@ Const TSI_PM_MLT = (1.0 - TSI_PM_OFF)/5000 '0-1.0 mg/m^3, 0-5V
 
 Const DF_CO = 5
 Const CO_OFF = 0
-Const CO_MLT = (1.0 - CO_OFF)/5000 '0-1.0 ppm over 0-5V
+Const CO_MLT = (10.0 - CO_OFF)/5000 '0-10.0 ppm over 0-5V
 
 Const NOX_ADDR = 42 'instrument-specific address (default: 42)
 Const PREFIX = CHR(128 + NOX_ADDR)
