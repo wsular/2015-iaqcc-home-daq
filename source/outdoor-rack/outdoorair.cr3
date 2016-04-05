@@ -482,7 +482,7 @@ Const REPORT2 = "&m42c_no2=%.2f&m42c_no=%.2f&m42c_nox=%.2f&m42c_self_t=%.1f"
 Const REPORT4 = "&li840a_cell_t=%.1f&li840a_cell_p=%.1f&li840a_co2=%.1f"
 Const REPORT5 = "&li840a_h2o=%.1f&li840a_dew_t=%.1f&li840a_pwr_src=%.1f"
 'misc
-Const REPORT6 = "&typet_sample_t=%.1f&logger_panel_t=%.1f"
+Const REPORT6 = "&typet_sample_t=%.1f&logger_panel_t=%.1f&dusttrak2_analog_pm25=%3.f"
 Sub send_telemetry_report()
   Dim msg1 As String * 100, msg2 As String * 100, msg3 As String * 100
   Dim msg4 As String * 100, msg5 As String * 100, msg6 As String * 100
@@ -492,7 +492,7 @@ Sub send_telemetry_report()
 '  Sprintf(msg3,REPORT3,
   Sprintf(msg4,REPORT4,li840a_cell_T,li840a_cell_P,li840a_CO2)
   Sprintf(msg5,REPORT5,li840a_H2O,li840a_dew_T,li840a_pwr_src)
-  Sprintf(msg6,REPORT6,typeT_sample_T,logger_panel_T)
+  Sprintf(msg6,REPORT6,typeT_sample_T,logger_panel_T,dusttrak2_analog_pm25)
 '  payload = msg1 & msg2 & msg3 & msg4 & msg5 & msg6
   payload = msg1 & msg2 & msg4 & msg5 & msg6
   send_scadabr_data(payload)

@@ -1,6 +1,14 @@
 Changelog for outdoor AQ DAQFactory program
 ===========================================
 
+next version
+------------
+
+### Issues Fixed
+
+* Add DustTrak PM2.5 (analog output) to telemetry reports
+
+
 v1.2 [2016-04-02]
 -----------------
 
