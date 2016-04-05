@@ -1,8 +1,47 @@
 Changelog for outdoor AQ DAQFactory program
 ===========================================
 
+v1.2 [2016-04-02]
+-----------------
+
+### Changes to instrument line-up
+
+* Add new CO monitor (T300U2; Teledyne API) with just CO being monitored via
+  analog output channel #1 (0-1.0 ppmv over 5Vdc)
+
+### Issues Fixed
+
+* Improve error handling for LI-840A
+* Reject messages from Model 205 if cell pressure value outside 800-1300 bar
+* Fix zero-sampling schedule for CO & PTR-MS and change to these times:
+    * 3:30 - 3:37 AM
+    * 11:30 - 11:37 AM
+    * 7:30 - 7:37 PM
+
+### Data Table Changes
+
+* Add new column `t300_CO` to table `tsdata` before column `m205_O3`
+* Rename columns for internal consistency:
+    * `m42C_tmpr` -> `m42C_self_T`
+    * `li840a_dewpoint` -> li840a_dew_T`
+* (hidden change) Change units of LGR UGGA H2O column from parts-per-million to
+  parts-per-thousand for consistency with other water vapor columns; won't take
+  effect for end-users until device returns from other projects
+* Move columns `is_zeroing_PTRMS` and `zflag` to front of file between
+  `tflag` and (new column) `t300_CO`
+
+### Enhancements
+
+* Restore telemetry reporting (to ScadaBR)
+
+
 v1.1 [2016-03-12]
 -----------------
+
+### Known Issues
+
+* Auto-zero schedule for PTR-MS was not setup correctly... TODO: figure it out
+
 
 ### Changes to instrument line-up
 

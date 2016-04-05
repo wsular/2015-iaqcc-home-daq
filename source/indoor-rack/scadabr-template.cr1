@@ -11,12 +11,12 @@
 '
 '                     THIS FILE IS A TEMPLATE
 '
-' File contains dummy values! Update as necessary and save as `scadabr.cr3`
+' File contains dummy values! Update as necessary and save as `scadabr.cr1`
 '
-' Before compiling `default.cr3`, open `scadabr.cr3` in CRBasic Editor, go
-' File > Save and Encrypt... and save with default name `scadabr_Enc.cr3`
+' Before compiling `default.cr3`, open `scadabr.cr1` in CRBasic Editor, go
+' File > Save and Encrypt... and save with default name `scadabr_Enc.cr1`
 '
-' Before sending to datalogger, copy `scadabr_Enc.cr3` to its CPU: drive
+' Before sending to datalogger, copy `scadabr_Enc.cr1` to its CPU: drive
 '
 
 ' URI to ScadaBR HTTP receiver; just the document, no query punctuation

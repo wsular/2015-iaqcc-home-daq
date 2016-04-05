@@ -1,6 +1,23 @@
 Changelog for indoor AQ datalogger
 ==================================
 
+v1.2 [2016-04-02]
+-----------------
+
+### Issues Fixed
+
+* Improve error handling for LI-840A
+* Store NANs, not zeros, in dust monitor (Dylos DC1100) variables at start-up
+
+### Data Table Changes
+
+* Rename `li840a_dewpoint` to li840a_dew_T` for internal consistency
+
+### Enhancements
+
+* Restore telemetry reporting (to ScadaBR)
+
+
 v1.1 [2016-03-12]
 -----------------
 
