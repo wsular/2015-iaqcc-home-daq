@@ -10,6 +10,8 @@ next version
 * Increase upper range limit of Teledyne CO analyzer from 1.0->10 ppm;
   highest measurement yet has been ~4ppm (data recorded before this fix is 
   truncated, but unaffected data can be collected directly from the analyzer)
+* (hidden fix since we always specify device names..) Correctly construct
+  reporting URL to ScadaBR if no device name is not specified (`""`)
 
 ### Notes
 

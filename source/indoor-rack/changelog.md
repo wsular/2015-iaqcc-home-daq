@@ -8,6 +8,8 @@ next version
 
 * Fix telemetry reporting of inst. values `li840a_dew_T`, `li840a_pwr_src`,
   `typeK_amb_T`, and `logger_panel_T`
+* (hidden fix since we always specify device names..) Correctly construct
+  reporting URL to ScadaBR if no device name is not specified (`""`)
 
 ### Notes
 
