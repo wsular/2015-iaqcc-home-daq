@@ -335,7 +335,7 @@ Sub send_telemetry_report()
   Dim payload As String * 300
   Sprintf(msg1,REPORT1,dusttrak2_analog_pm25,dc1100_pm_small,dc1100_pm_large)
   Sprintf(msg2,REPORT2,li840a_CO2,li840a_H2O,li840a_cell_T,li840a_cell_P)
-  Sprintf(msg3,REPORT3,li840a_pwr_src,typeK_amb_T,logger_panel_T)
+  Sprintf(msg3,REPORT3,li840a_dew_T,li840a_pwr_src,typeK_amb_T,logger_panel_T)
   payload = msg1 & msg2 & msg3
   send_scadabr_data(payload)
 EndSub

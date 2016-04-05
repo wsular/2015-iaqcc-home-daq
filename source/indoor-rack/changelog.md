@@ -1,6 +1,15 @@
 Changelog for indoor AQ datalogger
 ==================================
 
+next version
+------------
+
+### Issues Fixed
+
+* Fix telemetry reporting of inst. values `li840a_dew_T`, `li840a_pwr_src`,
+  `typeK_amb_T`, and `logger_panel_T`
+
+
 v1.2 [2016-04-02]
 -----------------
 
