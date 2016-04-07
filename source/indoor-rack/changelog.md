@@ -1,6 +1,21 @@
 Changelog for indoor AQ datalogger
 ==================================
 
+v1.2.1 [2016-04-05]
+-------------------
+
+### Issues Fixed
+
+* Fix telemetry reporting of inst. values `li840a_dew_T`, `li840a_pwr_src`,
+  `typeK_amb_T`, and `logger_panel_T`
+* (hidden fix since we always specify device names..) Correctly construct
+  reporting URL to ScadaBR if no device name is not specified (`""`)
+
+### Notes
+
+* Rename `clock_drift` to `NTP_offset` for clarity
+
+
 v1.2 [2016-04-02]
 -----------------
 

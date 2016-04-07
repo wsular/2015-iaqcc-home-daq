@@ -21,7 +21,7 @@ Const TSI_PM_MLT = (1.0 - TSI_PM_OFF)/5000 '0-1.0 mg/m^3, 0-5V
 
 Const DF_CO = 5
 Const CO_OFF = 0
-Const CO_MLT = (1.0 - CO_OFF)/5000 '0-1.0 ppm over 0-5V
+Const CO_MLT = (10.0 - CO_OFF)/5000 '0-10.0 ppm over 0-5V
 
 Const NOX_ADDR = 42 'instrument-specific address (default: 42)
 Const PREFIX = CHR(128 + NOX_ADDR)
@@ -74,10 +74,10 @@ Const MBAR_PER_KPA = 10
 Public debug_on As Boolean
 
 Const NTP_ADDR = "0.us.pool.ntp.org"
-Const NTP_OFFSET = -8*3600 'sec from UTC = PST
+Const UTC_OFFSET = -8*3600 'sec from UTC = PST
 Const NTP_DEV = 100 'ms, tolerable drift
-Dim clock_drift
-Units clock_drift = ms
+Dim NTP_offset
+Units NTP_offset = ms
 
 Dim dusttrak2_analog_pm25
 Units dusttrak2_analog_pm25 = mg/m^3
@@ -319,7 +319,7 @@ DataTable(debug,True,1)
   Sample(1,co(1),IEEE4)
   Sample(1,o3_record,String)
   Sample(9,o3(1),IEEE4)
-  Sample(1,nox_record,String)
+  Sample(4,nox_record,String)
   Sample(1,nox_bytes,IEEE4)
   Sample(6,nox(1),IEEE4)
 '  Sample(1,ch4_record,String)
@@ -332,7 +332,7 @@ DataTable(debug,True,1)
 '  Sample(1,smtp_response,String)
   Sample(1,scadabr_resp,String)
   Sample(1,scadabr_success,Boolean)
-  Sample(1,clock_drift,IEEE4)
+  Sample(1,NTP_offset,IEEE4)
   Sample(1,ctrl_smp_vlv,IEEE4)
   Sample(1,ctrl_co_zero,IEEE4)
   Sample(1,ctrl_ptr_zero,IEEE4)
@@ -456,19 +456,20 @@ Include("CPU:scadabr_Enc.cr3")
 Dim scadabr_socket As Long
 Dim scadabr_success As Boolean
 Dim scadabr_resp As String * 256
+Dim rack_report As String * 56
 
-Sub send_scadabr_data(payload As String * 1000)
-  Dim uri As String * 1085
+Sub send_scadabr_data(device As String, payload As String * 420)
+  Dim uri As String * 600
   Dim tstamp As String * 18
   RealTime(rtime)
   Sprintf(tstamp,"%04u%02u%02u%02u%02u%02u", rtime(1),rtime(2),rtime(3),rtime(4),rtime(5),rtime(6))
-  uri = REPORT_URL & tstamp & payload
+  Sprintf(uri, REPORT_URL, device, tstamp, payload)
   scadabr_socket = HTTPGet(uri, scadabr_resp, "")
   scadabr_success = NOT (scadabr_socket OR Len(scadabr_resp))
 EndSub
 
 Sub send_test_ScadaBR()
-  send_scadabr_data("&testing=0")
+  send_scadabr_data("outdoor-rack", "&testing=0")
   test_scadabr = False
 EndSub
 
@@ -482,20 +483,20 @@ Const REPORT2 = "&m42c_no2=%.2f&m42c_no=%.2f&m42c_nox=%.2f&m42c_self_t=%.1f"
 Const REPORT4 = "&li840a_cell_t=%.1f&li840a_cell_p=%.1f&li840a_co2=%.1f"
 Const REPORT5 = "&li840a_h2o=%.1f&li840a_dew_t=%.1f&li840a_pwr_src=%.1f"
 'misc
-Const REPORT6 = "&typet_sample_t=%.1f&logger_panel_t=%.1f"
-Sub send_telemetry_report()
-  Dim msg1 As String * 100, msg2 As String * 100, msg3 As String * 100
-  Dim msg4 As String * 100, msg5 As String * 100, msg6 As String * 100
-  Dim payload As String * 600
-  Sprintf(msg1,REPORT1,t300_co,m205_O3,m205_cell_T,m205_cell_P)
+Const REPORT6 = "&typet_sample_t=%.1f"
+Sub send_gasdata_report(device As String)
+  Dim msg1 As String * 70, msg2 As String * 70, msg3 As String * 100
+  Dim msg4 As String * 70, msg5 As String * 70, msg6 As String * 30
+  Dim payload As String * 420
+  Sprintf(msg1,REPORT1,t300_CO,m205_O3,m205_cell_T,m205_cell_P)
   Sprintf(msg2,REPORT2,m42C_NO2,m42C_NO,m42C_NOx,m42C_self_T)
 '  Sprintf(msg3,REPORT3,
   Sprintf(msg4,REPORT4,li840a_cell_T,li840a_cell_P,li840a_CO2)
   Sprintf(msg5,REPORT5,li840a_H2O,li840a_dew_T,li840a_pwr_src)
-  Sprintf(msg6,REPORT6,typeT_sample_T,logger_panel_T)
+  Sprintf(msg6,REPORT6,typeT_sample_T)
 '  payload = msg1 & msg2 & msg3 & msg4 & msg5 & msg6
   payload = msg1 & msg2 & msg4 & msg5 & msg6
-  send_scadabr_data(payload)
+  send_scadabr_data(device, payload)
 EndSub
 
 
@@ -515,6 +516,28 @@ Sub setup()
   ctrl_smp_vlv = IIF((rtime(5) MOD 30) < 15, 0, 5000)
   is_sampling_indoor = ctrl_smp_vlv
   'WARN: not waiting to flush plumbing...
+
+  'setup NOX instrument since RS232 locks out panel control
+  SerialOut(NOX_COM,(PREFIX & "set avg time 6" & CR),"",0,0) '6=60s
+  Delay(0,500,mSec)
+  SerialOut(NOX_COM,(PREFIX & "set meas mode no/nox" & CR),"",0,0)
+  Delay(0,500,mSec)
+  SerialOut(NOX_COM,(PREFIX & "set gas unit ppb" & CR),"",0,0)
+  Delay(0,500,mSec)
+  SerialOut(NOX_COM,(PREFIX & "set temp comp on" & CR),"",0,0)
+  Delay(0,500,mSec)
+  SerialOut(NOX_COM,(PREFIX & "set pres comp on" & CR),"",0,0)
+  Delay(0,500,mSec)
+  SerialFlush(NOX_COM)
+  'all relevants commands & responses, fyi:
+  '    "set avg time 6"          "set avg time 6 ok"
+  '    "set meas mode no/nox"    "set meas mode no/nox ok"
+  '    "set gas unit ppb"        "set gas unit ppb ok"
+  '    "set temp comp on"        "set temp comp on ok"
+  '    "set pres comp on"        "set pres comp on ok"
+  '    "set time HH:mm"          "set time HH:mm ok" (zero padded; 24hr)
+  '    "set date mm-dd-yy"       "set date mm-dd-yy ok" (zero padded)
+  '    "set save params"         "set save params ok"
 EndSub
 
 
@@ -569,8 +592,19 @@ BeginProg
     ElseIf (NOT is_sampling_indoor) Then 
       CallTable(stats_outdoor)
     EndIf
+
+    'HINT do reports before making changes so flag is checked before any changes occur
     If TimeIntoInterval(0,60,Sec) Then
-      send_telemetry_report()
+      Sprintf(rack_report, "&logger_panel_t=%1.f&dusttrak2_analog_pm25=%.3f", _
+              logger_panel_T, dusttrak2_analog_pm25)
+      send_scadabr_data("outdoor-rack", rack_report)
+      If (tflag) Then
+        'don't report during transition times
+      ElseIf (is_sampling_indoor) Then
+        send_gasdata_report("outdoor-rack-inside")
+      Else
+        send_gasdata_report("outdoor-rack-outside")
+      EndIf
     EndIf
 
     'state init'd during setup()
@@ -609,8 +643,8 @@ BeginProg
 
     If TimeIntoInterval(1,10,Min) Then
       'RealTime(rtime(1)) 'for UGGA message check
-      clock_drift = NetworkTimeProtocol(NTP_ADDR,NTP_OFFSET,NTP_DEV)
-      send_scadabr_data(FormatFloat(clock_drift,"&clock_drift=%f"))
+      NTP_offset = NetworkTimeProtocol(NTP_ADDR,UTC_OFFSET,NTP_DEV)
+      send_scadabr_data("outdoor-rack", FormatFloat(NTP_offset,"&ntp_offset=%f"))
     EndIf
     If (test_scadabr) Then
       send_test_scadabr()
@@ -639,6 +673,7 @@ BeginProg
     '
     'Bench tests reveal a delay of at least 300ms be introduced 
     'between queries to prevent incomplete responses
+    SerialFlush(NOX_COM)
     SerialOut(NOX_COM,(PREFIX & "no2" & CR),"",0,0)
     SerialIn(nox_record(1),NOX_COM,100,&H0d,NOX_REC)
     Delay(1,NOX_DELAY,mSec)
@@ -677,8 +712,8 @@ BeginProg
 '    If TimeIntoInterval(0,10,Min) Then
 '      RealTime(rtime(1)) 'HINT - happens implicitly within ScadaBR integration
 '                         'but do so explicitly here for the UGGA message parsing check
-'      clock_drift = NetworkTimeProtocol(NTP_ADDR,NTP_OFFSET,NTP_DEV)
-'      send_scadabr_data(FormatFloat(clock_drift,"&clock_drift=%f"))
+'      NTP_offset = NetworkTimeProtocol(NTP_ADDR,UTC_OFFSET,NTP_DEV)
+'      send_scadabr_data(FormatFloat(NTP_offset,"&ntp_offset=%f"))
 '
 '      cr3k_lithium_battery = Status.LithiumBattery
 '      send_scadabr_data(FormatFloat(cr3k_lithium_battery,"&cr3k_lithium_battery=%f"))

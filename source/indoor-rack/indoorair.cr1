@@ -55,10 +55,10 @@ Const MBAR_PER_KPA = 10
 Public debug_on As Boolean
 
 Const NTP_ADDR = "0.us.pool.ntp.org"
-Const NTP_OFFSET = -8*3600 'sec from UTC = PST
+Const UTC_OFFSET = -8*3600 'sec from UTC = PST
 Const NTP_DEV = 100 'ms, tolerable drift
-Dim clock_drift
-Units clock_drift = ms
+Dim NTP_offset
+Units NTP_offset = ms
 
 Dim dusttrak2_analog_pm25
 Units dusttrak2_analog_pm25 = mg/m^3
@@ -209,7 +209,7 @@ DataTable(debug,True,1)
 '  Sample(1,smtp_response,String)
   Sample(1,scadabr_resp,String)
   Sample(1,scadabr_success,Boolean)
-  Sample(1,clock_drift,IEEE4)
+  Sample(1,NTP_offset,IEEE4)
 EndTable
 
 
@@ -335,7 +335,7 @@ Sub send_telemetry_report()
   Dim payload As String * 300
   Sprintf(msg1,REPORT1,dusttrak2_analog_pm25,dc1100_pm_small,dc1100_pm_large)
   Sprintf(msg2,REPORT2,li840a_CO2,li840a_H2O,li840a_cell_T,li840a_cell_P)
-  Sprintf(msg3,REPORT3,li840a_pwr_src,typeK_amb_T,logger_panel_T)
+  Sprintf(msg3,REPORT3,li840a_dew_T,li840a_pwr_src,typeK_amb_T,logger_panel_T)
   payload = msg1 & msg2 & msg3
   send_scadabr_data(payload)
 EndSub
@@ -454,8 +454,8 @@ BeginProg
 '    EndIf
 
     If TimeIntoInterval(0,10,Min) Then
-      clock_drift = NetworkTimeProtocol(NTP_ADDR,NTP_OFFSET,NTP_DEV)
-      send_scadabr_data(FormatFloat(clock_drift,"&clock_drift=%f"))
+      NTP_offset = NetworkTimeProtocol(NTP_ADDR,UTC_OFFSET,NTP_DEV)
+      send_scadabr_data(FormatFloat(NTP_offset,"&ntp_offset=%f"))
     EndIf
   NextScan
 EndProg

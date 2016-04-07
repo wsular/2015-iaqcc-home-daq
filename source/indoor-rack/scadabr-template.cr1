@@ -13,7 +13,7 @@
 '
 ' File contains dummy values! Update as necessary and save as `scadabr.cr1`
 '
-' Before compiling `default.cr3`, open `scadabr.cr1` in CRBasic Editor, go
+' Before compiling `indoorair.cr1`, open `scadabr.cr1` in CRBasic Editor, go
 ' File > Save and Encrypt... and save with default name `scadabr_Enc.cr1`
 '
 ' Before sending to datalogger, copy `scadabr_Enc.cr1` to its CPU: drive
@@ -29,6 +29,6 @@ Const _DEVICE_KEY = "device-name"
 #If (Len(_DEVICE_KEY)) Then
   Const REPORT_URL = (_SERVER_URL & "?__device=" & _DEVICE_KEY & "&__time=")
 #Else
-  Const REPORT_URL = (_SERVER_URL & "&__time=")
+  Const REPORT_URL = (_SERVER_URL & "?__time=")
 #EndIf
 

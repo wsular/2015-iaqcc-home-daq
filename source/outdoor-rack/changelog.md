@@ -1,6 +1,37 @@
 Changelog for outdoor AQ DAQFactory program
 ===========================================
 
+v1.2.1 [2016-04-05]
+-------------------
+
+### Issues Fixed
+
+* Add DustTrak PM2.5 (analog output) to telemetry reports
+* Increase upper range limit of Teledyne CO analyzer from 1.0->10 ppm;
+  highest measurement yet has been ~4ppm (data recorded before this fix is 
+  truncated, but unaffected data can be collected directly from the analyzer)
+* (hidden fix since we always specify device names..) Correctly construct
+  reporting URL to ScadaBR if no device name is not specified (`""`)
+* Force TECO NOx analyzer into correct operating mode by sending relevant
+  commands at start-up
+
+### Data Table Changes
+
+* Monitoring table `debug` now exposes all RS232 (string) records from TECO NOx
+  box for review
+
+### Enhancements
+
+* Split the telemetry reporting into (3) distinct channel groups:
+    * **outdoor-rack** = continuous data from rack (i.e. logger temperature)
+    * **outdoor-rack-inside** = gas analyzer data for indoor air sampling
+    * **outdoor-rack-outside** = gas analyzer data for outdoor air sampling
+
+### Notes
+
+* Rename `clock_drift` to `NTP_offset` for clarity
+
+
 v1.2 [2016-04-02]
 -----------------
 
