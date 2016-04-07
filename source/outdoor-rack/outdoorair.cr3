@@ -594,7 +594,7 @@ BeginProg
     'HINT do reports before making changes so flag is checked before any changes occur
     If TimeIntoInterval(0,60,Sec) Then
       Sprintf(rack_report, _
-            "&logger_panel_t=%1.f&dusttrak2_analog_pm25=%.3f&typet_sample_t=%.1f", _
+            "&logger_panel_t=%.1f&dusttrak2_analog_pm25=%.3f&typet_sample_t=%.1f", _
             logger_panel_T, dusttrak2_analog_pm25, typeT_sample_T)
       send_scadabr_data("outdoor-rack", rack_report)
       If (tflag) Then

@@ -1,6 +1,14 @@
 Changelog for outdoor AQ DAQFactory program
 ===========================================
 
+next version
+------------
+
+### Issues Fixed
+
+* Fix datalogger temperature report (was truncated to single digit width)
+
+
 v1.2.2 [2016-04-06]
 -------------------
 
