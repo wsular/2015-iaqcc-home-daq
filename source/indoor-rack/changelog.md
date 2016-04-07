@@ -1,6 +1,12 @@
 Changelog for indoor AQ datalogger
 ==================================
 
+v1.2.2
+------
+
+*Skipped; no changes*
+
+
 v1.2.1 [2016-04-05]
 -------------------
 

@@ -456,15 +456,16 @@ Include("CPU:scadabr_Enc.cr3")
 Dim scadabr_socket As Long
 Dim scadabr_success As Boolean
 Dim scadabr_resp As String * 256
-Dim rack_report As String * 56
+Dim rack_report As String * 70
 
 Sub send_scadabr_data(device As String, payload As String * 420)
   Dim uri As String * 600
   Dim tstamp As String * 18
   RealTime(rtime)
   Sprintf(tstamp,"%04u%02u%02u%02u%02u%02u", rtime(1),rtime(2),rtime(3),rtime(4),rtime(5),rtime(6))
-  Sprintf(uri, REPORT_URL, device, tstamp, payload)
-  scadabr_socket = HTTPGet(uri, scadabr_resp, "")
+  Sprintf(uri, REPORT_URL, device)
+  'HACK `sprintf` cannot (?) handle adjacent string arguments (`..%s%s`) so just concatenate...
+  scadabr_socket = HTTPGet((uri & tstamp & payload), scadabr_resp, "")
   scadabr_success = NOT (scadabr_socket OR Len(scadabr_resp))
 EndSub
 
@@ -482,20 +483,17 @@ Const REPORT2 = "&m42c_no2=%.2f&m42c_no=%.2f&m42c_nox=%.2f&m42c_self_t=%.1f"
 'Licor LI-840A CO2/H2O
 Const REPORT4 = "&li840a_cell_t=%.1f&li840a_cell_p=%.1f&li840a_co2=%.1f"
 Const REPORT5 = "&li840a_h2o=%.1f&li840a_dew_t=%.1f&li840a_pwr_src=%.1f"
-'misc
-Const REPORT6 = "&typet_sample_t=%.1f"
 Sub send_gasdata_report(device As String)
   Dim msg1 As String * 70, msg2 As String * 70, msg3 As String * 100
-  Dim msg4 As String * 70, msg5 As String * 70, msg6 As String * 30
+  Dim msg4 As String * 70, msg5 As String * 70
   Dim payload As String * 420
   Sprintf(msg1,REPORT1,t300_CO,m205_O3,m205_cell_T,m205_cell_P)
   Sprintf(msg2,REPORT2,m42C_NO2,m42C_NO,m42C_NOx,m42C_self_T)
 '  Sprintf(msg3,REPORT3,
   Sprintf(msg4,REPORT4,li840a_cell_T,li840a_cell_P,li840a_CO2)
   Sprintf(msg5,REPORT5,li840a_H2O,li840a_dew_T,li840a_pwr_src)
-  Sprintf(msg6,REPORT6,typeT_sample_T)
-'  payload = msg1 & msg2 & msg3 & msg4 & msg5 & msg6
-  payload = msg1 & msg2 & msg4 & msg5 & msg6
+'  payload = msg1 & msg2 & msg3 & msg4 & msg5
+  payload = msg1 & msg2 & msg4 & msg5
   send_scadabr_data(device, payload)
 EndSub
 
@@ -595,8 +593,9 @@ BeginProg
 
     'HINT do reports before making changes so flag is checked before any changes occur
     If TimeIntoInterval(0,60,Sec) Then
-      Sprintf(rack_report, "&logger_panel_t=%1.f&dusttrak2_analog_pm25=%.3f", _
-              logger_panel_T, dusttrak2_analog_pm25)
+      Sprintf(rack_report, _
+            "&logger_panel_t=%1.f&dusttrak2_analog_pm25=%.3f&typet_sample_t=%.1f", _
+            logger_panel_T, dusttrak2_analog_pm25, typeT_sample_T)
       send_scadabr_data("outdoor-rack", rack_report)
       If (tflag) Then
         'don't report during transition times

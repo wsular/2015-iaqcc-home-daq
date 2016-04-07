@@ -27,5 +27,5 @@ Const _SERVER_URL = "http://yourserver.tld:8080/ScadaBR/httpds"
 '
 '    Sprintf(query_url, REPORT_URL, "device-name", timestamp_str, payload)
 '
-Const REPORT_URL = (_SERVER_URL & "?__device=%s&__time=%s%s")
+Const REPORT_URL = (_SERVER_URL & "?__device=%s&__time=")
 

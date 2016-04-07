@@ -1,6 +1,16 @@
 Changelog for outdoor AQ DAQFactory program
 ===========================================
 
+v1.2.2 [2016-04-06]
+-------------------
+
+### Issues Fixed
+
+* Fix telemetry reports to ScadaBR from outdoor rack (avoid apparent bug with 
+  `sprintf()` which causes adjacent string placeholders ("`...%s%s`") to be
+  filled with null strings)
+
+
 v1.2.1 [2016-04-05]
 -------------------
 
@@ -11,7 +21,7 @@ v1.2.1 [2016-04-05]
   highest measurement yet has been ~4ppm (data recorded before this fix is 
   truncated, but unaffected data can be collected directly from the analyzer)
 * (hidden fix since we always specify device names..) Correctly construct
-  reporting URL to ScadaBR if no device name is not specified (`""`)
+  reporting URL to ScadaBR if device name is not specified (`""`)
 * Force TECO NOx analyzer into correct operating mode by sending relevant
   commands at start-up
 
