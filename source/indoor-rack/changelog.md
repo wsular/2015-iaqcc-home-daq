@@ -1,6 +1,15 @@
 Changelog for indoor AQ datalogger
 ==================================
 
+next version
+------------
+
+### Enhancements
+
+* Include more precision in values reported to ScadaBR so plots maintain high
+  resolution
+
+
 v1.2.2
 ------
 
