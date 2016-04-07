@@ -11,6 +11,7 @@ next version
     * Reconsolidates non-gas data measurements (e.g. ozone is split in/outdoor
       but analyzer cell pressure is not)
     * Construct report URLs as statically as possible
+* Send reports *after* sample source flags are updated
 
 
 v1.2.2 [2016-04-06]

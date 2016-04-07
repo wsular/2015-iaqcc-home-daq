@@ -601,18 +601,6 @@ BeginProg
       CallTable(stats_outdoor)
     EndIf
 
-    'HINT do reports before making changes so flag is checked before any changes occur
-    If TimeIntoInterval(0,60,Sec) Then
-      send_rack_report()
-      If (tflag) Then
-        'don't report during transition times
-      ElseIf (is_sampling_indoor) Then
-        send_indoor_report()
-      ElseIf (NOT is_sampling_indoor) Then
-        send_outdoor_report()
-      EndIf
-    EndIf
-
     'state init'd during setup()
     If TimeIntoInterval(0,30,Min) Then
       ctrl_smp_vlv = 0 'off = outdoor air
@@ -696,6 +684,15 @@ BeginProg
     SplitStr(nox(3),nox_record(2),"",1,0)
     SplitStr(nox(4),nox_record(3),"",1,0)
     SplitStr(nox(5),nox_record(4),"",2,0)
+
+    send_rack_report()
+    If (tflag) Then
+      'don't report during transition times
+    ElseIf (is_sampling_indoor) Then
+      send_indoor_report()
+    ElseIf (NOT is_sampling_indoor) Then
+      send_outdoor_report()
+    EndIf
 
     just_had_1min_scan = True
   NextScan
