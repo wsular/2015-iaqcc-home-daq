@@ -4,6 +4,16 @@ Changelog for indoor AQ datalogger
 next version
 ------------
 
+### Data Table Changes
+
+* Columns renamed:
+    * `li840a_dew_T` -> `li840a_dewpoint`
+    * `logger_panel_T` -> `logger_self_T`
+
+
+v1.2.3
+------
+
 ### Enhancements
 
 * Include more precision in values reported to ScadaBR so plots maintain high

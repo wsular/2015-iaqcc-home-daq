@@ -4,6 +4,16 @@ Changelog for outdoor AQ DAQFactory program
 next version
 ------------
 
+### Data Table Changes
+
+* Columns renamed:
+    * `li840a_dew_T` -> `li840a_dewpoint`
+    * `logger_panel_T` -> `logger_self_T`
+
+
+v1.2.3
+------
+
 ### Issues Fixed
 
 * Fix datalogger temperature report (was truncated to single digit width)

@@ -158,7 +158,7 @@ Alias li840a(11) = li840a_H2O
 '(14) H2O absorbance value
 '(15) </h2oabs>
 '(16) <h2odewpoint>
-Alias li840a(17) = li840a_dew_T
+Alias li840a(17) = li840a_dewpoint
 '(18) </h2odewpoint>
 Alias li840a(19) = li840a_pwr_src
 '(20) <co2> (raw)
@@ -178,13 +178,13 @@ Units li840a_cell_T = degC
 Units li840a_cell_P = mbar
 Units li840a_CO2 = ppmv
 Units li840a_H2O = ppthv
-Units li840a_dew_T = degC
+Units li840a_dewpoint = degC
 Units li840a_pwr_src = Vdc
 
 Dim typeT_sample_T
-Dim logger_panel_T
+Dim logger_self_T
 Units typeT_sample_T = degC
-Units logger_panel_T = degC
+Units logger_self_T = degC
 
 Dim cr3k_lithium_battery
 Units cr3k_lithium_battery = Volts
@@ -244,14 +244,14 @@ DataTable(tsdata,True,1440*DAYS_OF_DATA)
     FieldNames("li840a_cell_T")
   Average(1,li840a_cell_P,IEEE4,li840a_cell_P=NAN)
     FieldNames("li840a_cell_P")
-  Average(1,li840a_dew_T,IEEE4,li840a_dew_T=NAN)
-    FieldNames("li840a_dew_T")
+  Average(1,li840a_dewpoint,IEEE4,li840a_dewpoint=NAN)
+    FieldNames("li840a_dewpoint")
   Average(1,li840a_pwr_src,IEEE4,li840a_pwr_src=NAN)
     FieldNames("li840a_pwr_src")
   Average(1,typeT_sample_T,FP2,typeT_sample_T=NAN)
     FieldNames("typeT_sample_T")
-  Average(1,logger_panel_T,FP2,logger_panel_T=NAN)
-    FieldNames("logger_panel_T")
+  Average(1,logger_self_T,FP2,logger_self_T=NAN)
+    FieldNames("logger_self_T")
 EndTable
 
 DataTable(stats_indoor,(NOT tflag),48*DAYS_OF_DATA)
@@ -279,9 +279,9 @@ DataTable(stats_indoor,(NOT tflag),48*DAYS_OF_DATA)
   Average(1,li840a_H2O,IEEE4,li840a_H2O=NAN)
   Average(1,li840a_cell_T,FP2,li840a_cell_T=NAN)
   Average(1,li840a_cell_P,IEEE4,li840a_cell_P=NAN)
-  Average(1,li840a_dew_T,FP2,li840a_dew_T=NAN)
+  Average(1,li840a_dewpoint,FP2,li840a_dewpoint=NAN)
   Average(1,typeT_sample_T,FP2,typeT_sample_T=NAN)
-  Average(1,logger_panel_T,FP2,logger_panel_T=NAN)
+  Average(1,logger_self_T,FP2,logger_self_T=NAN)
 EndTable
 
 DataTable(stats_outdoor,(NOT tflag),48*DAYS_OF_DATA)
@@ -309,9 +309,9 @@ DataTable(stats_outdoor,(NOT tflag),48*DAYS_OF_DATA)
   Average(1,li840a_H2O,IEEE4,li840a_H2O=NAN)
   Average(1,li840a_cell_T,FP2,li840a_cell_T=NAN)
   Average(1,li840a_cell_P,IEEE4,li840a_cell_P=NAN)
-  Average(1,li840a_dew_T,FP2,li840a_dew_T=NAN)
+  Average(1,li840a_dewpoint,FP2,li840a_dewpoint=NAN)
   Average(1,typeT_sample_T,FP2,typeT_sample_T=NAN)
-  Average(1,logger_panel_T,FP2,logger_panel_T=NAN)
+  Average(1,logger_self_T,FP2,logger_self_T=NAN)
 EndTable
 
 DataTable(debug,True,1)
@@ -328,7 +328,7 @@ DataTable(debug,True,1)
   Sample(1,li840a_record,String)
   Sample(32,li840a(1),IEEE4)
   Sample(1,typeT_sample_T,IEEE4)
-  Sample(1,logger_panel_T,IEEE4)
+  Sample(1,logger_self_T,IEEE4)
 '  Sample(1,smtp_response,String)
   Sample(1,scadabr_resp,String)
   Sample(1,scadabr_success,Boolean)
@@ -356,7 +356,7 @@ DisplayMenu("Indoor AQ", -1)
   SubMenu("Debug")
     SubMenu("Monitor sensors")
       DisplayValue("TypeT tmpr.", typeT_sample_T)
-      DisplayValue("Panel tmpr.", logger_panel_T)
+      DisplayValue("Panel tmpr.", logger_self_T)
       DisplayValue("Dusttrak PM", dusttrak2_analog_pm25)
       SubMenu("CO (Teledyne)")
         DisplayValue("CO", t300_CO)
@@ -390,7 +390,7 @@ DisplayMenu("Indoor AQ", -1)
         DisplayValue("H2O", li840a_H2O)
         DisplayValue("Cell tmpr.", li840a_cell_T)
         DisplayValue("Cell press.", li840a_cell_P)
-        DisplayValue("Dewpoint", li840a_dew_T)
+        DisplayValue("Dewpoint", li840a_dewpoint)
         DisplayValue("Power in", li840a_pwr_src)
       EndSubMenu
     EndSubMenu
@@ -561,8 +561,8 @@ BeginProg
   Scan(500,mSec,10,0)
     VoltDiff(dusttrak2_analog_pm25,1,mv5000,DF_TSI_PM,True,0,INTEG,TSI_PM_MLT,TSI_PM_OFF)
     VoltDiff(t300_CO,1,mv5000,DF_CO,True,0,INTEG,CO_MLT,CO_OFF)
-    PanelTemp(logger_panel_T,INTEG)
-    TCDiff(typeT_sample_T,1,mV20,DF_TYPE_T,TypeT,logger_panel_T,1,0,INTEG,1,0)
+    PanelTemp(logger_self_T,INTEG)
+    TCDiff(typeT_sample_T,1,mV20,DF_TYPE_T,TypeT,logger_self_T,1,0,INTEG,1,0)
 
 '    SerialIn(ch4_record,CH4_COM,5,&h0A,CH4_BUFF)
 '    If (Len(ch4_record)) Then
