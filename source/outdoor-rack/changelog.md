@@ -13,6 +13,10 @@ next version
     * `li840a_CO2`, `li840a_H2O`, `li840a_cell_T`,
       `li840a_dewpoint`, `li840a_pwr_src`
 
+### Notes
+
+* Disables telemetry reporting to ScadaBR instance
+
 
 v1.2.3
 ------

@@ -15,6 +15,10 @@ next version
       `li840a_dewpoint`, `li840a_pwr_src`
     * `B4_CO_est`, `B4_NO_est`, `B4_O3_est`
 
+### Notes
+
+* Disables telemetry reporting to ScadaBR instance
+
 
 v1.2.3
 ------
