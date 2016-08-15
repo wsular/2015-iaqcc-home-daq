@@ -9,6 +9,9 @@ next version
 * Columns renamed:
     * `li840a_dew_T` -> `li840a_dewpoint`
     * `logger_panel_T` -> `logger_self_T`
+* Data types reduced from IEEE4 to FP2:
+    * `li840a_CO2`, `li840a_H2O`, `li840a_cell_T`,
+      `li840a_dewpoint`, `li840a_pwr_src`
 
 
 v1.2.3
