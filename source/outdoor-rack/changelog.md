@@ -4,14 +4,28 @@ Changelog for outdoor AQ DAQFactory program
 next version
 ------------
 
+### Changes to instrument line-up
+
+* Removed:
+    * NO/NO2/NOx (Model 42C; TECO)
+    * O3 (Model 205; 2B Technologies)
+* Added:
+    * NO/NO2/NOx (Model T200U; Teledyne API)
+    * O3 (Model T400; Teledyne API)
+    * CH4/CO2 (UGGA; Los Gatos Research)
+
 ### Data Table Changes
 
+* Remove data tables `stats_indoor` and `stats_outdoor` entirely (since post-
+  processing routines consume minutely data)
 * Columns renamed:
     * `li840a_dew_T` -> `li840a_dewpoint`
     * `logger_panel_T` -> `logger_self_T`
 * Data types reduced from IEEE4 to FP2:
     * `li840a_CO2`, `li840a_H2O`, `li840a_cell_T`,
       `li840a_dewpoint`, `li840a_pwr_src`
+* Columns associated with removed instruments have also been removed
+* Several new columns associated with added instruments have been added
 
 ### Notes
 
