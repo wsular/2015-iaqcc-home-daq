@@ -52,8 +52,8 @@ Const LI840A_BUFF = LI840A_REC*2 + 1
 Const DF_TYPE_T = 7
 
 Const CAO_SMP_VLV = 2 'sample source: indoor/outdoor
-Const CAO_CO_ZERO = 1 'CO monitor: sample/zero air (scrubbed)
-Const C_PTR_ZERO = 7 'PTR-MS: sample/zero air (generated)
+'Const CAO_CO_ZERO = 1 'CO monitor: sample/zero air (scrubbed)
+'Const C_PTR_ZERO = 7 'PTR-MS: sample/zero air (generated)
 
 Const ZERO_INTV = 480   'every 8 hours
 Const ZERO_OFF = 210    'wait 3-1/2 hrs into interval = 3:30a, 11:30a, 19:30p
@@ -211,13 +211,13 @@ Dim cr3k_lithium_battery
 Units cr3k_lithium_battery = Volts
 
 Dim ctrl_smp_vlv
-Dim ctrl_co_zero
-Dim ctrl_ptr_zero
+'Dim ctrl_co_zero
+'Dim ctrl_ptr_zero
 Dim is_sampling_indoor As Boolean
 Dim tflag As Boolean 'transition flag
-Dim zflag As Boolean 'CO/PTRMS zero flag
-Dim is_zeroing_CO As Boolean
-Dim is_zeroing_PTRMS As Boolean
+'Dim zflag As Boolean 'CO/PTRMS zero flag
+'Dim is_zeroing_CO As Boolean
+'Dim is_zeroing_PTRMS As Boolean
 
 Dim rtime(9) As Long
 Dim inbetween_1min_scan As Boolean
@@ -230,10 +230,10 @@ DataTable(tsdata,True,1440*DAYS_OF_DATA)
   Sample(1,is_sampling_indoor,Boolean)
   Sample(1,tflag,Boolean)
     FieldNames("transition_flag")
-  Sample(1,is_zeroing_PTRMS,Boolean)
-  Sample(1,is_zeroing_CO,Boolean)
-  Sample(1,zflag,Boolean)
-    FieldNames("zero_flag")
+'  Sample(1,is_zeroing_PTRMS,Boolean)
+'  Sample(1,is_zeroing_CO,Boolean)
+'  Sample(1,zflag,Boolean)
+'    FieldNames("zero_flag")
   Sample(2,dc1100,IEEE4)
   Average(1,t300_CO,FP2,t300_CO=NAN)
     FieldNames("t300_CO")
@@ -358,13 +358,13 @@ DataTable(debug,True,1)
   'Sample(1,scadabr_success,Boolean)
   Sample(1,NTP_offset,IEEE4)
   Sample(1,ctrl_smp_vlv,IEEE4)
-  Sample(1,ctrl_co_zero,IEEE4)
-  Sample(1,ctrl_ptr_zero,IEEE4)
+'  Sample(1,ctrl_co_zero,IEEE4)
+'  Sample(1,ctrl_ptr_zero,IEEE4)
   Sample(1,is_sampling_indoor,Boolean)
   Sample(1,tflag,Boolean)
-  Sample(1,zflag,Boolean)
-  Sample(1,is_zeroing_CO,Boolean)
-  Sample(1,is_zeroing_PTRMS,Boolean)
+'  Sample(1,zflag,Boolean)
+'  Sample(1,is_zeroing_CO,Boolean)
+'  Sample(1,is_zeroing_PTRMS,Boolean)
 EndTable
 
 
@@ -422,8 +422,8 @@ DisplayMenu("Indoor AQ", -1)
 '    MenuItem("Test ScadaBR", test_scadabr)
 '      MenuPick(Cancel, Yes)
     DisplayValue("Indoor air?", is_sampling_indoor)
-    DisplayValue("Zero CO?", is_zeroing_CO)
-    DisplayValue("Zero PTRMS?", is_zeroing_PTRMS)
+'    DisplayValue("Zero CO?", is_zeroing_CO)
+'    DisplayValue("Zero PTRMS?", is_zeroing_PTRMS)
   EndSubMenu
 EndMenu
 
@@ -623,24 +623,24 @@ BeginProg
     is_sampling_indoor = (ctrl_smp_vlv > 0)
     ExciteCAO(CAO_SMP_VLV,ctrl_smp_vlv,True)
 
-    'not init'd so possibility of 1st event being skipped
-    If TimeIntoInterval(ZERO_OFF,ZERO_INTV,Min) Then '01:00
-      ctrl_co_zero = 5000 'on
-      ctrl_ptr_zero = 5000 'on
-      zflag = 1
-    ElseIf TimeIntoInterval(ZERO_OFF+ZERO_PREFLAG,ZERO_INTV,Min) Then '01:02
-      zflag = 0
-    ElseIf TimeIntoInterval(ZERO_OFF+ZERO_DUR,ZERO_INTV,Min) Then '02:00
-      ctrl_co_zero = 0 'off
-      ctrl_ptr_zero = 0 'off
-      zflag = 1
-    ElseIf TimeIntoInterval(ZERO_OFF+ZERO_DUR+ZERO_POSTFLAG,ZERO_INTV,Min) Then '02:02
-      zflag = 0
-    EndIf
-    is_zeroing_CO = (ctrl_co_zero > 0)
-    is_zeroing_PTRMS = (ctrl_ptr_zero > 0)
-    ExciteCAO(CAO_CO_ZERO,ctrl_co_zero,True)
-    PortSet(C_PTR_ZERO,ctrl_ptr_zero)
+'    'not init'd so possibility of 1st event being skipped
+'    If TimeIntoInterval(ZERO_OFF,ZERO_INTV,Min) Then '01:00
+'      ctrl_co_zero = 5000 'on
+'      ctrl_ptr_zero = 5000 'on
+'      zflag = 1
+'    ElseIf TimeIntoInterval(ZERO_OFF+ZERO_PREFLAG,ZERO_INTV,Min) Then '01:02
+'      zflag = 0
+'    ElseIf TimeIntoInterval(ZERO_OFF+ZERO_DUR,ZERO_INTV,Min) Then '02:00
+'      ctrl_co_zero = 0 'off
+'      ctrl_ptr_zero = 0 'off
+'      zflag = 1
+'    ElseIf TimeIntoInterval(ZERO_OFF+ZERO_DUR+ZERO_POSTFLAG,ZERO_INTV,Min) Then '02:02
+'      zflag = 0
+'    EndIf
+'    is_zeroing_CO = (ctrl_co_zero > 0)
+'    is_zeroing_PTRMS = (ctrl_ptr_zero > 0)
+'    ExciteCAO(CAO_CO_ZERO,ctrl_co_zero,True)
+'    PortSet(C_PTR_ZERO,ctrl_ptr_zero)
 
     If TimeIntoInterval(1,10,Min) Then
       RealTime(rtime(1)) 'for UGGA message check

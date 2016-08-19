@@ -30,6 +30,8 @@ next version
 ### Notes
 
 * Disables telemetry reporting to ScadaBR instance
+* Disables CO analyzer scheduled auto-zero routine
+* Disables PTR-MS scheduled auto-zero routine
 
 
 v1.2.3
