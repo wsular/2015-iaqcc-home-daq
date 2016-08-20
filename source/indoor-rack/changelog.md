@@ -1,8 +1,27 @@
-Changelog for indoor AQ datalogger
-==================================
+Changelog for indoor rack
+=========================
 
-next version
-------------
+v1.3
+----
+
+### Data Table Changes
+
+* Multiple days of data stored to CPU: now
+* Columns renamed:
+    * `li840a_dew_T` -> `li840a_dewpoint`
+    * `logger_panel_T` -> `logger_self_T`
+* Data types reduced from IEEE4 to FP2:
+    * `li840a_CO2`, `li840a_H2O`, `li840a_cell_T`,
+      `li840a_dewpoint`, `li840a_pwr_src`
+    * `B4_CO_est`, `B4_NO_est`, `B4_O3_est`
+
+### Notes
+
+* Disables telemetry reporting to ScadaBR instance
+
+
+v1.2.3
+------
 
 ### Enhancements
 

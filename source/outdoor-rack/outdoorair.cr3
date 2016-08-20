@@ -15,37 +15,35 @@ Const STATION = "outdoorair"
 'version-stamped name for data file headers
 Const SELF = STATION & "(" & VERSION & ")"
 
-Const DF_TSI_PM = 4
+Const DF_TSI_PM = 8
 Const TSI_PM_OFF = 0
 Const TSI_PM_MLT = (1.0 - TSI_PM_OFF)/5000 '0-1.0 mg/m^3, 0-5V
 
+Const DYLOS_COM = Com4
+Const DYLOS_BAUD = 9600
+Const DYLOS_FMT = 19 '8/n/1, TTL logic
+Const DYLOS_BUFF = 12
+
 Const DF_CO = 5
 Const CO_OFF = 0
-Const CO_MLT = (10.0 - CO_OFF)/5000 '0-10.0 ppm over 0-5V
+Const CO_MLT = (2000.0 - CO_OFF)/10000 '0-2000 ppb over 0-10V
 
-Const NOX_ADDR = 42 'instrument-specific address (default: 42)
-Const PREFIX = CHR(128 + NOX_ADDR)
-Const CR = CHR(13) 'carriage return
+Const DF_NOX = 12
+Const DF_NO = 13
+Const DF_NO2 = 14
+Const NOX_OFF = 0
+Const NOX_MLT = (200.0 - NOX_OFF)/10000 '200 ppb over 0-10V
 
-Const NOX_DELAY = 350 '(empirical) delay between data queries, msec
-Const NOX_COM = Com1
-Const NOX_BAUD = 9600
-Const NOX_FMT = 3 '8/n/1, RS232 logic
-Const NOX_REC = 42 'longest result's ~41 chars
-Const NOX_BUFF = 1+2*NOX_REC
+Const CH4_COM = Com3
+Const CH4_BAUD = 19200
+Const CH4_FMT = 19 '8/n/1, TTL logic
+Const CH4_BUFF = 800
 
-'Const CH4_COM = Com4
-'Const CH4_BAUD = 19200
-'Const CH4_FMT = 19 '8/n/1, TTL logic
-'Const CH4_BUFF = 800
+Const DF_O3 = 6
+Const O3_OFF = 0
+Const O3_MLT = (500.0 - O3_OFF)/10000 '500 ppb over 0-10V
 
-Const O3_COM = Com2
-Const O3_BAUD = 19200
-Const O3_FMT = 3 '8/n/1
-Const O3_REC = 80
-Const O3_BUFF = 1+2*O3_REC
-
-Const LI840A_COM = Com3
+Const LI840A_COM = Com2
 Const LI840A_BAUD = 9600
 Const LI840A_FMT = 3 '8/n/1, RS232 logic
 Const LI840A_REC = 350
@@ -54,8 +52,8 @@ Const LI840A_BUFF = LI840A_REC*2 + 1
 Const DF_TYPE_T = 7
 
 Const CAO_SMP_VLV = 2 'sample source: indoor/outdoor
-Const CAO_CO_ZERO = 1 'CO monitor: sample/zero air (scrubbed)
-Const C_PTR_ZERO = 7 'PTR-MS: sample/zero air (generated)
+'Const CAO_CO_ZERO = 1 'CO monitor: sample/zero air (scrubbed)
+'Const C_PTR_ZERO = 7 'PTR-MS: sample/zero air (generated)
 
 Const ZERO_INTV = 480   'every 8 hours
 Const ZERO_OFF = 210    'wait 3-1/2 hrs into interval = 3:30a, 11:30a, 19:30p
@@ -68,6 +66,7 @@ Const ZERO_POSTFLAG = 1 'flag 1 minute after ending
 Const INTEG = 250
 Const DAYS_OF_DATA = 14 'saved to CPU
 
+Const FT3_PER_M3 = 35.314667
 Const MBAR_PER_TORR = 1.3332237
 Const MBAR_PER_KPA = 10
 
@@ -82,62 +81,84 @@ Units NTP_offset = ms
 Dim dusttrak2_analog_pm25
 Units dusttrak2_analog_pm25 = mg/m^3
 
+Dim dc1100_record As String * 12
+Dim dc1100_size_ratio
+Dim dc1100_vals(2)
+'dc1100_vals(1) = "small" counts / 100 ft^3
+'dc1100_vals(2) = "large" counts / 100 ft^3
+Dim dc1100(2)
+Alias dc1100(1) = dc1100_pm_small
+Alias dc1100(2) = dc1100_pm_large
+Units dc1100_pm_small = counts/m^3
+Units dc1100_pm_large = counts/m^3
+
 Dim co(1)
 Alias co(1) = t300_CO
-Units t300_CO = ppm
+Units t300_CO = ppbv
 
-Dim o3_record As String * O3_REC
-Dim o3(9)
-Alias o3(1) = m205_O3
-Alias o3(2) = m205_cell_T
-Alias o3(3) = m205_cell_P
-'4: date, day of month    '7: time, hour
-'5: date, month           '8: time, minute
-'6: date, short year      '9: time, second
-Units m205_O3 = ppbv
-Units m205_cell_T = degC
-Units m205_cell_P = mbar
+Dim o3(1)
+Alias o3(1) = t400_O3
+Units t400_O3 = ppbv
 
-Dim nox_record(4) As String * NOX_REC
-Dim nox_bytes
-Dim nox(6)
-'nox(1): HACK catches "2" within "no2"
-Alias nox(2) = m42C_NO2
-Alias nox(3) = m42C_NO
-Alias nox(4) = m42C_NOx
-Alias nox(5) = nox_tmpr 'should mirror nox(6)
-Alias nox(6) = m42C_self_T 'measured value
+'Dim o3_record As String * O3_REC
+'Dim o3(9)
+'Alias o3(1) = m205_O3
+'Alias o3(2) = m205_cell_T
+'Alias o3(3) = m205_cell_P
+''4: date, day of month    '7: time, hour
+''5: date, month           '8: time, minute
+''6: date, short year      '9: time, second
+'Units m205_O3 = ppbv
+'Units m205_cell_T = degC
+'Units m205_cell_P = mbar
+
+Dim nox(3)
+Alias nox(1) = t200_NO2
+Alias nox(2) = t200_NO
+Alias nox(3) = t200_NOx
 Units nox = ppbv
-Units nox_tmpr = degC
-Units m42C_self_T = degC
 
-'Dim ch4_record As String * 400
-'Dim ch4_year
-'Dim ch4(25)
-''1: date (only year captured)   '2: time (only hour captured)
-'Alias ch4(3)  = ugga_CH4        '4: CH4 s.d.
-'Alias ch4(5)  = ugga_H2O        '6: H2O s.d.
-'Alias ch4(7)  = ugga_CO2        '8: CO2 s.d.
-'Alias ch4(9)  = ugga_CH4_dry    '10: CH4 dry s.d.
-'Alias ch4(11) = ugga_CO2_dry    '12: CO2 dry s.d.
-'Alias ch4(13) = ugga_gas_P      '14: gas P s.d.
-'Alias ch4(15) = ugga_gas_T      '16: gas T s.d.
-'Alias ch4(17) = ugga_self_T     '18: self T s.d.
-'Alias ch4(19) = ugga_ringdown0  '20: ringdown #0 s.d.
-'Alias ch4(21) = ugga_ringdown1  '22: ringdown #1 s.d.
-'Alias ch4(23) = ugga_fit_flag   '24: MIU valve
-''25: MIU description
-'Units ugga_CH4 = ppmv
-'Units ugga_H2O = ppthv
-'Units ugga_CO2 = ppmv
-'Units ugga_CH4_dry = ppmv
-'Units ugga_CO2_dry = ppmv
-'Units ugga_gas_P = mbar
-'Units ugga_gas_T = degC
-'Units ugga_self_T = degC
-'Units ugga_ringdown0 = usec
-'Units ugga_ringdown1 = usec
-'Units ugga_fit_flag = arb
+'Dim nox_record(4) As String * NOX_REC
+'Dim nox_bytes
+'Dim nox(6)
+''nox(1): HACK catches "2" within "no2"
+'Alias nox(2) = m42C_NO2
+'Alias nox(3) = m42C_NO
+'Alias nox(4) = m42C_NOx
+'Alias nox(5) = nox_tmpr 'should mirror nox(6)
+'Alias nox(6) = m42C_self_T 'measured value
+'Units nox = ppbv
+'Units nox_tmpr = degC
+'Units m42C_self_T = degC
+
+Dim disable_ugga As Boolean
+Dim ch4_record As String * 400
+Dim ch4_year
+Dim ch4(25)
+'1: date (only year captured)   '2: time (only hour captured)
+Alias ch4(3)  = ugga_CH4        '4: CH4 s.d.
+Alias ch4(5)  = ugga_H2O        '6: H2O s.d.
+Alias ch4(7)  = ugga_CO2        '8: CO2 s.d.
+Alias ch4(9)  = ugga_CH4_dry    '10: CH4 dry s.d.
+Alias ch4(11) = ugga_CO2_dry    '12: CO2 dry s.d.
+Alias ch4(13) = ugga_gas_P      '14: gas P s.d.
+Alias ch4(15) = ugga_gas_T      '16: gas T s.d.
+Alias ch4(17) = ugga_self_T     '18: self T s.d.
+Alias ch4(19) = ugga_ringdown0  '20: ringdown #0 s.d.
+Alias ch4(21) = ugga_ringdown1  '22: ringdown #1 s.d.
+Alias ch4(23) = ugga_fit_flag   '24: MIU valve
+'25: MIU description
+Units ugga_CH4 = ppmv
+Units ugga_H2O = ppthv
+Units ugga_CO2 = ppmv
+Units ugga_CH4_dry = ppmv
+Units ugga_CO2_dry = ppmv
+Units ugga_gas_P = mbar
+Units ugga_gas_T = degC
+Units ugga_self_T = degC
+Units ugga_ringdown0 = usec
+Units ugga_ringdown1 = usec
+Units ugga_fit_flag = arb
 
 Dim li840a_record As String * LI840A_REC
 Dim li840a(32)
@@ -158,7 +179,7 @@ Alias li840a(11) = li840a_H2O
 '(14) H2O absorbance value
 '(15) </h2oabs>
 '(16) <h2odewpoint>
-Alias li840a(17) = li840a_dew_T
+Alias li840a(17) = li840a_dewpoint
 '(18) </h2odewpoint>
 Alias li840a(19) = li840a_pwr_src
 '(20) <co2> (raw)
@@ -178,25 +199,25 @@ Units li840a_cell_T = degC
 Units li840a_cell_P = mbar
 Units li840a_CO2 = ppmv
 Units li840a_H2O = ppthv
-Units li840a_dew_T = degC
+Units li840a_dewpoint = degC
 Units li840a_pwr_src = Vdc
 
 Dim typeT_sample_T
-Dim logger_panel_T
+Dim logger_self_T
 Units typeT_sample_T = degC
-Units logger_panel_T = degC
+Units logger_self_T = degC
 
 Dim cr3k_lithium_battery
 Units cr3k_lithium_battery = Volts
 
 Dim ctrl_smp_vlv
-Dim ctrl_co_zero
-Dim ctrl_ptr_zero
+'Dim ctrl_co_zero
+'Dim ctrl_ptr_zero
 Dim is_sampling_indoor As Boolean
 Dim tflag As Boolean 'transition flag
-Dim zflag As Boolean 'CO/PTRMS zero flag
-Dim is_zeroing_CO As Boolean
-Dim is_zeroing_PTRMS As Boolean
+'Dim zflag As Boolean 'CO/PTRMS zero flag
+'Dim is_zeroing_CO As Boolean
+'Dim is_zeroing_PTRMS As Boolean
 
 Dim rtime(9) As Long
 Dim inbetween_1min_scan As Boolean
@@ -209,138 +230,141 @@ DataTable(tsdata,True,1440*DAYS_OF_DATA)
   Sample(1,is_sampling_indoor,Boolean)
   Sample(1,tflag,Boolean)
     FieldNames("transition_flag")
-  Sample(1,is_zeroing_PTRMS,Boolean)
-  Sample(1,is_zeroing_CO,Boolean)
-  Sample(1,zflag,Boolean)
-    FieldNames("zero_flag")
-  Average(1,t300_CO,IEEE4,t300_CO=NAN)
-  Sample(2,o3(1),FP2)
-  Sample(1,o3(3),IEEE4)
-  Sample(3,nox(2),IEEE4)
-  Sample(1,nox(6),IEEE4)
-'  Average(1,ugga_CH4,FP2,disable_ugga OR ugga_CH4=NAN)
-'    FieldNames("ugga_CH4")
-'  Average(1,ugga_H2O,IEEE4,disable_ugga OR ugga_H2O=NAN)
-'    FieldNames("ugga_H2O")
-'  Average(1,ugga_CO2,FP2,disable_ugga OR ugga_CO2=NAN)
-'    FieldNames("ugga_CO2")
-'  Average(1,ugga_CH4_dry,FP2,disable_ugga OR ugga_CH4_dry=NAN)
-'    FieldNames("ugga_CH4_dry")
-'  Average(1,ugga_CO2_dry,FP2,disable_ugga OR ugga_CO2_dry=NAN)
-'    FieldNames("ugga_CO2_dry")
-'  Average(1,ugga_gas_P,IEEE4,disable_ugga OR ugga_gas_P=NAN)
-'    FieldNames("ugga_gas_P")
-'  Average(1,ugga_gas_T,FP2,disable_ugga OR ugga_gas_T=NAN)
-'    FieldNames("ugga_gas_T")
-'  Average(1,ugga_self_T,FP2,disable_ugga OR ugga_self_T=NAN)
-'    FieldNames("ugga_self_T")
-'  Average(1,ugga_fit_flag,FP2,disable_ugga OR ugga_fit_flag=NAN)
-'    FieldNames("ugga_fit_flag")
-  Average(1,li840a_CO2,IEEE4,li840a_CO2=NAN)
+'  Sample(1,is_zeroing_PTRMS,Boolean)
+'  Sample(1,is_zeroing_CO,Boolean)
+'  Sample(1,zflag,Boolean)
+'    FieldNames("zero_flag")
+  Sample(2,dc1100,IEEE4)
+  Average(1,t300_CO,FP2,t300_CO=NAN)
+    FieldNames("t300_CO")
+  Average(1,t400_O3,FP2,t400_O3=NAN)
+    FieldNames("t400_O3")
+  Average(1,t200_NO2,FP2,t200_NO2=NAN)
+    FieldNames("t200_NO2")
+  Average(1,t200_NO,FP2,t200_NO=NAN)
+    FieldNames("t200_NO")
+  Average(1,t200_NOx,FP2,t200_NOx=NAN)
+    FieldNames("t200_NOx")
+  Average(1,ugga_CH4,FP2,disable_ugga OR ugga_CH4=NAN)
+    FieldNames("ugga_CH4")
+  Average(1,ugga_H2O,IEEE4,disable_ugga OR ugga_H2O=NAN)
+    FieldNames("ugga_H2O")
+  Average(1,ugga_CO2,FP2,disable_ugga OR ugga_CO2=NAN)
+    FieldNames("ugga_CO2")
+  Average(1,ugga_CH4_dry,FP2,disable_ugga OR ugga_CH4_dry=NAN)
+    FieldNames("ugga_CH4_dry")
+  Average(1,ugga_CO2_dry,FP2,disable_ugga OR ugga_CO2_dry=NAN)
+    FieldNames("ugga_CO2_dry")
+  Average(1,ugga_gas_P,IEEE4,disable_ugga OR ugga_gas_P=NAN)
+    FieldNames("ugga_gas_P")
+  Average(1,ugga_gas_T,FP2,disable_ugga OR ugga_gas_T=NAN)
+    FieldNames("ugga_gas_T")
+  Average(1,ugga_self_T,FP2,disable_ugga OR ugga_self_T=NAN)
+    FieldNames("ugga_self_T")
+  Average(1,ugga_fit_flag,FP2,disable_ugga OR ugga_fit_flag=NAN)
+    FieldNames("ugga_fit_flag")
+  Average(1,li840a_CO2,FP2,li840a_CO2=NAN)
     FieldNames("li840a_CO2")
-  Average(1,li840a_H2O,IEEE4,li840a_H2O=NAN)
+  Average(1,li840a_H2O,FP2,li840a_H2O=NAN)
     FieldNames("li840a_H2O")
-  Average(1,li840a_cell_T,IEEE4,li840a_cell_T=NAN)
+  Average(1,li840a_cell_T,FP2,li840a_cell_T=NAN)
     FieldNames("li840a_cell_T")
   Average(1,li840a_cell_P,IEEE4,li840a_cell_P=NAN)
     FieldNames("li840a_cell_P")
-  Average(1,li840a_dew_T,IEEE4,li840a_dew_T=NAN)
-    FieldNames("li840a_dew_T")
-  Average(1,li840a_pwr_src,IEEE4,li840a_pwr_src=NAN)
+  Average(1,li840a_dewpoint,FP2,li840a_dewpoint=NAN)
+    FieldNames("li840a_dewpoint")
+  Average(1,li840a_pwr_src,FP2,li840a_pwr_src=NAN)
     FieldNames("li840a_pwr_src")
   Average(1,typeT_sample_T,FP2,typeT_sample_T=NAN)
     FieldNames("typeT_sample_T")
-  Average(1,logger_panel_T,FP2,logger_panel_T=NAN)
-    FieldNames("logger_panel_T")
+  Average(1,logger_self_T,FP2,logger_self_T=NAN)
+    FieldNames("logger_self_T")
 EndTable
 
-DataTable(stats_indoor,(NOT tflag),48*DAYS_OF_DATA)
-  DataInterval(0,30,min,1)
-  Average(1,t300_CO,FP2,t300_CO=NAN OR zflag)
-  Average(1,t300_CO,FP2,t300_CO=NAN OR NOT zflag)
-    FieldNames("t300_CO_zero")
-  Average(1,m205_O3,FP2,inbetween_1min_scan OR m205_O3=NAN)
-  Average(1,m205_cell_T,FP2,inbetween_1min_scan OR m205_cell_T=NAN)
-  Average(1,m205_cell_P,IEEE4,inbetween_1min_scan OR m205_cell_P=NAN)
-  Average(1,m42C_NO2,FP2,inbetween_1min_scan OR m42C_NO2=NAN)
-  Average(1,m42C_NO,FP2,inbetween_1min_scan OR m42C_NO=NAN)
-  Average(1,m42C_NOx,FP2,inbetween_1min_scan OR m42C_NOx=NAN)
-  Average(1,m42C_self_T,FP2,inbetween_1min_scan OR m42C_self_T=NAN)
-'  Average(1,ugga_CH4,FP2,disable_ugga OR ugga_CH4=NAN)
-'  Average(1,ugga_H2O,IEEE4,disable_ugga OR ugga_H2O=NAN)
-'  Average(1,ugga_CO2,FP2,disable_ugga OR ugga_CO2=NAN)
-'  Average(1,ugga_CH4_dry,FP2,disable_ugga OR ugga_CH4_dry=NAN)
-'  Average(1,ugga_CO2_dry,FP2,disable_ugga OR ugga_CO2_dry=NAN)
-'  Average(1,ugga_gas_P,IEEE4,disable_ugga OR ugga_gas_P=NAN)
-'  Average(1,ugga_gas_T,FP2,disable_ugga OR ugga_gas_T=NAN)
-'  Average(1,ugga_self_T,FP2,disable_ugga OR ugga_self_T=NAN)
-'  Average(1,ugga_fit_flag,FP2,disable_ugga OR ugga_fit_flag=NAN)
-  Average(1,li840a_CO2,IEEE4,li840a_CO2=NAN)
-  Average(1,li840a_H2O,IEEE4,li840a_H2O=NAN)
-  Average(1,li840a_cell_T,FP2,li840a_cell_T=NAN)
-  Average(1,li840a_cell_P,IEEE4,li840a_cell_P=NAN)
-  Average(1,li840a_dew_T,FP2,li840a_dew_T=NAN)
-  Average(1,typeT_sample_T,FP2,typeT_sample_T=NAN)
-  Average(1,logger_panel_T,FP2,logger_panel_T=NAN)
-EndTable
-
-DataTable(stats_outdoor,(NOT tflag),48*DAYS_OF_DATA)
-  DataInterval(0,30,min,1)
-  Average(1,t300_CO,FP2,t300_CO=NAN OR zflag)
-  Average(1,t300_CO,FP2,t300_CO=NAN OR NOT zflag)
-    FieldNames("t300_CO_zero")
-  Average(1,m205_O3,FP2,inbetween_1min_scan OR m205_O3=NAN)
-  Average(1,m205_cell_T,FP2,inbetween_1min_scan OR m205_cell_T=NAN)
-  Average(1,m205_cell_P,IEEE4,inbetween_1min_scan OR m205_cell_P=NAN)
-  Average(1,m42C_NO2,FP2,inbetween_1min_scan OR m42C_NO2=NAN)
-  Average(1,m42C_NO,FP2,inbetween_1min_scan OR m42C_NO=NAN)
-  Average(1,m42C_NOx,FP2,inbetween_1min_scan OR m42C_NOx=NAN)
-  Average(1,m42C_self_T,FP2,inbetween_1min_scan OR m42C_self_T=NAN)
-'  Average(1,ugga_CH4,FP2,disable_ugga OR ugga_CH4=NAN)
-'  Average(1,ugga_H2O,IEEE4,disable_ugga OR ugga_H2O=NAN)
-'  Average(1,ugga_CO2,FP2,disable_ugga OR ugga_CO2=NAN)
-'  Average(1,ugga_CH4_dry,FP2,disable_ugga OR ugga_CH4_dry=NAN)
-'  Average(1,ugga_CO2_dry,FP2,disable_ugga OR ugga_CO2_dry=NAN)
-'  Average(1,ugga_gas_P,IEEE4,disable_ugga OR ugga_gas_P=NAN)
-'  Average(1,ugga_gas_T,FP2,disable_ugga OR ugga_gas_T=NAN)
-'  Average(1,ugga_self_T,FP2,disable_ugga OR ugga_self_T=NAN)
-'  Average(1,ugga_fit_flag,FP2,disable_ugga OR ugga_fit_flag=NAN)
-  Average(1,li840a_CO2,IEEE4,li840a_CO2=NAN)
-  Average(1,li840a_H2O,IEEE4,li840a_H2O=NAN)
-  Average(1,li840a_cell_T,FP2,li840a_cell_T=NAN)
-  Average(1,li840a_cell_P,IEEE4,li840a_cell_P=NAN)
-  Average(1,li840a_dew_T,FP2,li840a_dew_T=NAN)
-  Average(1,typeT_sample_T,FP2,typeT_sample_T=NAN)
-  Average(1,logger_panel_T,FP2,logger_panel_T=NAN)
-EndTable
+'DataTable(stats_indoor,(NOT tflag),48*DAYS_OF_DATA)
+'  DataInterval(0,30,min,1)
+'  Average(1,t300_CO,FP2,t300_CO=NAN OR zflag)
+'  Average(1,t300_CO,FP2,t300_CO=NAN OR NOT zflag)
+'    FieldNames("t300_CO_zero")
+'  Average(1,m205_O3,FP2,inbetween_1min_scan OR m205_O3=NAN)
+'  Average(1,m205_cell_T,FP2,inbetween_1min_scan OR m205_cell_T=NAN)
+'  Average(1,m205_cell_P,IEEE4,inbetween_1min_scan OR m205_cell_P=NAN)
+'  Average(1,m42C_NO2,FP2,inbetween_1min_scan OR m42C_NO2=NAN)
+'  Average(1,m42C_NO,FP2,inbetween_1min_scan OR m42C_NO=NAN)
+'  Average(1,m42C_NOx,FP2,inbetween_1min_scan OR m42C_NOx=NAN)
+'  Average(1,m42C_self_T,FP2,inbetween_1min_scan OR m42C_self_T=NAN)
+''  Average(1,ugga_CH4,FP2,disable_ugga OR ugga_CH4=NAN)
+''  Average(1,ugga_H2O,IEEE4,disable_ugga OR ugga_H2O=NAN)
+''  Average(1,ugga_CO2,FP2,disable_ugga OR ugga_CO2=NAN)
+''  Average(1,ugga_CH4_dry,FP2,disable_ugga OR ugga_CH4_dry=NAN)
+''  Average(1,ugga_CO2_dry,FP2,disable_ugga OR ugga_CO2_dry=NAN)
+''  Average(1,ugga_gas_P,IEEE4,disable_ugga OR ugga_gas_P=NAN)
+''  Average(1,ugga_gas_T,FP2,disable_ugga OR ugga_gas_T=NAN)
+''  Average(1,ugga_self_T,FP2,disable_ugga OR ugga_self_T=NAN)
+''  Average(1,ugga_fit_flag,FP2,disable_ugga OR ugga_fit_flag=NAN)
+'  Average(1,li840a_CO2,FP2,li840a_CO2=NAN)
+'  Average(1,li840a_H2O,FP2,li840a_H2O=NAN)
+'  Average(1,li840a_cell_T,FP2,li840a_cell_T=NAN)
+'  Average(1,li840a_cell_P,IEEE4,li840a_cell_P=NAN)
+'  Average(1,li840a_dewpoint,FP2,li840a_dewpoint=NAN)
+'  Average(1,typeT_sample_T,FP2,typeT_sample_T=NAN)
+'  Average(1,logger_self_T,FP2,logger_self_T=NAN)
+'EndTable
+'
+'DataTable(stats_outdoor,(NOT tflag),48*DAYS_OF_DATA)
+'  DataInterval(0,30,min,1)
+'  Average(1,t300_CO,FP2,t300_CO=NAN OR zflag)
+'  Average(1,t300_CO,FP2,t300_CO=NAN OR NOT zflag)
+'    FieldNames("t300_CO_zero")
+'  Average(1,m205_O3,FP2,inbetween_1min_scan OR m205_O3=NAN)
+'  Average(1,m205_cell_T,FP2,inbetween_1min_scan OR m205_cell_T=NAN)
+'  Average(1,m205_cell_P,IEEE4,inbetween_1min_scan OR m205_cell_P=NAN)
+'  Average(1,m42C_NO2,FP2,inbetween_1min_scan OR m42C_NO2=NAN)
+'  Average(1,m42C_NO,FP2,inbetween_1min_scan OR m42C_NO=NAN)
+'  Average(1,m42C_NOx,FP2,inbetween_1min_scan OR m42C_NOx=NAN)
+'  Average(1,m42C_self_T,FP2,inbetween_1min_scan OR m42C_self_T=NAN)
+''  Average(1,ugga_CH4,FP2,disable_ugga OR ugga_CH4=NAN)
+''  Average(1,ugga_H2O,IEEE4,disable_ugga OR ugga_H2O=NAN)
+''  Average(1,ugga_CO2,FP2,disable_ugga OR ugga_CO2=NAN)
+''  Average(1,ugga_CH4_dry,FP2,disable_ugga OR ugga_CH4_dry=NAN)
+''  Average(1,ugga_CO2_dry,FP2,disable_ugga OR ugga_CO2_dry=NAN)
+''  Average(1,ugga_gas_P,IEEE4,disable_ugga OR ugga_gas_P=NAN)
+''  Average(1,ugga_gas_T,FP2,disable_ugga OR ugga_gas_T=NAN)
+''  Average(1,ugga_self_T,FP2,disable_ugga OR ugga_self_T=NAN)
+''  Average(1,ugga_fit_flag,FP2,disable_ugga OR ugga_fit_flag=NAN)
+'  Average(1,li840a_CO2,FP2,li840a_CO2=NAN)
+'  Average(1,li840a_H2O,FP2,li840a_H2O=NAN)
+'  Average(1,li840a_cell_T,FP2,li840a_cell_T=NAN)
+'  Average(1,li840a_cell_P,IEEE4,li840a_cell_P=NAN)
+'  Average(1,li840a_dewpoint,FP2,li840a_dewpoint=NAN)
+'  Average(1,typeT_sample_T,FP2,typeT_sample_T=NAN)
+'  Average(1,logger_self_T,FP2,logger_self_T=NAN)
+'EndTable
 
 DataTable(debug,True,1)
   Sample(1,dusttrak2_analog_pm25,IEEE4)
   Sample(1,co(1),IEEE4)
-  Sample(1,o3_record,String)
-  Sample(9,o3(1),IEEE4)
-  Sample(4,nox_record,String)
-  Sample(1,nox_bytes,IEEE4)
-  Sample(6,nox(1),IEEE4)
-'  Sample(1,ch4_record,String)
-'  Sample(25,ch4(1),IEEE4)
-'  Sample(1,disable_ugga,Boolean)
+  Sample(1,o3(1),IEEE4)
+  Sample(3,nox(1),IEEE4)
+  Sample(1,ch4_record,String)
+  Sample(25,ch4(1),IEEE4)
+  Sample(1,disable_ugga,Boolean)
   Sample(1,li840a_record,String)
   Sample(32,li840a(1),IEEE4)
   Sample(1,typeT_sample_T,IEEE4)
-  Sample(1,logger_panel_T,IEEE4)
+  Sample(1,logger_self_T,IEEE4)
 '  Sample(1,smtp_response,String)
-  Sample(1,scadabr_resp,String)
-  Sample(1,scadabr_success,Boolean)
+  'Sample(1,scadabr_resp,String)
+  'Sample(1,scadabr_success,Boolean)
   Sample(1,NTP_offset,IEEE4)
   Sample(1,ctrl_smp_vlv,IEEE4)
-  Sample(1,ctrl_co_zero,IEEE4)
-  Sample(1,ctrl_ptr_zero,IEEE4)
+'  Sample(1,ctrl_co_zero,IEEE4)
+'  Sample(1,ctrl_ptr_zero,IEEE4)
   Sample(1,is_sampling_indoor,Boolean)
   Sample(1,tflag,Boolean)
-  Sample(1,zflag,Boolean)
-  Sample(1,is_zeroing_CO,Boolean)
-  Sample(1,is_zeroing_PTRMS,Boolean)
+'  Sample(1,zflag,Boolean)
+'  Sample(1,is_zeroing_CO,Boolean)
+'  Sample(1,is_zeroing_PTRMS,Boolean)
 EndTable
 
 
@@ -350,47 +374,44 @@ Const Cancel = False
 Const No = False
 
 'Public test_email As Boolean
-Public test_scadabr As Boolean
+'Public test_scadabr As Boolean
 
 DisplayMenu("Indoor AQ", -1)
   SubMenu("Debug")
     SubMenu("Monitor sensors")
       DisplayValue("TypeT tmpr.", typeT_sample_T)
-      DisplayValue("Panel tmpr.", logger_panel_T)
+      DisplayValue("Panel tmpr.", logger_self_T)
       DisplayValue("Dusttrak PM", dusttrak2_analog_pm25)
-      SubMenu("CO (Teledyne)")
+      SubMenu("PM (Dylos)")
+        DisplayValue("DC1100 small", dc1100_pm_small)
+        DisplayValue("DC1100 large", dc1100_pm_large)
+      EndSubMenu
+      SubMenu("Teledyne API")
         DisplayValue("CO", t300_CO)
+        DisplayValue("O3", t400_O3)
+        DisplayValue("NO2", t200_NO2)
+        DisplayValue("NO", t200_NO)
+        DisplayValue("NOx", t200_NOx)
       EndSubMenu
-      SubMenu("O3 (2B Tech)")
-        DisplayValue("O3", m205_O3)
-        DisplayValue("Cell tmpr.", m205_cell_T)
-        DisplayValue("Cell press.", m205_cell_P)
+      SubMenu("CH4/CO2/H2O (LGR)")
+        DisplayValue("CH4", ugga_CH4)
+        DisplayValue("CO2", ugga_CO2)
+        DisplayValue("H2O", ugga_H2O)
+        DisplayValue("CH4 (dry)", ugga_CH4_dry)
+        DisplayValue("CO2 (dry)", ugga_CO2_dry)
+        DisplayValue("gas press.", ugga_gas_P)
+        DisplayValue("gas tmpr.", ugga_gas_T)
+        DisplayValue("self tmpr.", ugga_self_T)
+        DisplayValue("ringdown 0", ugga_ringdown0)
+        DisplayValue("ringdown 1", ugga_ringdown1)
+        DisplayValue("fit flag", ugga_fit_flag)
       EndSubMenu
-      SubMenu("NO/NO2 (TECO)")
-        DisplayValue("NO2", m42C_NO2)
-        DisplayValue("NO", m42C_NO)
-        DisplayValue("NOx", m42C_NOx)
-        DisplayValue("tmpr.", m42C_self_T)
-      EndSubMenu
-'      SubMenu("CH4/CO2/H2O (LGR)")
-'        DisplayValue("CH4", ugga_CH4)
-'        DisplayValue("CO2", ugga_CO2)
-'        DisplayValue("H2O", ugga_H2O)
-'        DisplayValue("CH4 (dry)", ugga_CH4_dry)
-'        DisplayValue("CO2 (dry)", ugga_CO2_dry)
-'        DisplayValue("gas press.", ugga_gas_P)
-'        DisplayValue("gas tmpr.", ugga_gas_T)
-'        DisplayValue("self tmpr.", ugga_self_T)
-'        DisplayValue("ringdown 0", ugga_ringdown0)
-'        DisplayValue("ringdown 1", ugga_ringdown1)
-'        DisplayValue("fit flag", ugga_fit_flag)
-'      EndSubMenu
       SubMenu("CO2/H2O (Licor)")
         DisplayValue("CO2", li840a_CO2)
         DisplayValue("H2O", li840a_H2O)
         DisplayValue("Cell tmpr.", li840a_cell_T)
         DisplayValue("Cell press.", li840a_cell_P)
-        DisplayValue("Dewpoint", li840a_dew_T)
+        DisplayValue("Dewpoint", li840a_dewpoint)
         DisplayValue("Power in", li840a_pwr_src)
       EndSubMenu
     EndSubMenu
@@ -398,11 +419,11 @@ DisplayMenu("Indoor AQ", -1)
       MenuPick(No,Yes)
 '    MenuItem("Test email", test_email)
 '      MenuPick(Cancel, Yes)
-    MenuItem("Test ScadaBR", test_scadabr)
-      MenuPick(Cancel, Yes)
+'    MenuItem("Test ScadaBR", test_scadabr)
+'      MenuPick(Cancel, Yes)
     DisplayValue("Indoor air?", is_sampling_indoor)
-    DisplayValue("Zero CO?", is_zeroing_CO)
-    DisplayValue("Zero PTRMS?", is_zeroing_PTRMS)
+'    DisplayValue("Zero CO?", is_zeroing_CO)
+'    DisplayValue("Zero PTRMS?", is_zeroing_PTRMS)
   EndSubMenu
 EndMenu
 
@@ -451,107 +472,89 @@ EndMenu
 'EndSub
 
 
-'============================= SCADABR INTEGRATION ==================================
-Include("CPU:scadabr_Enc.cr3")
-Dim scadabr_socket As Long
-Dim scadabr_success As Boolean
-Dim scadabr_resp As String * 256
+''============================= SCADABR INTEGRATION ==================================
+'Include("CPU:scadabr_Enc.cr3")
+'Dim scadabr_socket As Long
+'Dim scadabr_success As Boolean
+'Dim scadabr_resp As String * 256
+'
+'Sub send_scadabr_data(device As String, payload As String * 400)
+'  Dim tstamp As String * 24
+'  RealTime(rtime)
+'  Sprintf(tstamp,"&__time=%04u%02u%02u%02u%02u%02u", _
+'          rtime(1),rtime(2),rtime(3),rtime(4),rtime(5),rtime(6))
+'  scadabr_socket = HTTPGet((REPORT_URL & device & tstamp & payload), scadabr_resp, "")
+'  scadabr_success = NOT (scadabr_socket OR Len(scadabr_resp))
+'EndSub
+'
+'Sub send_test_ScadaBR()
+'  send_scadabr_data("outdoor-rack", "&testing=0")
+'  test_scadabr = False
+'EndSub
+'
+'Const RACK1 = "&logger_self_T=%.2f&dusttrak2_analog_pm25=%.3f&typet_sample_t=%.1f"
+'Const RACK2 = "&li840a_cell_t=%.2f&li840a_cell_p=%.2f&li840a_pwr_src=%.2f&m42c_self_t=%.1f"
+'Const RACK3 = "&m205_cell_t=%.2f&m205_cell_p=%.2f"'&ugga_gas_t=%.2f&ugga_gas_p=%.2f"
+''Const RACK4 = "&ugga_self_t=%.2f&ugga_ringdown0=%.3f&ugga_ringdown1=%.3f&ugga_fit_flag=%.1f"
+'Sub send_rack_report()
+'  Dim msg1 As String * 80, msg2 As String * 88, msg3 As String * 80', msg4 As String * 88
+'  
+'  Sprintf(msg1, RACK1, logger_self_T, dusttrak2_analog_pm25, typeT_sample_T)
+'  Sprintf(msg2, RACK2, li840a_cell_T, li840a_cell_P, li840a_pwr_src, m42C_self_T)
+'  Sprintf(msg3, RACK3, m205_cell_T, m205_cell_P)',ugga_gas_T, ugga_gas_P)
+'  'Sprintf(msg4, RACK4, ugga_self_T, ugga_ringdown0, ugga_ringdown1, ugga_fit_flag)
+'
+'  send_scadabr_data("outdoor-rack", (msg1 & msg2 & msg3))' & msg4))
+'EndSub
+'
+'Const GASES1 = "&t300_co=%.3f&m205_o3=%.1f&m42c_no2=%.2f&m42c_no=%.2f&m42c_nox=%.2f"
+'Const GASES2 = "&li840a_co2=%.1f&li840a_h2o=%.3f&li840a_dewpoint=%.1f"
+''Const GASES3 = "&ugga_ch4=%.3f&ugga_h2o=%.3f&ugga_co2=%.1f&ugga_ch4_dry=%.3f&ugga_co2_dry=%.1f"
+'Sub send_gasdata_report(device As String)
+'  Dim msg1 As String * 88, msg2 As String * 80', msg3 As String * 100
+'
+'  Sprintf(msg1, GASES1, t300_CO, m205_O3, m42C_NO2, m42C_NO, m42C_NOx)
+'  Sprintf(msg2, GASES2, li840a_CO2, li840a_H2O, li840a_dewpoint)
+'  'Sprintf(msg3, GASES3, ugga_CH4, ugga_H2O, ugga_CO2, ugga_CH4_dry, ugga_CO2_dry)
+'
+'  send_scadabr_data(device, (msg1 & msg2))' & msg3))
+'EndSub
+'
+'Sub send_indoor_report()
+'  send_gasdata_report("outdoor-rack-inside")
+'EndSub
+'
+'Sub send_outdoor_report()
+'  send_gasdata_report("outdoor-rack-outside")
+'EndSub
 
-Sub send_scadabr_data(device As String, payload As String * 400)
-  Dim tstamp As String * 24
-  RealTime(rtime)
-  Sprintf(tstamp,"&__time=%04u%02u%02u%02u%02u%02u", _
-          rtime(1),rtime(2),rtime(3),rtime(4),rtime(5),rtime(6))
-  scadabr_socket = HTTPGet((REPORT_URL & device & tstamp & payload), scadabr_resp, "")
-  scadabr_success = NOT (scadabr_socket OR Len(scadabr_resp))
-EndSub
-
-Sub send_test_ScadaBR()
-  send_scadabr_data("outdoor-rack", "&testing=0")
-  test_scadabr = False
-EndSub
-
-Const RACK1 = "&logger_panel_t=%.2f&dusttrak2_analog_pm25=%.3f&typet_sample_t=%.1f"
-Const RACK2 = "&li840a_cell_t=%.2f&li840a_cell_p=%.2f&li840a_pwr_src=%.2f&m42c_self_t=%.1f"
-Const RACK3 = "&m205_cell_t=%.2f&m205_cell_p=%.2f"'&ugga_gas_t=%.2f&ugga_gas_p=%.2f"
-'Const RACK4 = "&ugga_self_t=%.2f&ugga_ringdown0=%.3f&ugga_ringdown1=%.3f&ugga_fit_flag=%.1f"
-Sub send_rack_report()
-  Dim msg1 As String * 80, msg2 As String * 88, msg3 As String * 80', msg4 As String * 88
-  
-  Sprintf(msg1, RACK1, logger_panel_T, dusttrak2_analog_pm25, typeT_sample_T)
-  Sprintf(msg2, RACK2, li840a_cell_T, li840a_cell_P, li840a_pwr_src, m42C_self_T)
-  Sprintf(msg3, RACK3, m205_cell_T, m205_cell_P)',ugga_gas_T, ugga_gas_P)
-  'Sprintf(msg4, RACK4, ugga_self_T, ugga_ringdown0, ugga_ringdown1, ugga_fit_flag)
-
-  send_scadabr_data("outdoor-rack", (msg1 & msg2 & msg3))' & msg4))
-EndSub
-
-Const GASES1 = "&t300_co=%.3f&m205_o3=%.1f&m42c_no2=%.2f&m42c_no=%.2f&m42c_nox=%.2f"
-Const GASES2 = "&li840a_co2=%.1f&li840a_h2o=%.3f&li840a_dew_t=%.1f"
-'Const GASES3 = "&ugga_ch4=%.3f&ugga_h2o=%.3f&ugga_co2=%.1f&ugga_ch4_dry=%.3f&ugga_co2_dry=%.1f"
-Sub send_gasdata_report(device As String)
-  Dim msg1 As String * 88, msg2 As String * 80', msg3 As String * 100
-
-  Sprintf(msg1, GASES1, t300_CO, m205_O3, m42C_NO2, m42C_NO, m42C_NOx)
-  Sprintf(msg2, GASES2, li840a_CO2, li840a_H2O, li840a_dew_T)
-  'Sprintf(msg3, GASES3, ugga_CH4, ugga_H2O, ugga_CO2, ugga_CH4_dry, ugga_CO2_dry)
-
-  send_scadabr_data(device, (msg1 & msg2))' & msg3))
-EndSub
-
-Sub send_indoor_report()
-  send_gasdata_report("outdoor-rack-inside")
-EndSub
-
-Sub send_outdoor_report()
-  send_gasdata_report("outdoor-rack-outside")
-EndSub
-
+'================================ FUNCTIONS =================================
+Function convert_dc1100_value(number) As Float
+  'counts/100 per cubic foot => counts per cubic meter
+  Return INT(number * 100 * FT3_PER_M3)
+EndFunction
 
 '============================== SUBROUTINES =================================
 Sub setup()
-  SerialOpen(NOX_COM,NOX_BAUD,NOX_FMT,0,NOX_BUFF)
-'  SerialOpen(CH4_COM,CH4_BAUD,CH4_FMT,0,CH4_BUFF)
-  SerialOpen(O3_COM,O3_BAUD,O3_FMT,0,O3_BUFF)
+  SerialOpen(DYLOS_COM,DYLOS_BAUD,DYLOS_FMT,0,DYLOS_BUFF)
+  SerialOpen(CH4_COM,CH4_BAUD,CH4_FMT,0,CH4_BUFF)
   SerialOpen(LI840A_COM,LI840A_BAUD,LI840A_FMT,0,LI840A_BUFF)
   Move(li840a(1),32,NAN,1)      'HACK ensure serial dest vars begin @ NAN to prevent
-'  Move(ch4(1),25,NAN,1)         'inclusion of 0 in first averages produced
-  Move(o3(1),3,NAN,1)
-  Move(nox(1),6,NAN,1)
+  Move(ch4(1),25,NAN,1)         'inclusion of 0 in first averages produced
+  Move(dc1100_vals(1),2,NAN,1)
+  Move(dc1100(1),2,NAN,1)
 
   RealTime(rtime(1))
   'Scheduled sampling: outside :00-:15 & :30-:45, inside :15-:30 & :45-:00
   ctrl_smp_vlv = IIF((rtime(5) MOD 30) < 15, 0, 5000)
   is_sampling_indoor = ctrl_smp_vlv
   'WARN: not waiting to flush plumbing...
-
-  'setup NOX instrument since RS232 locks out panel control
-  SerialOut(NOX_COM,(PREFIX & "set avg time 6" & CR),"",0,0) '6=60s
-  Delay(0,500,mSec)
-  SerialOut(NOX_COM,(PREFIX & "set meas mode no/nox" & CR),"",0,0)
-  Delay(0,500,mSec)
-  SerialOut(NOX_COM,(PREFIX & "set gas unit ppb" & CR),"",0,0)
-  Delay(0,500,mSec)
-  SerialOut(NOX_COM,(PREFIX & "set temp comp on" & CR),"",0,0)
-  Delay(0,500,mSec)
-  SerialOut(NOX_COM,(PREFIX & "set pres comp on" & CR),"",0,0)
-  Delay(0,500,mSec)
-  SerialFlush(NOX_COM)
-  'all relevants commands & responses, fyi:
-  '    "set avg time 6"          "set avg time 6 ok"
-  '    "set meas mode no/nox"    "set meas mode no/nox ok"
-  '    "set gas unit ppb"        "set gas unit ppb ok"
-  '    "set temp comp on"        "set temp comp on ok"
-  '    "set pres comp on"        "set pres comp on ok"
-  '    "set time HH:mm"          "set time HH:mm ok" (zero padded; 24hr)
-  '    "set date mm-dd-yy"       "set date mm-dd-yy ok" (zero padded)
-  '    "set save params"         "set save params ok"
 EndSub
 
 
 '========================= MAIN PROGRAM =====================================
 BeginProg
-  SetStatus("StationName", SELF)
+  SetStatus("StationName", SELF) 'XXXX mutually exclusive with `CardOut()`
 '  send_startup_email()
   setup()
 
@@ -561,23 +564,27 @@ BeginProg
   Scan(500,mSec,10,0)
     VoltDiff(dusttrak2_analog_pm25,1,mv5000,DF_TSI_PM,True,0,INTEG,TSI_PM_MLT,TSI_PM_OFF)
     VoltDiff(t300_CO,1,mv5000,DF_CO,True,0,INTEG,CO_MLT,CO_OFF)
-    PanelTemp(logger_panel_T,INTEG)
-    TCDiff(typeT_sample_T,1,mV20,DF_TYPE_T,TypeT,logger_panel_T,1,0,INTEG,1,0)
+    VoltDiff(t200_NOx,1,mv5000,DF_NOX,True,0,INTEG,NOX_MLT,NOX_OFF)
+    VoltDiff(t200_NO,1,mv5000,DF_NO,True,0,INTEG,NOX_MLT,NOX_OFF)
+    VoltDiff(t200_NO2,1,mv5000,DF_NO2,True,0,INTEG,NOX_MLT,NOX_OFF)
+    VoltDiff(t400_O3,1,mv5000,DF_O3,True,0,INTEG,O3_MLT,O3_OFF)
+    PanelTemp(logger_self_T,INTEG)
+    TCDiff(typeT_sample_T,1,mV20,DF_TYPE_T,TypeT,logger_self_T,1,0,INTEG,1,0)
 
-'    SerialIn(ch4_record,CH4_COM,5,&h0A,CH4_BUFF)
-'    If (Len(ch4_record)) Then
-'      SplitStr(ch4(1),ch4_record,", ",25,6)
-'      ch4_year = ch4(1) 'convert string->float
-'      'HACK - compare record year with logger timestamp to verify correctly parsed
-'      disable_ugga = NOT(ch4_year = rtime(1))
-'      ugga_gas_P *= MBAR_PER_TORR
-'      ugga_h2o /= 1000 'ppmv -> ppthv
-'    ElseIf (ch4_year = NAN) Then
-'      'do nothing, UGGA vars already set to NAN
-'    Else
-'      Move(ch4(1),25,NAN,1)
-'      ch4_year = NAN
-'    EndIf
+    SerialIn(ch4_record,CH4_COM,5,&h0A,CH4_BUFF)
+    If (Len(ch4_record)) Then
+      SplitStr(ch4(1),ch4_record,", ",25,6)
+      ch4_year = ch4(1) 'convert string->float
+      'HACK - compare record year with logger timestamp to verify correctly parsed
+      disable_ugga = NOT(ch4_year = rtime(1))
+      ugga_gas_P *= MBAR_PER_TORR
+      ugga_H2O /= 1000 'ppmv -> ppthv
+    ElseIf (ch4_year = NAN) Then
+      'do nothing, UGGA vars already set to NAN
+    Else
+      Move(ch4(1),25,NAN,1)
+      ch4_year = NAN
+    EndIf
 
     SerialIn(li840a_record,LI840A_COM,5,&h0A,LI840A_BUFF)
     If (Len(li840a_record)) Then
@@ -592,14 +599,14 @@ BeginProg
 
     If (debug_on) Then CallTable(debug)
     CallTable(tsdata)
-    If TimeIntoInterval(0,30,Min) Then
-      CallTable(stats_indoor)
-      CallTable(stats_outdoor)
-    ElseIf (is_sampling_indoor) Then 
-      CallTable(stats_indoor)
-    ElseIf (NOT is_sampling_indoor) Then 
-      CallTable(stats_outdoor)
-    EndIf
+'    If TimeIntoInterval(0,30,Min) Then
+'      CallTable(stats_indoor)
+'      CallTable(stats_outdoor)
+'    ElseIf (is_sampling_indoor) Then 
+'      CallTable(stats_indoor)
+'    ElseIf (NOT is_sampling_indoor) Then 
+'      CallTable(stats_outdoor)
+'    EndIf
 
     'state init'd during setup()
     If TimeIntoInterval(0,30,Min) Then
@@ -616,33 +623,33 @@ BeginProg
     is_sampling_indoor = (ctrl_smp_vlv > 0)
     ExciteCAO(CAO_SMP_VLV,ctrl_smp_vlv,True)
 
-    'not init'd so possibility of 1st event being skipped
-    If TimeIntoInterval(ZERO_OFF,ZERO_INTV,Min) Then '01:00
-      ctrl_co_zero = 5000 'on
-      ctrl_ptr_zero = 5000 'on
-      zflag = 1
-    ElseIf TimeIntoInterval(ZERO_OFF+ZERO_PREFLAG,ZERO_INTV,Min) Then '01:02
-      zflag = 0
-    ElseIf TimeIntoInterval(ZERO_OFF+ZERO_DUR,ZERO_INTV,Min) Then '02:00
-      ctrl_co_zero = 0 'off
-      ctrl_ptr_zero = 0 'off
-      zflag = 1
-    ElseIf TimeIntoInterval(ZERO_OFF+ZERO_DUR+ZERO_POSTFLAG,ZERO_INTV,Min) Then '02:02
-      zflag = 0
-    EndIf
-    is_zeroing_CO = (ctrl_co_zero > 0)
-    is_zeroing_PTRMS = (ctrl_ptr_zero > 0)
-    ExciteCAO(CAO_CO_ZERO,ctrl_co_zero,True)
-    PortSet(C_PTR_ZERO,ctrl_ptr_zero)
+'    'not init'd so possibility of 1st event being skipped
+'    If TimeIntoInterval(ZERO_OFF,ZERO_INTV,Min) Then '01:00
+'      ctrl_co_zero = 5000 'on
+'      ctrl_ptr_zero = 5000 'on
+'      zflag = 1
+'    ElseIf TimeIntoInterval(ZERO_OFF+ZERO_PREFLAG,ZERO_INTV,Min) Then '01:02
+'      zflag = 0
+'    ElseIf TimeIntoInterval(ZERO_OFF+ZERO_DUR,ZERO_INTV,Min) Then '02:00
+'      ctrl_co_zero = 0 'off
+'      ctrl_ptr_zero = 0 'off
+'      zflag = 1
+'    ElseIf TimeIntoInterval(ZERO_OFF+ZERO_DUR+ZERO_POSTFLAG,ZERO_INTV,Min) Then '02:02
+'      zflag = 0
+'    EndIf
+'    is_zeroing_CO = (ctrl_co_zero > 0)
+'    is_zeroing_PTRMS = (ctrl_ptr_zero > 0)
+'    ExciteCAO(CAO_CO_ZERO,ctrl_co_zero,True)
+'    PortSet(C_PTR_ZERO,ctrl_ptr_zero)
 
     If TimeIntoInterval(1,10,Min) Then
-      'RealTime(rtime(1)) 'for UGGA message check
+      RealTime(rtime(1)) 'for UGGA message check
       NTP_offset = NetworkTimeProtocol(NTP_ADDR,UTC_OFFSET,NTP_DEV)
-      send_scadabr_data("outdoor-rack", FormatFloat(NTP_offset,"&ntp_offset=%f"))
+      'send_scadabr_data("outdoor-rack", FormatFloat(NTP_offset,"&ntp_offset=%f"))
     EndIf
-    If (test_scadabr) Then
-      send_test_scadabr()
-    EndIf
+    'If (test_scadabr) Then
+    '  send_test_scadabr()
+    'EndIf
 
     inbetween_1min_scan = True
     If (just_had_1min_scan) Then
@@ -653,46 +660,26 @@ BeginProg
 
   SlowSequence
   Scan(1,Min,1,0)
-    SerialIn(o3_record,O3_COM,100,&h0D,O3_REC)
-    If (Len(o3_record)) Then
-      SplitStr(o3(1),o3_record,"",9,0)
-      If (o3(9)=NAN OR m205_cell_P < 800 OR m205_cell_P > 1300) Then
-        Move(o3(1),9,NAN,1)
+    SerialIn(dc1100_record,DYLOS_COM,100,&h0D,DYLOS_BUFF)
+    If (Len(dc1100_record)) Then
+      SplitStr(dc1100_vals(1),dc1100_record,"",2,0)
+      If (dc1100_vals(1)=NAN OR dc1100_vals(2)=NAN) Then
+        dc1100_pm_small = NAN
+        dc1100_pm_large = NAN
+      Else
+        dc1100_pm_small = convert_dc1100_value(dc1100_vals(1))
+        dc1100_pm_large = convert_dc1100_value(dc1100_vals(2))
       EndIf
-      SerialFlush(O3_COM)
+      SerialFlush(DYLOS_COM)
     EndIf
-
-    'SerialIn & SerialOut run sequentially from processing task
-    'regardless of program mode (pipeline/sequential)
-    '
-    'Bench tests reveal a delay of at least 300ms be introduced 
-    'between queries to prevent incomplete responses
-    SerialFlush(NOX_COM)
-    SerialOut(NOX_COM,(PREFIX & "no2" & CR),"",0,0)
-    SerialIn(nox_record(1),NOX_COM,100,&H0d,NOX_REC)
-    Delay(1,NOX_DELAY,mSec)
-    SerialOut(NOX_COM,(PREFIX & "no" & CR),"",0,0)
-    SerialIn(nox_record(2),NOX_COM,100,&H0d,NOX_REC)
-    Delay(1,NOX_DELAY,mSec)   
-    SerialOut(NOX_COM,(PREFIX & "nox" & CR),"",0,0)
-    SerialIn(nox_record(3),NOX_COM,100,&H0d,NOX_REC)
-    Delay(1,NOX_DELAY,mSec)
-    SerialOut(NOX_COM,(PREFIX & "internal temp" & CR),"",0,0)
-    SerialIn(nox_record(4),NOX_COM,100,&H0d,NOX_REC)
-    'Update all values before processing (by ignoring non-numeric chars)
-    SplitStr(nox(1),nox_record(1),"",2,0) 'catch "2" within "no2" into teco_42C(1)
-    SplitStr(nox(3),nox_record(2),"",1,0)
-    SplitStr(nox(4),nox_record(3),"",1,0)
-    SplitStr(nox(5),nox_record(4),"",2,0)
-
-    send_rack_report()
-    If (tflag) Then
-      'don't report during transition times
-    ElseIf (is_sampling_indoor) Then
-      send_indoor_report()
-    ElseIf (NOT is_sampling_indoor) Then
-      send_outdoor_report()
-    EndIf
+    'send_rack_report()
+    'If (tflag) Then
+    '  'don't report during transition times
+    'ElseIf (is_sampling_indoor) Then
+    '  send_indoor_report()
+    'ElseIf (NOT is_sampling_indoor) Then
+    '  send_outdoor_report()
+    'EndIf
 
     just_had_1min_scan = True
   NextScan

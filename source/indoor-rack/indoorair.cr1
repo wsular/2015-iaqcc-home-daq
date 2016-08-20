@@ -93,7 +93,7 @@ Alias li840a(11) = li840a_H2O
 '(14) H2O absorbance value
 '(15) </h2oabs>
 '(16) <h2odewpoint>
-Alias li840a(17) = li840a_dew_T
+Alias li840a(17) = li840a_dewpoint
 '(18) </h2odewpoint>
 Alias li840a(19) = li840a_pwr_src
 '(20) <co2> (raw)
@@ -113,13 +113,13 @@ Units li840a_cell_T = degC
 Units li840a_cell_P = mbar
 Units li840a_CO2 = ppmv
 Units li840a_H2O = ppthv
-Units li840a_dew_T = degC
+Units li840a_dewpoint = degC
 Units li840a_pwr_src = Vdc
 
 Dim typeK_amb_T
-Dim logger_panel_T
+Dim logger_self_T
 Units typeK_amb_T = degC
-Units logger_panel_T = degC
+Units logger_self_T = degC
 
 'Dim cr3k_lithium_battery
 'Units cr3k_lithium_battery = Volts
@@ -142,57 +142,54 @@ Dim just_had_1min_scan As Boolean
 
 
 '============================ DATA TABLES ===================================
-DataTable(tsdata,True,1440)
+DataTable(tsdata,True,1440*DAYS_OF_DATA)
   DataInterval(0,1,min,5)
-'  CardOut(0,1440*DAYS_OF_DATA)
 '  Average(1,dusttrak2_analog_pm25,IEEE4,dusttrak2_analog_pm25=NAN)
 '    FieldNames("dusttrak2_analog_pm25")
   Sample(2,dc1100,IEEE4)
-  Average(1,li840a_CO2,IEEE4,li840a_CO2=NAN)
+  Average(1,li840a_CO2,FP2,li840a_CO2=NAN)
     FieldNames("li840a_CO2")
-  Average(1,li840a_H2O,IEEE4,li840a_H2O=NAN)
+  Average(1,li840a_H2O,FP2,li840a_H2O=NAN)
     FieldNames("li840a_H2O")
-  Average(1,li840a_cell_T,IEEE4,li840a_cell_T=NAN)
+  Average(1,li840a_cell_T,FP2,li840a_cell_T=NAN)
     FieldNames("li840a_cell_T")
   Average(1,li840a_cell_P,IEEE4,li840a_cell_P=NAN)
     FieldNames("li840a_cell_P")
-  Average(1,li840a_dew_T,IEEE4,li840a_dew_T=NAN)
-    FieldNames("li840a_dew_T")
-  Average(1,li840a_pwr_src,IEEE4,li840a_pwr_src=NAN)
+  Average(1,li840a_dewpoint,FP2,li840a_dewpoint=NAN)
+    FieldNames("li840a_dewpoint")
+  Average(1,li840a_pwr_src,FP2,li840a_pwr_src=NAN)
     FieldNames("li840a_pwr_src")
   Average(1,typeK_amb_T,FP2,typeK_amb_T=NAN)
     FieldNames("typeK_amb_T")
-  Average(1,logger_panel_T,FP2,logger_panel_T=NAN)
-    FieldNames("logger_panel_T")
+  Average(1,logger_self_T,FP2,logger_self_T=NAN)
+    FieldNames("logger_self_T")
 EndTable
 
-DataTable(stats,True,48) '1 week
+DataTable(stats,True,48*DAYS_OF_DATA)
   DataInterval(0,30,min,1)
-'  CardOut(0,48*DAYS_OF_DATA)
 '  Average(1,dusttrak2_analog_pm25,IEEE4,dusttrak2_analog_pm25=NAN)
   Average(1,dc1100_pm_small,IEEE4,inbetween_1min_scan OR dc1100_pm_small=NAN)
   Average(1,dc1100_pm_large,IEEE4,inbetween_1min_scan OR dc1100_pm_large=NAN)
-  Average(1,li840a_CO2,IEEE4,li840a_CO2=NAN)
-  Average(1,li840a_H2O,IEEE4,li840a_H2O=NAN)
-  Average(1,li840a_cell_T,IEEE4,li840a_cell_T=NAN)
+  Average(1,li840a_CO2,FP2,li840a_CO2=NAN)
+  Average(1,li840a_H2O,FP2,li840a_H2O=NAN)
+  Average(1,li840a_cell_T,FP2,li840a_cell_T=NAN)
   Average(1,li840a_cell_P,IEEE4,li840a_cell_P=NAN)
-  Average(1,li840a_dew_T,IEEE4,li840a_dew_T=NAN)
+  Average(1,li840a_dewpoint,FP2,li840a_dewpoint=NAN)
   Average(1,typeK_amb_T,FP2,typeK_amb_T=NAN)
-  Average(1,logger_panel_T,FP2,logger_panel_T=NAN)
+  Average(1,logger_self_T,FP2,logger_self_T=NAN)
 EndTable
 
 'HINT - segregate these 'prototype' sensors until solid
 'calibration curve is derived; ultimately, will probably
 'be integrated into CO2 tracer detection network package
-DataTable(B4_sensors,True,1440)
+DataTable(B4_sensors,True,1440*DAYS_OF_DATA)
   DataInterval(0,1,Min,5)
-  'CardOut(0,-1)
   Average(1,B4_CO_mV,IEEE4,B4_CO_mV=NAN)
   Average(1,B4_NO_mV,IEEE4,B4_NO_mV=NAN)
   Average(1,B4_O3_mV,IEEE4,B4_O3_mV=NAN)
-  Average(1,B4_CO_est,IEEE4,B4_CO_est=NAN)
-  Average(1,B4_NO_est,IEEE4,B4_NO_est=NAN)
-  Average(1,B4_O3_est,IEEE4,B4_O3_est=NAN)
+  Average(1,B4_CO_est,FP2,B4_CO_est=NAN)
+  Average(1,B4_NO_est,FP2,B4_NO_est=NAN)
+  Average(1,B4_O3_est,FP2,B4_O3_est=NAN)
 EndTable
 
 DataTable(debug,True,1)
@@ -202,13 +199,13 @@ DataTable(debug,True,1)
   Sample(1,li840a_record,String)
   Sample(32,li840a(1),IEEE4)
   Sample(1,typeK_amb_T,IEEE4)
-  Sample(1,logger_panel_T,IEEE4)
+  Sample(1,logger_self_T,IEEE4)
   Sample(1,B4_CO_mV,IEEE4)
   Sample(1,B4_NO_mV,IEEE4)
   Sample(1,B4_O3_mV,IEEE4)
 '  Sample(1,smtp_response,String)
-  Sample(1,scadabr_resp,String)
-  Sample(1,scadabr_success,Boolean)
+'  Sample(1,scadabr_resp,String)
+'  Sample(1,scadabr_success,Boolean)
   Sample(1,NTP_offset,IEEE4)
 EndTable
 
@@ -219,13 +216,13 @@ Const Cancel = False
 Const No = False
 
 'Public test_email As Boolean
-Public test_scadabr As Boolean
+'Public test_scadabr As Boolean
 
 DisplayMenu("Indoor AQ", -1)
   SubMenu("Debug")
     SubMenu("Monitor sensors")
       DisplayValue("TypeK tmpr.", typeK_amb_T)
-      DisplayValue("Panel tmpr.", logger_panel_T)
+      DisplayValue("Panel tmpr.", logger_self_T)
       DisplayValue("Dusttrak PM", dusttrak2_analog_pm25)
       SubMenu("PM (Dylos)")
         DisplayValue("DC1100 small", dc1100_pm_small)
@@ -236,7 +233,7 @@ DisplayMenu("Indoor AQ", -1)
         DisplayValue("H2O", li840a_H2O)
         DisplayValue("Cell tmpr.", li840a_cell_T)
         DisplayValue("Cell press.", li840a_cell_P)
-        DisplayValue("Dewpoint", li840a_dew_T)
+        DisplayValue("Dewpoint", li840a_dewpoint)
         DisplayValue("Power in", li840a_pwr_src)
       EndSubMenu
       SubMenu("CO/NO/O3 (Alphasense")
@@ -252,8 +249,8 @@ DisplayMenu("Indoor AQ", -1)
       MenuPick(No,Yes)
 '    MenuItem("Test email", test_email)
 '      MenuPick(Cancel, Yes)
-    MenuItem("Test ScadaBR", test_scadabr)
-      MenuPick(Cancel, Yes)
+'    MenuItem("Test ScadaBR", test_scadabr)
+'      MenuPick(Cancel, Yes)
   EndSubMenu
 EndMenu
 
@@ -302,47 +299,47 @@ EndMenu
 'EndSub
 
 
-'============================= SCADABR INTEGRATION ==================================
-Include("CPU:scadabr_Enc.cr1")
-Dim scadabr_socket As Long
-Dim rtime(9) As Long
-Dim scadabr_success As Boolean
-Dim scadabr_resp As String * 256
-
-Sub send_scadabr_data(payload As String * 300)
-  Dim tstamp As String * 18
-  RealTime(rtime)
-  Sprintf(tstamp,"%04u%02u%02u%02u%02u%02u", rtime(1),rtime(2),rtime(3),rtime(4),rtime(5),rtime(6))
-  scadabr_socket = HTTPGet((REPORT_URL & tstamp & payload), scadabr_resp, "")
-  scadabr_success = NOT (scadabr_socket OR Len(scadabr_resp))
-EndSub
-
-Sub send_test_ScadaBR()
-  send_scadabr_data("&testing=0")
-  test_scadabr = False
-EndSub
-
-Const REPORT1 = "&dusttrak2_analog_pm25=%.3f&dc1100_pm_small=%.1f&dc1100_pm_large=%.1f"
-Const REPORT2 = "&li840a_co2=%.1f&li840a_h2o=%.3f&li840a_cell_t=%.2f&li840a_cell_p=%.2f"
-Const REPORT3 = "&li840a_dew_t=%.1f&li840a_pwr_src=%.2f&typek_amb_t=%.1f&logger_panel_t=%.2f"
-Sub send_telemetry_report()
-  Dim msg1 As String * 88, msg2 As String * 88, msg3 As String * 88
-  Dim payload As String * 264
-  Sprintf(msg1, REPORT1, dusttrak2_analog_pm25, dc1100_pm_small, dc1100_pm_large)
-  Sprintf(msg2, REPORT2, li840a_CO2, li840a_H2O, li840a_cell_T, li840a_cell_P)
-  Sprintf(msg3, REPORT3, li840a_dew_T, li840a_pwr_src, typeK_amb_T, logger_panel_T)
-  send_scadabr_data(msg1 & msg2 & msg3)
-EndSub
-
-'HINT - just send most recent value instead of 5-min mean,
-'since that would require a fair amount of infrastructure
-'and time-series data is already emailed daily
-Sub send_alphasensors_report()
-  Dim msg1 As String * 56, msg2 As String * 56
-  Sprintf(msg1,"&b4_co_mv=%.1f&b4_no_mv=%.1f&b4_o3_mv=%.1f",B4_CO_mV,B4_NO_mV,B4_O3_mV)
-  Sprintf(msg2,"&b4_co_est=%.1f&b4_no_est=%.1f&b4_o3_est=%.1f", B4_CO_est,B4_NO_est,B4_O3_est)
-  send_scadabr_data(msg1 & msg2)
-EndSub
+''============================= SCADABR INTEGRATION ==================================
+'Include("CPU:scadabr_Enc.cr1")
+'Dim scadabr_socket As Long
+'Dim rtime(9) As Long
+'Dim scadabr_success As Boolean
+'Dim scadabr_resp As String * 256
+'
+'Sub send_scadabr_data(payload As String * 300)
+'  Dim tstamp As String * 18
+'  RealTime(rtime)
+'  Sprintf(tstamp,"%04u%02u%02u%02u%02u%02u", rtime(1),rtime(2),rtime(3),rtime(4),rtime(5),rtime(6))
+'  scadabr_socket = HTTPGet((REPORT_URL & tstamp & payload), scadabr_resp, "")
+'  scadabr_success = NOT (scadabr_socket OR Len(scadabr_resp))
+'EndSub
+'
+'Sub send_test_ScadaBR()
+'  send_scadabr_data("&testing=0")
+'  test_scadabr = False
+'EndSub
+'
+'Const REPORT1 = "&dusttrak2_analog_pm25=%.3f&dc1100_pm_small=%.1f&dc1100_pm_large=%.1f"
+'Const REPORT2 = "&li840a_co2=%.1f&li840a_h2o=%.3f&li840a_cell_t=%.2f&li840a_cell_p=%.2f"
+'Const REPORT3 = "&li840a_dewpoint=%.1f&li840a_pwr_src=%.2f&typek_amb_t=%.1f&logger_self_T=%.2f"
+'Sub send_telemetry_report()
+'  Dim msg1 As String * 88, msg2 As String * 88, msg3 As String * 88
+'  Dim payload As String * 264
+'  Sprintf(msg1, REPORT1, dusttrak2_analog_pm25, dc1100_pm_small, dc1100_pm_large)
+'  Sprintf(msg2, REPORT2, li840a_CO2, li840a_H2O, li840a_cell_T, li840a_cell_P)
+'  Sprintf(msg3, REPORT3, li840a_dewpoint, li840a_pwr_src, typeK_amb_T, logger_self_T)
+'  send_scadabr_data(msg1 & msg2 & msg3)
+'EndSub
+'
+''HINT - just send most recent value instead of 5-min mean,
+''since that would require a fair amount of infrastructure
+''and time-series data is already emailed daily
+'Sub send_alphasensors_report()
+'  Dim msg1 As String * 56, msg2 As String * 56
+'  Sprintf(msg1,"&b4_co_mv=%.1f&b4_no_mv=%.1f&b4_o3_mv=%.1f",B4_CO_mV,B4_NO_mV,B4_O3_mV)
+'  Sprintf(msg2,"&b4_co_est=%.1f&b4_no_est=%.1f&b4_o3_est=%.1f", B4_CO_est,B4_NO_est,B4_O3_est)
+'  send_scadabr_data(msg1 & msg2)
+'EndSub
 
 
 '================================ FUNCTIONS =================================
@@ -364,7 +361,7 @@ EndSub
 
 '========================= MAIN PROGRAM =====================================
 BeginProg
-  SetStatus("StationName", SELF)
+  SetStatus("StationName", SELF) 'XXXX mutually exclusive with `CardOut()`
 '  send_startup_email()
   setup()
 
@@ -372,8 +369,8 @@ BeginProg
   '       not precisely 1Hz... run twice as fast to avoid losing messages.
   Scan(500,mSec,1,0)
     VoltDiff(dusttrak2_analog_pm25,1,mv5000,DF_TSI_PM,True,0,INTEG,TSI_PM_MLT,TSI_PM_OFF)
-    PanelTemp(logger_panel_T,INTEG)
-    TCDiff(typeK_amb_T,1,mV25,DF_TYPE_K,TypeK,logger_panel_T,1,0,INTEG,1,0)
+    PanelTemp(logger_self_T,INTEG)
+    TCDiff(typeK_amb_T,1,mV25,DF_TYPE_K,TypeK,logger_self_T,1,0,INTEG,1,0)
 
     SerialIn(li840a_record,LI840A_COM,5,&h0A,LI840A_BUFF)
     If (Len(li840a_record)) Then
@@ -396,10 +393,10 @@ BeginProg
 
     CallTable(tsdata)
     CallTable(stats)
-    If TimeIntoInterval(0,60,Sec) Then 
-      send_telemetry_report()
-      send_alphasensors_report()
-    EndIf
+'    If TimeIntoInterval(0,60,Sec) Then 
+'      send_telemetry_report()
+'      send_alphasensors_report()
+'    EndIf
 
     inbetween_1min_scan = True
     If (just_had_1min_scan) Then
@@ -431,9 +428,9 @@ BeginProg
 '  SlowSequence
 '  Scan(1,Sec,1,0)
     If (debug_on) Then CallTable(debug)
-    If (test_scadabr) Then
-      send_test_scadabr()
-    EndIf
+'    If (test_scadabr) Then
+'      send_test_scadabr()
+'    EndIf
 '    If (test_email) Then
 '      send_test_email()
 '    EndIf
@@ -449,7 +446,7 @@ BeginProg
 
     If TimeIntoInterval(0,10,Min) Then
       NTP_offset = NetworkTimeProtocol(NTP_ADDR,UTC_OFFSET,NTP_DEV)
-      send_scadabr_data(FormatFloat(NTP_offset,"&ntp_offset=%f"))
+      'send_scadabr_data(FormatFloat(NTP_offset,"&ntp_offset=%f"))
     EndIf
   NextScan
 EndProg
