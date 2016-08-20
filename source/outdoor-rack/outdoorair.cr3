@@ -26,13 +26,13 @@ Const DYLOS_BUFF = 12
 
 Const DF_CO = 5
 Const CO_OFF = 0
-Const CO_MLT = (10.0 - CO_OFF)/5000 '0-10.0 ppm over 0-5V
+Const CO_MLT = (2000.0 - CO_OFF)/10000 '0-2000 ppb over 0-10V
 
 Const DF_NOX = 12
 Const DF_NO = 13
 Const DF_NO2 = 14
 Const NOX_OFF = 0
-Const NOX_MLT = (500.0 - NOX_OFF)/5000 '500 ppb over 0-5V
+Const NOX_MLT = (200.0 - NOX_OFF)/10000 '200 ppb over 0-10V
 
 Const CH4_COM = Com3
 Const CH4_BAUD = 19200
@@ -41,7 +41,7 @@ Const CH4_BUFF = 800
 
 Const DF_O3 = 6
 Const O3_OFF = 0
-Const O3_MLT = (500.0 - O3_OFF)/5000 '500 ppb over 0-5V
+Const O3_MLT = (500.0 - O3_OFF)/10000 '500 ppb over 0-10V
 
 Const LI840A_COM = Com2
 Const LI840A_BAUD = 9600
@@ -94,7 +94,7 @@ Units dc1100_pm_large = counts/m^3
 
 Dim co(1)
 Alias co(1) = t300_CO
-Units t300_CO = ppm
+Units t300_CO = ppbv
 
 Dim o3(1)
 Alias o3(1) = t400_O3
