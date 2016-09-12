@@ -1,6 +1,14 @@
 Changelog for indoor rack
 =========================
 
+next version
+------------
+
+### Notes
+
+* Remove ScadaBR integration (query instead via HTTP using Node-RED)
+
+
 v1.3
 ----
 

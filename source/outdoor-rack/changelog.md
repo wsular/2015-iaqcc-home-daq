@@ -11,6 +11,7 @@ next version
 
 ### Notes
 
+* Remove ScadaBR integration (query instead via HTTP using Node-RED)
 * Re-enables PTR-MS scheduled auto-zero routine
     * Triggered at 02:38, 10:38 and 18:38 (-1h, +8m shift w.r.t. previous)
     * Duration increased 7->15 minutes
