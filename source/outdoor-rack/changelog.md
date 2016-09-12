@@ -9,6 +9,14 @@ next version
 * Harden sample source selection logic (indoor/outdoor valve switching) against
   skipped scans
 
+### Notes
+
+* Re-enables PTR-MS scheduled auto-zero routine
+    * Triggered at 02:38, 10:38 and 18:38 (-1h, +8m shift w.r.t. previous)
+    * Duration increased 7->15 minutes
+    * Schedule is offset so zero routine overlaps half of an indoor period and
+      half of an outdoor period
+
 
 v1.3
 ----
