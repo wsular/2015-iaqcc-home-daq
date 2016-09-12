@@ -16,6 +16,7 @@ next version
     * Duration increased 7->15 minutes
     * Schedule is offset so zero routine overlaps half of an indoor period and
       half of an outdoor period
+* Remove abandoned code (commented data tables and instrument-specific stuffs)
 
 
 v1.3

@@ -100,36 +100,11 @@ Dim o3(1)
 Alias o3(1) = t400_O3
 Units t400_O3 = ppbv
 
-'Dim o3_record As String * O3_REC
-'Dim o3(9)
-'Alias o3(1) = m205_O3
-'Alias o3(2) = m205_cell_T
-'Alias o3(3) = m205_cell_P
-''4: date, day of month    '7: time, hour
-''5: date, month           '8: time, minute
-''6: date, short year      '9: time, second
-'Units m205_O3 = ppbv
-'Units m205_cell_T = degC
-'Units m205_cell_P = mbar
-
 Dim nox(3)
 Alias nox(1) = t200_NO2
 Alias nox(2) = t200_NO
 Alias nox(3) = t200_NOx
 Units nox = ppbv
-
-'Dim nox_record(4) As String * NOX_REC
-'Dim nox_bytes
-'Dim nox(6)
-''nox(1): HACK catches "2" within "no2"
-'Alias nox(2) = m42C_NO2
-'Alias nox(3) = m42C_NO
-'Alias nox(4) = m42C_NOx
-'Alias nox(5) = nox_tmpr 'should mirror nox(6)
-'Alias nox(6) = m42C_self_T 'measured value
-'Units nox = ppbv
-'Units nox_tmpr = degC
-'Units m42C_self_T = degC
 
 Dim disable_ugga As Boolean
 Dim ch4_record As String * 400
@@ -217,8 +192,6 @@ Dim tflag As Boolean 'transition flag
 Dim is_zeroing_PTRMS As Boolean
 
 Dim rtime(9) As Long
-Dim inbetween_1min_scan As Boolean
-Dim just_had_1min_scan As Boolean
 
 
 '============================ DATA TABLES ===================================
@@ -274,66 +247,6 @@ DataTable(tsdata,True,1440*DAYS_OF_DATA)
   Average(1,logger_self_T,FP2,logger_self_T=NAN)
     FieldNames("logger_self_T")
 EndTable
-
-'DataTable(stats_indoor,(NOT tflag),48*DAYS_OF_DATA)
-'  DataInterval(0,30,min,1)
-'  Average(1,t300_CO,FP2,t300_CO=NAN OR zflag)
-'  Average(1,t300_CO,FP2,t300_CO=NAN OR NOT zflag)
-'    FieldNames("t300_CO_zero")
-'  Average(1,m205_O3,FP2,inbetween_1min_scan OR m205_O3=NAN)
-'  Average(1,m205_cell_T,FP2,inbetween_1min_scan OR m205_cell_T=NAN)
-'  Average(1,m205_cell_P,IEEE4,inbetween_1min_scan OR m205_cell_P=NAN)
-'  Average(1,m42C_NO2,FP2,inbetween_1min_scan OR m42C_NO2=NAN)
-'  Average(1,m42C_NO,FP2,inbetween_1min_scan OR m42C_NO=NAN)
-'  Average(1,m42C_NOx,FP2,inbetween_1min_scan OR m42C_NOx=NAN)
-'  Average(1,m42C_self_T,FP2,inbetween_1min_scan OR m42C_self_T=NAN)
-''  Average(1,ugga_CH4,FP2,disable_ugga OR ugga_CH4=NAN)
-''  Average(1,ugga_H2O,IEEE4,disable_ugga OR ugga_H2O=NAN)
-''  Average(1,ugga_CO2,FP2,disable_ugga OR ugga_CO2=NAN)
-''  Average(1,ugga_CH4_dry,FP2,disable_ugga OR ugga_CH4_dry=NAN)
-''  Average(1,ugga_CO2_dry,FP2,disable_ugga OR ugga_CO2_dry=NAN)
-''  Average(1,ugga_gas_P,IEEE4,disable_ugga OR ugga_gas_P=NAN)
-''  Average(1,ugga_gas_T,FP2,disable_ugga OR ugga_gas_T=NAN)
-''  Average(1,ugga_self_T,FP2,disable_ugga OR ugga_self_T=NAN)
-''  Average(1,ugga_fit_flag,FP2,disable_ugga OR ugga_fit_flag=NAN)
-'  Average(1,li840a_CO2,FP2,li840a_CO2=NAN)
-'  Average(1,li840a_H2O,FP2,li840a_H2O=NAN)
-'  Average(1,li840a_cell_T,FP2,li840a_cell_T=NAN)
-'  Average(1,li840a_cell_P,IEEE4,li840a_cell_P=NAN)
-'  Average(1,li840a_dewpoint,FP2,li840a_dewpoint=NAN)
-'  Average(1,typeT_sample_T,FP2,typeT_sample_T=NAN)
-'  Average(1,logger_self_T,FP2,logger_self_T=NAN)
-'EndTable
-'
-'DataTable(stats_outdoor,(NOT tflag),48*DAYS_OF_DATA)
-'  DataInterval(0,30,min,1)
-'  Average(1,t300_CO,FP2,t300_CO=NAN OR zflag)
-'  Average(1,t300_CO,FP2,t300_CO=NAN OR NOT zflag)
-'    FieldNames("t300_CO_zero")
-'  Average(1,m205_O3,FP2,inbetween_1min_scan OR m205_O3=NAN)
-'  Average(1,m205_cell_T,FP2,inbetween_1min_scan OR m205_cell_T=NAN)
-'  Average(1,m205_cell_P,IEEE4,inbetween_1min_scan OR m205_cell_P=NAN)
-'  Average(1,m42C_NO2,FP2,inbetween_1min_scan OR m42C_NO2=NAN)
-'  Average(1,m42C_NO,FP2,inbetween_1min_scan OR m42C_NO=NAN)
-'  Average(1,m42C_NOx,FP2,inbetween_1min_scan OR m42C_NOx=NAN)
-'  Average(1,m42C_self_T,FP2,inbetween_1min_scan OR m42C_self_T=NAN)
-''  Average(1,ugga_CH4,FP2,disable_ugga OR ugga_CH4=NAN)
-''  Average(1,ugga_H2O,IEEE4,disable_ugga OR ugga_H2O=NAN)
-''  Average(1,ugga_CO2,FP2,disable_ugga OR ugga_CO2=NAN)
-''  Average(1,ugga_CH4_dry,FP2,disable_ugga OR ugga_CH4_dry=NAN)
-''  Average(1,ugga_CO2_dry,FP2,disable_ugga OR ugga_CO2_dry=NAN)
-''  Average(1,ugga_gas_P,IEEE4,disable_ugga OR ugga_gas_P=NAN)
-''  Average(1,ugga_gas_T,FP2,disable_ugga OR ugga_gas_T=NAN)
-''  Average(1,ugga_self_T,FP2,disable_ugga OR ugga_self_T=NAN)
-''  Average(1,ugga_fit_flag,FP2,disable_ugga OR ugga_fit_flag=NAN)
-'  Average(1,li840a_CO2,FP2,li840a_CO2=NAN)
-'  Average(1,li840a_H2O,FP2,li840a_H2O=NAN)
-'  Average(1,li840a_cell_T,FP2,li840a_cell_T=NAN)
-'  Average(1,li840a_cell_P,IEEE4,li840a_cell_P=NAN)
-'  Average(1,li840a_dewpoint,FP2,li840a_dewpoint=NAN)
-'  Average(1,typeT_sample_T,FP2,typeT_sample_T=NAN)
-'  Average(1,logger_self_T,FP2,logger_self_T=NAN)
-'EndTable
 
 DataTable(debug,True,1)
   Sample(1,dusttrak2_analog_pm25,IEEE4)
@@ -589,14 +502,6 @@ BeginProg
 
     If (debug_on) Then CallTable(debug)
     CallTable(tsdata)
-'    If TimeIntoInterval(0,30,Min) Then
-'      CallTable(stats_indoor)
-'      CallTable(stats_outdoor)
-'    ElseIf (is_sampling_indoor) Then 
-'      CallTable(stats_indoor)
-'    ElseIf (NOT is_sampling_indoor) Then 
-'      CallTable(stats_outdoor)
-'    EndIf
 
     'state init'd during setup()
     If TimeIsBetween(0,15,30,Min) Then
@@ -628,12 +533,6 @@ BeginProg
     'If (test_scadabr) Then
     '  send_test_scadabr()
     'EndIf
-
-    inbetween_1min_scan = True
-    If (just_had_1min_scan) Then
-      just_had_1min_scan = False
-      inbetween_1min_scan = False
-    EndIf
   NextScan
 
   SlowSequence
@@ -658,8 +557,6 @@ BeginProg
     'ElseIf (NOT is_sampling_indoor) Then
     '  send_outdoor_report()
     'EndIf
-
-    just_had_1min_scan = True
   NextScan
     
 '  SlowSequence
