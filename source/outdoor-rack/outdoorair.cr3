@@ -609,15 +609,14 @@ BeginProg
 '    EndIf
 
     'state init'd during setup()
-    If TimeIntoInterval(0,30,Min) Then
+    If TimeIsBetween(0,15,30,Min) Then
       ctrl_smp_vlv = 0 'off = outdoor air
-      tflag = 1
-    ElseIf TimeIntoInterval(1,30,Min) Then
-      tflag = 0
-    ElseIf TimeIntoInterval(15,30,Min) Then
+    Else
       ctrl_smp_vlv = 5000 'on = indoor air
+    EndIf
+    If (TimeIsBetween(0,1,30,Min) OR TimeIsBetween(15,16,30,Min)) Then
       tflag = 1
-    ElseIf TimeIntoInterval(16,30,Min) Then
+    Else
       tflag = 0
     EndIf
     is_sampling_indoor = (ctrl_smp_vlv > 0)

@@ -1,6 +1,15 @@
 Changelog for outdoor rack
 ==========================
 
+next version
+------------
+
+### Issues Fixed
+
+* Harden sample source selection logic (indoor/outdoor valve switching) against
+  skipped scans
+
+
 v1.3
 ----
 
