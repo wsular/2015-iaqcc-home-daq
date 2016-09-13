@@ -4,6 +4,10 @@ Changelog for indoor rack
 next version
 ------------
 
+### Data Table Changes
+
+* Remove 30-min averages data table
+
 ### Notes
 
 * Remove ScadaBR integration (query instead via HTTP using Node-RED)

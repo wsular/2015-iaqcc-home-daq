@@ -161,20 +161,6 @@ DataTable(tsdata,True,1440*DAYS_OF_DATA)
     FieldNames("logger_self_T")
 EndTable
 
-DataTable(stats,True,48*DAYS_OF_DATA)
-  DataInterval(0,30,min,1)
-'  Average(1,dusttrak2_analog_pm25,IEEE4,dusttrak2_analog_pm25=NAN)
-  Average(1,dc1100_pm_small,IEEE4,inbetween_1min_scan OR dc1100_pm_small=NAN)
-  Average(1,dc1100_pm_large,IEEE4,inbetween_1min_scan OR dc1100_pm_large=NAN)
-  Average(1,li840a_CO2,FP2,li840a_CO2=NAN)
-  Average(1,li840a_H2O,FP2,li840a_H2O=NAN)
-  Average(1,li840a_cell_T,FP2,li840a_cell_T=NAN)
-  Average(1,li840a_cell_P,IEEE4,li840a_cell_P=NAN)
-  Average(1,li840a_dewpoint,FP2,li840a_dewpoint=NAN)
-  Average(1,typeK_amb_T,FP2,typeK_amb_T=NAN)
-  Average(1,logger_self_T,FP2,logger_self_T=NAN)
-EndTable
-
 'HINT - segregate these 'prototype' sensors until solid
 'calibration curve is derived; ultimately, will probably
 'be integrated into CO2 tracer detection network package
@@ -340,7 +326,6 @@ BeginProg
     CallTable(B4_sensors)
 
     CallTable(tsdata)
-    CallTable(stats)
 
     inbetween_1min_scan = True
     If (just_had_1min_scan) Then
