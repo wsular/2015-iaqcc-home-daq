@@ -8,6 +8,11 @@ next version
 
 * Remove 30-min averages data table
 
+### Enhancements
+
+* Streamline Licor LI840A integration: sends XML config to sensor, setting it
+  to 1Hz reporting of select variables using sparsely formatted strings
+
 ### Notes
 
 * Remove ScadaBR integration (query instead via HTTP using Node-RED)

@@ -46,7 +46,7 @@ Const O3_MLT = (500.0 - O3_OFF)/10000 '500 ppb over 0-10V
 Const LI840A_COM = Com2
 Const LI840A_BAUD = 9600
 Const LI840A_FMT = 3 '8/n/1, RS232 logic
-Const LI840A_REC = 350
+Const LI840A_REC = 120
 Const LI840A_BUFF = LI840A_REC*2 + 1
 
 Const DF_TYPE_T = 7
@@ -135,47 +135,22 @@ Units ugga_ringdown0 = usec
 Units ugga_ringdown1 = usec
 Units ugga_fit_flag = arb
 
+Dim li840a_config As String * 300
+Dim li840a_resp As String * 32
 Dim li840a_record As String * LI840A_REC
-Dim li840a(32)
-'HINT dumb-parsing method ("on non-numeric") also catches numbers within XML tag names
-'(1) <li840>
-Alias li840a(2) = li840a_cell_T
-Alias li840a(3) = li840a_cell_P 'read as kPa, converted to mbar
-'(4) <co2>
-Alias li840a(5) = li840a_CO2
-'(6) </co2>
-'(7) <co2abs>
-'(8) CO2 absorbance value
-'(9) </co2abs>
-'(10) <h2o>
-Alias li840a(11) = li840a_H2O
-'(12) </h2o>
-'(13) <h2oabs>
-'(14) H2O absorbance value
-'(15) </h2oabs>
-'(16) <h2odewpoint>
-Alias li840a(17) = li840a_dewpoint
-'(18) </h2odewpoint>
-Alias li840a(19) = li840a_pwr_src
-'(20) <co2> (raw)
-'(21) raw CO2 number
-'(22) </co2>
-'(23) <co2ref>
-'(24) raw CO2 ref. number
-'(25) </co2ref>
-'(26) <h2o>
-'(27) raw H2O number
-'(28) </h2o>
-'(29) <h2oref>
-'(30) raw H2O number
-'(31) </h2oref>
-'(32) </li840a>
+Dim li840a(6)
+Alias li840a(1) = li840a_cell_T
+Alias li840a(2) = li840a_cell_P
+Alias li840a(3) = li840a_CO2
+Alias li840a(4) = li840a_pwr_src
+Alias li840a(5) = li840a_H2O
+Alias li840a(6) = li840a_dewpoint
 Units li840a_cell_T = degC
-Units li840a_cell_P = mbar
-Units li840a_CO2 = ppmv
-Units li840a_H2O = ppthv
-Units li840a_dewpoint = degC
+Units li840a_cell_P = kPa
+Units li840a_CO2 = ppm
 Units li840a_pwr_src = Vdc
+Units li840a_H2O = ppth
+Units li840a_dewpoint = degC
 
 Dim typeT_sample_T
 Dim logger_self_T
@@ -257,7 +232,7 @@ DataTable(debug,True,1)
   Sample(25,ch4(1),IEEE4)
   Sample(1,disable_ugga,Boolean)
   Sample(1,li840a_record,String)
-  Sample(32,li840a(1),IEEE4)
+  Sample(6,li840a(1),IEEE4)
   Sample(1,typeT_sample_T,IEEE4)
   Sample(1,logger_self_T,IEEE4)
 '  Sample(1,smtp_response,String)
@@ -378,9 +353,18 @@ EndFunction
 '============================== SUBROUTINES =================================
 Sub setup()
   SerialOpen(DYLOS_COM,DYLOS_BAUD,DYLOS_FMT,0,DYLOS_BUFF)
+
   SerialOpen(CH4_COM,CH4_BAUD,CH4_FMT,0,CH4_BUFF)
+
+  li840a_config = ("<li840><cfg><outrate>1</outrate></cfg><rs232><co2>true</co2>" & _
+        "<co2abs>false</co2abs><h2o>true</h2o><h2odewpoint>true</h2odewpoint>" & _
+        "<h2oabs>false</h2oabs><celltemp>true</celltemp><cellpres>true</cellpres>" & _
+        "<ivolt>true</ivolt><raw>false</raw><strip>true</strip></rs232></li840>")
+  li840a_resp = ("<li840><ack>true</ack></li840>")
   SerialOpen(LI840A_COM,LI840A_BAUD,LI840A_FMT,0,LI840A_BUFF)
-  Move(li840a(1),32,NAN,1)      'HACK ensure serial dest vars begin @ NAN to prevent
+  SerialOut(LI840A_COM,li840a_config,li840a_resp,3,1)
+
+  Move(li840a(1),6,NAN,1)      'HACK ensure serial dest vars begin @ NAN to prevent
   Move(ch4(1),25,NAN,1)         'inclusion of 0 in first averages produced
   Move(dc1100_vals(1),2,NAN,1)
   Move(dc1100(1),2,NAN,1)
@@ -427,17 +411,6 @@ BeginProg
       ch4_year = NAN
     EndIf
 
-    SerialIn(li840a_record,LI840A_COM,5,&h0A,LI840A_BUFF)
-    If (Len(li840a_record)) Then
-      SplitStr(li840a(1),li840a_record,"",32,0)
-      If (li840a(1)=840 AND li840a(32)=840) Then
-        li840a_cell_P *= MBAR_PER_KPA
-      Else
-        Move(li840a(1),32,NAN,1)
-        SerialFlush(LI840A_COM)
-      EndIf
-    EndIf
-
     If (debug_on) Then CallTable(debug)
     CallTable(tsdata)
 
@@ -466,6 +439,16 @@ BeginProg
     If TimeIntoInterval(1,10,Min) Then
       RealTime(rtime(1)) 'for UGGA message check
       NTP_offset = NetworkTimeProtocol(NTP_ADDR,UTC_OFFSET,NTP_DEV)
+    EndIf
+  NextScan
+  
+  SlowSequence
+  Scan(1,Sec,2,0)
+    SerialIn(li840a_record,LI840A_COM,50,&h0A,LI840A_BUFF)
+    If (Len(li840a_record)) Then
+      SplitStr(li840a(1),li840a_record,"",6,0)
+    Else
+      Move(li840a(1),6,NAN,1)
     EndIf
   NextScan
 
