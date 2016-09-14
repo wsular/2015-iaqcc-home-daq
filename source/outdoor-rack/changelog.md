@@ -4,6 +4,10 @@ Changelog for outdoor rack
 next version
 ------------
 
+### Changes to instrument line-up
+
+* Disable CH4/CO2 analyzer (LGR UGGA)
+
 ### Issues Fixed
 
 * Harden sample source selection logic (indoor/outdoor valve switching) against

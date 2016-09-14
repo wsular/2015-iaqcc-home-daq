@@ -34,10 +34,10 @@ Const DF_NO2 = 14
 Const NOX_OFF = 0
 Const NOX_MLT = (200.0 - NOX_OFF)/10000 '200 ppb over 0-10V
 
-Const CH4_COM = Com3
-Const CH4_BAUD = 19200
-Const CH4_FMT = 19 '8/n/1, TTL logic
-Const CH4_BUFF = 800
+'Const CH4_COM = Com3
+'Const CH4_BAUD = 19200
+'Const CH4_FMT = 19 '8/n/1, TTL logic
+'Const CH4_BUFF = 800
 
 Const DF_O3 = 6
 Const O3_OFF = 0
@@ -106,34 +106,34 @@ Alias nox(2) = t200_NO
 Alias nox(3) = t200_NOx
 Units nox = ppbv
 
-Dim disable_ugga As Boolean
-Dim ch4_record As String * 400
-Dim ch4_year
-Dim ch4(25)
-'1: date (only year captured)   '2: time (only hour captured)
-Alias ch4(3)  = ugga_CH4        '4: CH4 s.d.
-Alias ch4(5)  = ugga_H2O        '6: H2O s.d.
-Alias ch4(7)  = ugga_CO2        '8: CO2 s.d.
-Alias ch4(9)  = ugga_CH4_dry    '10: CH4 dry s.d.
-Alias ch4(11) = ugga_CO2_dry    '12: CO2 dry s.d.
-Alias ch4(13) = ugga_gas_P      '14: gas P s.d.
-Alias ch4(15) = ugga_gas_T      '16: gas T s.d.
-Alias ch4(17) = ugga_self_T     '18: self T s.d.
-Alias ch4(19) = ugga_ringdown0  '20: ringdown #0 s.d.
-Alias ch4(21) = ugga_ringdown1  '22: ringdown #1 s.d.
-Alias ch4(23) = ugga_fit_flag   '24: MIU valve
-'25: MIU description
-Units ugga_CH4 = ppmv
-Units ugga_H2O = ppthv
-Units ugga_CO2 = ppmv
-Units ugga_CH4_dry = ppmv
-Units ugga_CO2_dry = ppmv
-Units ugga_gas_P = mbar
-Units ugga_gas_T = degC
-Units ugga_self_T = degC
-Units ugga_ringdown0 = usec
-Units ugga_ringdown1 = usec
-Units ugga_fit_flag = arb
+'Dim disable_ugga As Boolean
+'Dim ch4_record As String * 400
+'Dim ch4_year
+'Dim ch4(25)
+''1: date (only year captured)   '2: time (only hour captured)
+'Alias ch4(3)  = ugga_CH4        '4: CH4 s.d.
+'Alias ch4(5)  = ugga_H2O        '6: H2O s.d.
+'Alias ch4(7)  = ugga_CO2        '8: CO2 s.d.
+'Alias ch4(9)  = ugga_CH4_dry    '10: CH4 dry s.d.
+'Alias ch4(11) = ugga_CO2_dry    '12: CO2 dry s.d.
+'Alias ch4(13) = ugga_gas_P      '14: gas P s.d.
+'Alias ch4(15) = ugga_gas_T      '16: gas T s.d.
+'Alias ch4(17) = ugga_self_T     '18: self T s.d.
+'Alias ch4(19) = ugga_ringdown0  '20: ringdown #0 s.d.
+'Alias ch4(21) = ugga_ringdown1  '22: ringdown #1 s.d.
+'Alias ch4(23) = ugga_fit_flag   '24: MIU valve
+''25: MIU description
+'Units ugga_CH4 = ppmv
+'Units ugga_H2O = ppthv
+'Units ugga_CO2 = ppmv
+'Units ugga_CH4_dry = ppmv
+'Units ugga_CO2_dry = ppmv
+'Units ugga_gas_P = mbar
+'Units ugga_gas_T = degC
+'Units ugga_self_T = degC
+'Units ugga_ringdown0 = usec
+'Units ugga_ringdown1 = usec
+'Units ugga_fit_flag = arb
 
 Dim li840a_config As String * 300
 Dim li840a_resp As String * 32
@@ -187,24 +187,24 @@ DataTable(tsdata,True,1440*DAYS_OF_DATA)
     FieldNames("t200_NO")
   Average(1,t200_NOx,FP2,t200_NOx=NAN)
     FieldNames("t200_NOx")
-  Average(1,ugga_CH4,FP2,disable_ugga OR ugga_CH4=NAN)
-    FieldNames("ugga_CH4")
-  Average(1,ugga_H2O,IEEE4,disable_ugga OR ugga_H2O=NAN)
-    FieldNames("ugga_H2O")
-  Average(1,ugga_CO2,FP2,disable_ugga OR ugga_CO2=NAN)
-    FieldNames("ugga_CO2")
-  Average(1,ugga_CH4_dry,FP2,disable_ugga OR ugga_CH4_dry=NAN)
-    FieldNames("ugga_CH4_dry")
-  Average(1,ugga_CO2_dry,FP2,disable_ugga OR ugga_CO2_dry=NAN)
-    FieldNames("ugga_CO2_dry")
-  Average(1,ugga_gas_P,IEEE4,disable_ugga OR ugga_gas_P=NAN)
-    FieldNames("ugga_gas_P")
-  Average(1,ugga_gas_T,FP2,disable_ugga OR ugga_gas_T=NAN)
-    FieldNames("ugga_gas_T")
-  Average(1,ugga_self_T,FP2,disable_ugga OR ugga_self_T=NAN)
-    FieldNames("ugga_self_T")
-  Average(1,ugga_fit_flag,FP2,disable_ugga OR ugga_fit_flag=NAN)
-    FieldNames("ugga_fit_flag")
+'  Average(1,ugga_CH4,FP2,disable_ugga OR ugga_CH4=NAN)
+'    FieldNames("ugga_CH4")
+'  Average(1,ugga_H2O,IEEE4,disable_ugga OR ugga_H2O=NAN)
+'    FieldNames("ugga_H2O")
+'  Average(1,ugga_CO2,FP2,disable_ugga OR ugga_CO2=NAN)
+'    FieldNames("ugga_CO2")
+'  Average(1,ugga_CH4_dry,FP2,disable_ugga OR ugga_CH4_dry=NAN)
+'    FieldNames("ugga_CH4_dry")
+'  Average(1,ugga_CO2_dry,FP2,disable_ugga OR ugga_CO2_dry=NAN)
+'    FieldNames("ugga_CO2_dry")
+'  Average(1,ugga_gas_P,IEEE4,disable_ugga OR ugga_gas_P=NAN)
+'    FieldNames("ugga_gas_P")
+'  Average(1,ugga_gas_T,FP2,disable_ugga OR ugga_gas_T=NAN)
+'    FieldNames("ugga_gas_T")
+'  Average(1,ugga_self_T,FP2,disable_ugga OR ugga_self_T=NAN)
+'    FieldNames("ugga_self_T")
+'  Average(1,ugga_fit_flag,FP2,disable_ugga OR ugga_fit_flag=NAN)
+'    FieldNames("ugga_fit_flag")
   Average(1,li840a_CO2,FP2,li840a_CO2=NAN)
     FieldNames("li840a_CO2")
   Average(1,li840a_H2O,FP2,li840a_H2O=NAN)
@@ -228,9 +228,9 @@ DataTable(debug,True,1)
   Sample(1,co(1),IEEE4)
   Sample(1,o3(1),IEEE4)
   Sample(3,nox(1),IEEE4)
-  Sample(1,ch4_record,String)
-  Sample(25,ch4(1),IEEE4)
-  Sample(1,disable_ugga,Boolean)
+'  Sample(1,ch4_record,String)
+'  Sample(25,ch4(1),IEEE4)
+'  Sample(1,disable_ugga,Boolean)
   Sample(1,li840a_record,String)
   Sample(6,li840a(1),IEEE4)
   Sample(1,typeT_sample_T,IEEE4)
@@ -269,19 +269,19 @@ DisplayMenu("Indoor AQ", -1)
         DisplayValue("NO", t200_NO)
         DisplayValue("NOx", t200_NOx)
       EndSubMenu
-      SubMenu("CH4/CO2/H2O (LGR)")
-        DisplayValue("CH4", ugga_CH4)
-        DisplayValue("CO2", ugga_CO2)
-        DisplayValue("H2O", ugga_H2O)
-        DisplayValue("CH4 (dry)", ugga_CH4_dry)
-        DisplayValue("CO2 (dry)", ugga_CO2_dry)
-        DisplayValue("gas press.", ugga_gas_P)
-        DisplayValue("gas tmpr.", ugga_gas_T)
-        DisplayValue("self tmpr.", ugga_self_T)
-        DisplayValue("ringdown 0", ugga_ringdown0)
-        DisplayValue("ringdown 1", ugga_ringdown1)
-        DisplayValue("fit flag", ugga_fit_flag)
-      EndSubMenu
+'      SubMenu("CH4/CO2/H2O (LGR)")
+'        DisplayValue("CH4", ugga_CH4)
+'        DisplayValue("CO2", ugga_CO2)
+'        DisplayValue("H2O", ugga_H2O)
+'        DisplayValue("CH4 (dry)", ugga_CH4_dry)
+'        DisplayValue("CO2 (dry)", ugga_CO2_dry)
+'        DisplayValue("gas press.", ugga_gas_P)
+'        DisplayValue("gas tmpr.", ugga_gas_T)
+'        DisplayValue("self tmpr.", ugga_self_T)
+'        DisplayValue("ringdown 0", ugga_ringdown0)
+'        DisplayValue("ringdown 1", ugga_ringdown1)
+'        DisplayValue("fit flag", ugga_fit_flag)
+'      EndSubMenu
       SubMenu("CO2/H2O (Licor)")
         DisplayValue("CO2", li840a_CO2)
         DisplayValue("H2O", li840a_H2O)
@@ -353,8 +353,7 @@ EndFunction
 '============================== SUBROUTINES =================================
 Sub setup()
   SerialOpen(DYLOS_COM,DYLOS_BAUD,DYLOS_FMT,0,DYLOS_BUFF)
-
-  SerialOpen(CH4_COM,CH4_BAUD,CH4_FMT,0,CH4_BUFF)
+'  SerialOpen(CH4_COM,CH4_BAUD,CH4_FMT,0,CH4_BUFF)
 
   li840a_config = ("<li840><cfg><outrate>1</outrate></cfg><rs232><co2>true</co2>" & _
         "<co2abs>false</co2abs><h2o>true</h2o><h2odewpoint>true</h2odewpoint>" & _
@@ -365,7 +364,7 @@ Sub setup()
   SerialOut(LI840A_COM,li840a_config,li840a_resp,3,1)
 
   Move(li840a(1),6,NAN,1)      'HACK ensure serial dest vars begin @ NAN to prevent
-  Move(ch4(1),25,NAN,1)         'inclusion of 0 in first averages produced
+'  Move(ch4(1),25,NAN,1)         'inclusion of 0 in first averages produced
   Move(dc1100_vals(1),2,NAN,1)
   Move(dc1100(1),2,NAN,1)
 
@@ -383,10 +382,7 @@ BeginProg
 '  send_startup_email()
   setup()
 
-  'HINT - Los Gatos Research GGA-30p CH4/CO2/H2O analyzer sends messages at
-  '       not precisely 1Hz... run twice as fast to avoid losing messages.
-  '       Same for Licor LI-840A CO2/H2O analyzer
-  Scan(500,mSec,10,0)
+  Scan(1,Sec,10,0)
     VoltDiff(dusttrak2_analog_pm25,1,mv5000,DF_TSI_PM,True,0,INTEG,TSI_PM_MLT,TSI_PM_OFF)
     VoltDiff(t300_CO,1,mv5000,DF_CO,True,0,INTEG,CO_MLT,CO_OFF)
     VoltDiff(t200_NOx,1,mv5000,DF_NOX,True,0,INTEG,NOX_MLT,NOX_OFF)
@@ -396,20 +392,20 @@ BeginProg
     PanelTemp(logger_self_T,INTEG)
     TCDiff(typeT_sample_T,1,mV20,DF_TYPE_T,TypeT,logger_self_T,1,0,INTEG,1,0)
 
-    SerialIn(ch4_record,CH4_COM,5,&h0A,CH4_BUFF)
-    If (Len(ch4_record)) Then
-      SplitStr(ch4(1),ch4_record,", ",25,6)
-      ch4_year = ch4(1) 'convert string->float
-      'HACK - compare record year with logger timestamp to verify correctly parsed
-      disable_ugga = NOT(ch4_year = rtime(1))
-      ugga_gas_P *= MBAR_PER_TORR
-      ugga_H2O /= 1000 'ppmv -> ppthv
-    ElseIf (ch4_year = NAN) Then
-      'do nothing, UGGA vars already set to NAN
-    Else
-      Move(ch4(1),25,NAN,1)
-      ch4_year = NAN
-    EndIf
+'    SerialIn(ch4_record,CH4_COM,5,&h0A,CH4_BUFF)
+'    If (Len(ch4_record)) Then
+'      SplitStr(ch4(1),ch4_record,", ",25,6)
+'      ch4_year = ch4(1) 'convert string->float
+'      'HACK - compare record year with logger timestamp to verify correctly parsed
+'      disable_ugga = NOT(ch4_year = rtime(1))
+'      ugga_gas_P *= MBAR_PER_TORR
+'      ugga_H2O /= 1000 'ppmv -> ppthv
+'    ElseIf (ch4_year = NAN) Then
+'      'do nothing, UGGA vars already set to NAN
+'    Else
+'      Move(ch4(1),25,NAN,1)
+'      ch4_year = NAN
+'    EndIf
 
     If (debug_on) Then CallTable(debug)
     CallTable(tsdata)
