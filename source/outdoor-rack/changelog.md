@@ -8,10 +8,16 @@ next version
 
 * Disable CH4/CO2 analyzer (LGR UGGA)
 
+### Data Table Changes
+
+* Add Dylos DC1100 variables to table `debug`
+
 ### Issues Fixed
 
 * Harden sample source selection logic (indoor/outdoor valve switching) against
   skipped scans
+* Store null values if Dylos DC1100 stops reporting data (instead of holding
+  last value)
 
 ### Enhancements
 

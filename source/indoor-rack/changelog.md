@@ -8,6 +8,11 @@ next version
 
 * Remove 30-min averages data table
 
+### Issues Fixed
+
+* Store null values if Dylos DC1100 stops reporting data (instead of holding
+  last value)
+
 ### Enhancements
 
 * Streamline Licor LI840A integration: sends XML config to sensor, setting it

@@ -320,6 +320,8 @@ BeginProg
         dc1100_pm_large = convert_dc1100_value(dc1100_vals(2))
       EndIf
       SerialFlush(DYLOS_COM)
+    Else
+      Move(dc1100(1),2,NAN,1)
     EndIf
   NextScan
     

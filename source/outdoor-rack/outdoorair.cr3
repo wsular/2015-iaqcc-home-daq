@@ -225,6 +225,9 @@ EndTable
 
 DataTable(debug,True,1)
   Sample(1,dusttrak2_analog_pm25,IEEE4)
+  Sample(1,dc1100_record,String)
+  Sample(2,dc1100_vals(1),IEEE4)
+  Sample(2,dc1100(1),IEEE4)
   Sample(1,co(1),IEEE4)
   Sample(1,o3(1),IEEE4)
   Sample(3,nox(1),IEEE4)
@@ -461,6 +464,8 @@ BeginProg
         dc1100_pm_large = convert_dc1100_value(dc1100_vals(2))
       EndIf
       SerialFlush(DYLOS_COM)
+    Else
+      Move(dc1100(1),2,NAN,1)
     EndIf
   NextScan
     
