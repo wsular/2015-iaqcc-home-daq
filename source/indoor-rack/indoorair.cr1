@@ -152,6 +152,7 @@ EndTable
 DataTable(debug,True,1)
   Sample(1,dusttrak2_analog_pm25,IEEE4)
   Sample(1,dc1100_record,String)
+  Sample(2,dc1100_vals(1),IEEE4)
   Sample(2,dc1100(1),IEEE4)
   Sample(1,li840a_record,String)
   Sample(6,li840a(1),IEEE4)

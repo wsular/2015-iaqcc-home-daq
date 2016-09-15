@@ -8,6 +8,10 @@ next version
 
 * Store Licor CO2 analyzer cell pressure data in mbars
 
+### Data Table Changes
+
+* Add missing Dylos DC1100 intermediate vars to debug table
+
 
 v1.4
 ----
