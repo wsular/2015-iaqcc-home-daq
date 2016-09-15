@@ -1,6 +1,14 @@
 Changelog for indoor rack
 =========================
 
+next version
+------------
+
+### Issues Fixed
+
+* Store Licor CO2 analyzer cell pressure data in mbars
+
+
 v1.4
 ----
 

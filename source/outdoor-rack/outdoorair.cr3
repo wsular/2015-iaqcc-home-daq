@@ -146,7 +146,7 @@ Alias li840a(4) = li840a_pwr_src
 Alias li840a(5) = li840a_H2O
 Alias li840a(6) = li840a_dewpoint
 Units li840a_cell_T = degC
-Units li840a_cell_P = kPa
+Units li840a_cell_P = mb
 Units li840a_CO2 = ppm
 Units li840a_pwr_src = Vdc
 Units li840a_H2O = ppth
@@ -446,6 +446,7 @@ BeginProg
     SerialIn(li840a_record,LI840A_COM,50,&h0A,LI840A_BUFF)
     If (Len(li840a_record)) Then
       SplitStr(li840a(1),li840a_record,"",6,0)
+      li840a_cell_P *= 10 'kPa -> mbar
     Else
       Move(li840a(1),6,NAN,1)
     EndIf
