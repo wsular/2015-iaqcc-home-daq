@@ -1,6 +1,33 @@
 Changelog for indoor rack
 =========================
 
+v1.4
+----
+
+### Known Issues
+
+* Data files headers contain empty version spec because programs were deployed
+  without Git tag specified
+
+### Data Table Changes
+
+* Remove 30-min averages data table
+
+### Issues Fixed
+
+* Store null values if Dylos DC1100 stops reporting data (instead of holding
+  last value)
+
+### Enhancements
+
+* Streamline Licor LI840A integration: sends XML config to sensor, setting it
+  to 1Hz reporting of select variables using sparsely formatted strings
+
+### Notes
+
+* Remove ScadaBR integration (query instead via HTTP using Node-RED)
+
+
 v1.3
 ----
 

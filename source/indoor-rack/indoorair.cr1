@@ -27,7 +27,7 @@ Const DYLOS_BUFF = 12
 Const LI840A_COM = Com2
 Const LI840A_BAUD = 9600
 Const LI840A_FMT = 3 '8/n/1, RS232 logic
-Const LI840A_REC = 350
+Const LI840A_REC = 120
 Const LI840A_BUFF = LI840A_REC*2 + 1
 
 Const DF_TYPE_K = 8
@@ -74,55 +74,27 @@ Alias dc1100(2) = dc1100_pm_large
 Units dc1100_pm_small = counts/m^3
 Units dc1100_pm_large = counts/m^3
 
+Dim li840a_config As String * 300
+Dim li840a_resp As String * 32
 Dim li840a_record As String * LI840A_REC
-Dim li840a(32)
-'HINT dumb-parsing method ("on non-numeric") also catches numbers within XML tag names
-'(1) <li840>
-Alias li840a(2) = li840a_cell_T
-Alias li840a(3) = li840a_cell_P 'read as kPa, converted to mbar
-'(4) <co2>
-Alias li840a(5) = li840a_CO2
-'(6) </co2>
-'(7) <co2abs>
-'(8) CO2 absorbance value
-'(9) </co2abs>
-'(10) <h2o>
-Alias li840a(11) = li840a_H2O
-'(12) </h2o>
-'(13) <h2oabs>
-'(14) H2O absorbance value
-'(15) </h2oabs>
-'(16) <h2odewpoint>
-Alias li840a(17) = li840a_dewpoint
-'(18) </h2odewpoint>
-Alias li840a(19) = li840a_pwr_src
-'(20) <co2> (raw)
-'(21) raw CO2 number
-'(22) </co2>
-'(23) <co2ref>
-'(24) raw CO2 ref. number
-'(25) </co2ref>
-'(26) <h2o>
-'(27) raw H2O number
-'(28) </h2o>
-'(29) <h2oref>
-'(30) raw H2O number
-'(31) </h2oref>
-'(32) </li840a>
+Dim li840a(6)
+Alias li840a(1) = li840a_cell_T
+Alias li840a(2) = li840a_cell_P
+Alias li840a(3) = li840a_CO2
+Alias li840a(4) = li840a_pwr_src
+Alias li840a(5) = li840a_H2O
+Alias li840a(6) = li840a_dewpoint
 Units li840a_cell_T = degC
-Units li840a_cell_P = mbar
-Units li840a_CO2 = ppmv
-Units li840a_H2O = ppthv
-Units li840a_dewpoint = degC
+Units li840a_cell_P = kPa
+Units li840a_CO2 = ppm
 Units li840a_pwr_src = Vdc
+Units li840a_H2O = ppth
+Units li840a_dewpoint = degC
 
 Dim typeK_amb_T
 Dim logger_self_T
 Units typeK_amb_T = degC
 Units logger_self_T = degC
-
-'Dim cr3k_lithium_battery
-'Units cr3k_lithium_battery = Volts
 
 Dim alphasense(3)
 Alias alphasense(1) = B4_CO_mV
@@ -138,7 +110,6 @@ Units alphafixme = ppbv
 
 Dim inbetween_1min_scan As Boolean
 Dim just_had_1min_scan As Boolean
-'Dim time_for_telemetry_report As Boolean
 
 
 '============================ DATA TABLES ===================================
@@ -165,20 +136,6 @@ DataTable(tsdata,True,1440*DAYS_OF_DATA)
     FieldNames("logger_self_T")
 EndTable
 
-DataTable(stats,True,48*DAYS_OF_DATA)
-  DataInterval(0,30,min,1)
-'  Average(1,dusttrak2_analog_pm25,IEEE4,dusttrak2_analog_pm25=NAN)
-  Average(1,dc1100_pm_small,IEEE4,inbetween_1min_scan OR dc1100_pm_small=NAN)
-  Average(1,dc1100_pm_large,IEEE4,inbetween_1min_scan OR dc1100_pm_large=NAN)
-  Average(1,li840a_CO2,FP2,li840a_CO2=NAN)
-  Average(1,li840a_H2O,FP2,li840a_H2O=NAN)
-  Average(1,li840a_cell_T,FP2,li840a_cell_T=NAN)
-  Average(1,li840a_cell_P,IEEE4,li840a_cell_P=NAN)
-  Average(1,li840a_dewpoint,FP2,li840a_dewpoint=NAN)
-  Average(1,typeK_amb_T,FP2,typeK_amb_T=NAN)
-  Average(1,logger_self_T,FP2,logger_self_T=NAN)
-EndTable
-
 'HINT - segregate these 'prototype' sensors until solid
 'calibration curve is derived; ultimately, will probably
 'be integrated into CO2 tracer detection network package
@@ -197,15 +154,13 @@ DataTable(debug,True,1)
   Sample(1,dc1100_record,String)
   Sample(2,dc1100(1),IEEE4)
   Sample(1,li840a_record,String)
-  Sample(32,li840a(1),IEEE4)
+  Sample(6,li840a(1),IEEE4)
   Sample(1,typeK_amb_T,IEEE4)
   Sample(1,logger_self_T,IEEE4)
   Sample(1,B4_CO_mV,IEEE4)
   Sample(1,B4_NO_mV,IEEE4)
   Sample(1,B4_O3_mV,IEEE4)
 '  Sample(1,smtp_response,String)
-'  Sample(1,scadabr_resp,String)
-'  Sample(1,scadabr_success,Boolean)
   Sample(1,NTP_offset,IEEE4)
 EndTable
 
@@ -216,7 +171,6 @@ Const Cancel = False
 Const No = False
 
 'Public test_email As Boolean
-'Public test_scadabr As Boolean
 
 DisplayMenu("Indoor AQ", -1)
   SubMenu("Debug")
@@ -248,8 +202,6 @@ DisplayMenu("Indoor AQ", -1)
     MenuItem("Debug  ON", debug_on)
       MenuPick(No,Yes)
 '    MenuItem("Test email", test_email)
-'      MenuPick(Cancel, Yes)
-'    MenuItem("Test ScadaBR", test_scadabr)
 '      MenuPick(Cancel, Yes)
   EndSubMenu
 EndMenu
@@ -299,49 +251,6 @@ EndMenu
 'EndSub
 
 
-''============================= SCADABR INTEGRATION ==================================
-'Include("CPU:scadabr_Enc.cr1")
-'Dim scadabr_socket As Long
-'Dim rtime(9) As Long
-'Dim scadabr_success As Boolean
-'Dim scadabr_resp As String * 256
-'
-'Sub send_scadabr_data(payload As String * 300)
-'  Dim tstamp As String * 18
-'  RealTime(rtime)
-'  Sprintf(tstamp,"%04u%02u%02u%02u%02u%02u", rtime(1),rtime(2),rtime(3),rtime(4),rtime(5),rtime(6))
-'  scadabr_socket = HTTPGet((REPORT_URL & tstamp & payload), scadabr_resp, "")
-'  scadabr_success = NOT (scadabr_socket OR Len(scadabr_resp))
-'EndSub
-'
-'Sub send_test_ScadaBR()
-'  send_scadabr_data("&testing=0")
-'  test_scadabr = False
-'EndSub
-'
-'Const REPORT1 = "&dusttrak2_analog_pm25=%.3f&dc1100_pm_small=%.1f&dc1100_pm_large=%.1f"
-'Const REPORT2 = "&li840a_co2=%.1f&li840a_h2o=%.3f&li840a_cell_t=%.2f&li840a_cell_p=%.2f"
-'Const REPORT3 = "&li840a_dewpoint=%.1f&li840a_pwr_src=%.2f&typek_amb_t=%.1f&logger_self_T=%.2f"
-'Sub send_telemetry_report()
-'  Dim msg1 As String * 88, msg2 As String * 88, msg3 As String * 88
-'  Dim payload As String * 264
-'  Sprintf(msg1, REPORT1, dusttrak2_analog_pm25, dc1100_pm_small, dc1100_pm_large)
-'  Sprintf(msg2, REPORT2, li840a_CO2, li840a_H2O, li840a_cell_T, li840a_cell_P)
-'  Sprintf(msg3, REPORT3, li840a_dewpoint, li840a_pwr_src, typeK_amb_T, logger_self_T)
-'  send_scadabr_data(msg1 & msg2 & msg3)
-'EndSub
-'
-''HINT - just send most recent value instead of 5-min mean,
-''since that would require a fair amount of infrastructure
-''and time-series data is already emailed daily
-'Sub send_alphasensors_report()
-'  Dim msg1 As String * 56, msg2 As String * 56
-'  Sprintf(msg1,"&b4_co_mv=%.1f&b4_no_mv=%.1f&b4_o3_mv=%.1f",B4_CO_mV,B4_NO_mV,B4_O3_mV)
-'  Sprintf(msg2,"&b4_co_est=%.1f&b4_no_est=%.1f&b4_o3_est=%.1f", B4_CO_est,B4_NO_est,B4_O3_est)
-'  send_scadabr_data(msg1 & msg2)
-'EndSub
-
-
 '================================ FUNCTIONS =================================
 Function convert_dc1100_value(number) As Float
   'counts/100 per cubic foot => counts per cubic meter
@@ -352,10 +261,18 @@ EndFunction
 '============================== SUBROUTINES =================================
 Sub setup()
   SerialOpen(DYLOS_COM,DYLOS_BAUD,DYLOS_FMT,0,DYLOS_BUFF)
+
+  li840a_config = ("<li840><cfg><outrate>1</outrate></cfg><rs232><co2>true</co2>" & _
+        "<co2abs>false</co2abs><h2o>true</h2o><h2odewpoint>true</h2odewpoint>" & _
+        "<h2oabs>false</h2oabs><celltemp>true</celltemp><cellpres>true</cellpres>" & _
+        "<ivolt>true</ivolt><raw>false</raw><strip>true</strip></rs232></li840>")
+  li840a_resp = ("<li840><ack>true</ack></li840>")
   SerialOpen(LI840A_COM,LI840A_BAUD,LI840A_FMT,0,LI840A_BUFF)
+  SerialOut(LI840A_COM,li840a_config,li840a_resp,3,1)
+
   Move(dc1100_vals(1),2,NAN,1) 'HACK ensure serial dest vars begin @ NAN to prevent
   Move(dc1100(1),2,NAN,1)
-  Move(li840a(1),32,NAN,1)         'inclusion of 0 in first averages produced
+  Move(li840a(1),6,NAN,1)         'inclusion of 0 in first averages produced
 EndSub
 
 
@@ -367,21 +284,10 @@ BeginProg
 
   'HINT - Licor LI840A CO2/H2O analyzer sends messages at
   '       not precisely 1Hz... run twice as fast to avoid losing messages.
-  Scan(500,mSec,1,0)
+  Scan(1,Sec,1,0)
     VoltDiff(dusttrak2_analog_pm25,1,mv5000,DF_TSI_PM,True,0,INTEG,TSI_PM_MLT,TSI_PM_OFF)
     PanelTemp(logger_self_T,INTEG)
     TCDiff(typeK_amb_T,1,mV25,DF_TYPE_K,TypeK,logger_self_T,1,0,INTEG,1,0)
-
-    SerialIn(li840a_record,LI840A_COM,5,&h0A,LI840A_BUFF)
-    If (Len(li840a_record)) Then
-      SplitStr(li840a(1),li840a_record,"",32,0)
-      If (li840a(1)=840 AND li840a(32)=840) Then
-        li840a_cell_P *= MBAR_PER_KPA
-      Else
-        Move(li840a(1),32,NAN,1)
-        SerialFlush(LI840A_COM)
-      EndIf
-    EndIf
 
     VoltDiff(B4_CO_mV,1,mv5000,DF_CO,True,0,INTEG,1,0) 'in mV
     VoltDiff(B4_NO_mV,1,mv5000,DF_NO,True,0,INTEG,1,0) 'FIXME
@@ -391,23 +297,18 @@ BeginProg
     B4_O3_est = B4_O3_mV*O3_MLT + O3_OFF
     CallTable(B4_sensors)
 
-    CallTable(tsdata)
-    CallTable(stats)
-'    If TimeIntoInterval(0,60,Sec) Then 
-'      send_telemetry_report()
-'      send_alphasensors_report()
-'    EndIf
-
-    inbetween_1min_scan = True
-    If (just_had_1min_scan) Then
-      just_had_1min_scan = False
-      inbetween_1min_scan = False
+    SerialIn(li840a_record,LI840A_COM,50,&h0A,LI840A_BUFF)
+    If (Len(li840a_record)) Then
+      SplitStr(li840a(1),li840a_record,"",6,0)
+    Else
+      Move(li840a(1),6,NAN,1)
     EndIf
-'  NextScan
-'
-'  SlowSequence
-'  Scan(1,Min,1,0)
-  If TimeIntoInterval(0,1,Min) Then
+
+    CallTable(tsdata)
+  NextScan
+
+  SlowSequence
+  Scan(1,Min,1,0)
     SerialIn(dc1100_record,DYLOS_COM,100,&h0D,DYLOS_BUFF)
     If (Len(dc1100_record)) Then
       SplitStr(dc1100_vals(1),dc1100_record,"",2,0)
@@ -419,14 +320,13 @@ BeginProg
         dc1100_pm_large = convert_dc1100_value(dc1100_vals(2))
       EndIf
       SerialFlush(DYLOS_COM)
+    Else
+      Move(dc1100(1),2,NAN,1)
     EndIf
-
-    just_had_1min_scan = True
-'  NextScan
-  EndIf
+  NextScan
     
-'  SlowSequence
-'  Scan(1,Sec,1,0)
+  SlowSequence
+  Scan(1,Sec,1,0)
     If (debug_on) Then CallTable(debug)
 '    If (test_scadabr) Then
 '      send_test_scadabr()
@@ -446,7 +346,6 @@ BeginProg
 
     If TimeIntoInterval(0,10,Min) Then
       NTP_offset = NetworkTimeProtocol(NTP_ADDR,UTC_OFFSET,NTP_DEV)
-      'send_scadabr_data(FormatFloat(NTP_offset,"&ntp_offset=%f"))
     EndIf
   NextScan
 EndProg
