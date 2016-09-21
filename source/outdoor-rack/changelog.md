@@ -1,6 +1,14 @@
 Changelog for outdoor rack
 ==========================
 
+v1.4.1
+------
+
+### Issues Fixed
+
+* Store Licor CO2 analyzer cell pressure data in mbars
+
+
 v1.4
 ----
 
